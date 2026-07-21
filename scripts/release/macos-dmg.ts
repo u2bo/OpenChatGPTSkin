@@ -19,6 +19,10 @@ import sharp from "sharp";
 import { macDmgArtifactName } from "./artifact-names.js";
 import { verifyMacAppBundleLayout } from "./macos-app.js";
 import type { ReleaseArch } from "./payload.js";
+import {
+  assertPathMissing,
+  rethrowAfterRemoving,
+} from "./release-files.js";
 import { runReleaseCommand } from "./release-command.js";
 
 const MAC_ICON_ENTRIES = [
@@ -33,6 +37,15 @@ const MAC_ICON_ENTRIES = [
   ["icon_512x512.png", 512],
   ["icon_512x512@2x.png", 1024],
 ] as const;
+
+export const MAC_APPLICATIONS_LINK_NAME = "Applications";
+export const MAC_FIRST_LAUNCH_NOTICE_NAME =
+  "首次打开说明 - First Launch.txt";
+export const MAC_FIRST_LAUNCH_NOTICE = [
+  "未签名开发者预览：校验 SHA-256 后，将应用拖入 Applications，再右键选择“打开”。",
+  "Unsigned developer preview: verify SHA-256, drag the app to Applications, then Control-click and choose Open.",
+  "",
+].join("\n");
 
 export function macIconEntries(): typeof MAC_ICON_ENTRIES {
   return MAC_ICON_ENTRIES;
@@ -50,29 +63,6 @@ export function assertMacBinaryArchitecture(
   }
 }
 
-async function assertMissing(path: string): Promise<void> {
-  try {
-    await access(path);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
-    throw error;
-  }
-  throw new Error(`Release artifact already exists: ${path}`);
-}
-
-async function removeFailedOutput(
-  path: string,
-  failure: unknown,
-  message: string,
-): Promise<never> {
-  try {
-    await rm(path, { force: true });
-  } catch (cleanupError) {
-    throw new AggregateError([failure, cleanupError], message);
-  }
-  throw failure;
-}
-
 export async function generateMacIcon(
   svgPathInput: string,
   icnsPathInput: string,
@@ -83,7 +73,7 @@ export async function generateMacIcon(
   const svgPath = resolve(svgPathInput);
   const icnsPath = resolve(icnsPathInput);
   await access(svgPath);
-  await assertMissing(icnsPath);
+  await assertPathMissing(icnsPath, "Release artifact");
   const iconset = `${icnsPath}.iconset`;
   await mkdir(iconset, { recursive: false });
   let failure: unknown;
@@ -112,7 +102,7 @@ export async function generateMacIcon(
       : error;
   }
   if (failure) {
-    return await removeFailedOutput(
+    return await rethrowAfterRemoving(
       icnsPath,
       failure,
       "macOS icon generation and cleanup failed",
@@ -148,7 +138,7 @@ export async function buildMacDmg(options: {
   await mkdir(outputDirectory, { recursive: true });
   const name = macDmgArtifactName(options.version, options.arch);
   const output = join(outputDirectory, name);
-  await assertMissing(output);
+  await assertPathMissing(output, "Release artifact");
 
   const source = await mkdtemp(
     join(tmpdir(), "open-chatgpt-skin-dmg-"),
@@ -162,14 +152,13 @@ export async function buildMacDmg(options: {
       errorOnExist: true,
       dereference: false,
     });
-    await symlink("/Applications", join(source, "Applications"));
+    await symlink(
+      "/Applications",
+      join(source, MAC_APPLICATIONS_LINK_NAME),
+    );
     await writeFile(
-      join(source, "首次打开说明 - First Launch.txt"),
-      [
-        "未签名开发者预览：校验 SHA-256 后，将应用拖入 Applications，再右键选择“打开”。",
-        "Unsigned developer preview: verify SHA-256, drag the app to Applications, then Control-click and choose Open.",
-        "",
-      ].join("\n"),
+      join(source, MAC_FIRST_LAUNCH_NOTICE_NAME),
+      MAC_FIRST_LAUNCH_NOTICE,
       "utf8",
     );
     await runReleaseCommand(
@@ -209,7 +198,7 @@ export async function buildMacDmg(options: {
       : error;
   }
   if (failure) {
-    return await removeFailedOutput(
+    return await rethrowAfterRemoving(
       output,
       failure,
       "DMG packaging and cleanup failed",

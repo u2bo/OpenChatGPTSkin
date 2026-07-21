@@ -14,6 +14,9 @@ import {
 import { requiredReleaseOption } from "./options.js";
 
 async function main(): Promise<void> {
+  if (process.platform !== "darwin") {
+    throw new Error("macOS distribution builds require Darwin");
+  }
   const args = process.argv.slice(2);
   const releaseRoot = resolve(requiredReleaseOption(args, "--release-root"));
   const output = resolve(requiredReleaseOption(args, "--output"));

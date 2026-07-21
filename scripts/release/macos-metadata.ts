@@ -1,7 +1,7 @@
-import type { ReleaseArch } from "./payload.js";
-
-const MACOS_PRODUCT_VERSION =
-  /^(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.(\d+))?$/;
+import {
+  assertReleaseVersion,
+  type ReleaseArch,
+} from "./payload.js";
 
 function escapeXml(value: string): string {
   return value
@@ -12,33 +12,51 @@ function escapeXml(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
-function parseProductVersion(productVersion: string): RegExpExecArray {
-  const match = MACOS_PRODUCT_VERSION.exec(productVersion);
-  if (!match) {
+interface ProductVersionParts {
+  readonly major: string;
+  readonly minor: string;
+  readonly patch: string;
+  readonly prerelease?: "alpha" | "beta" | "rc";
+  readonly prereleaseNumber?: string;
+}
+
+function parseProductVersion(productVersion: string): ProductVersionParts {
+  try {
+    assertReleaseVersion(productVersion);
+  } catch {
     throw new Error(`Unsupported macOS product version: ${productVersion}`);
   }
-  return match;
+  const [core, prereleaseText] = productVersion.split("-");
+  const [major, minor, patch] = core!.split(".") as [string, string, string];
+  if (!prereleaseText) return { major, minor, patch };
+  const [prerelease, prereleaseNumber] =
+    prereleaseText.split(".") as ["alpha" | "beta" | "rc", string];
+  return { major, minor, patch, prerelease, prereleaseNumber };
 }
 
 export function toAppleBundleVersion(productVersion: string): string {
-  const [, major, minor, patch, prerelease, number] =
-    parseProductVersion(productVersion);
+  const {
+    major,
+    minor,
+    patch,
+    prerelease,
+    prereleaseNumber,
+  } = parseProductVersion(productVersion);
   if (!prerelease) return `${major}.${minor}.${patch}`;
   const suffix = prerelease === "alpha"
     ? "a"
     : prerelease === "beta"
     ? "b"
     : "fc";
-  return `${major}.${minor}.${patch}${suffix}${number}`;
+  return `${major}.${minor}.${patch}${suffix}${prereleaseNumber}`;
 }
 
 export function renderMacInfoPlist(input: {
   readonly productVersion: string;
   readonly arch: ReleaseArch;
 }): string {
-  const shortVersion = parseProductVersion(input.productVersion)
-    .slice(1, 4)
-    .join(".");
+  const { major, minor, patch } = parseProductVersion(input.productVersion);
+  const shortVersion = `${major}.${minor}.${patch}`;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

@@ -1,6 +1,8 @@
-import type {
-  ReleaseArch,
-  ReleasePlatform,
+import {
+  assertReleaseTarget,
+  assertReleaseVersion,
+  type ReleaseArch,
+  type ReleasePlatform,
 } from "./payload.js";
 
 export function releasePlatformLabel(
@@ -14,6 +16,8 @@ export function portableArtifactName(
   platform: ReleasePlatform,
   arch: ReleaseArch,
 ): string {
+  assertReleaseVersion(version);
+  assertReleaseTarget(platform, arch);
   const suffix = platform === "win32" ? ".zip" : ".tar.gz";
   return `OpenChatGPTSkin_${version}_${releasePlatformLabel(platform)}_${arch}${suffix}`;
 }
@@ -22,5 +26,7 @@ export function macDmgArtifactName(
   version: string,
   arch: ReleaseArch,
 ): string {
+  assertReleaseVersion(version);
+  assertReleaseTarget("darwin", arch);
   return `OpenChatGPTSkin_${version}_macos_${arch}.dmg`;
 }

@@ -297,7 +297,7 @@ npm run runtime:acceptance -- --finalize
 
 Acceptance evidence must remain sanitized and must not contain PIDs, ports, paths, command lines, project names, chat content, or screenshots.
 
-macOS currently uses a manual acceptance checklist. On a real Mac, verify `codesign`, `spctl`, Unix-socket permissions, all four built-in themes, restore, and a regular Codex restart as described in [macOS Runtime and Acceptance](docs/runtime-macos.en.md).
+macOS packages receive automated acceptance on native CI runners; the real-Codex visual and Runtime loop still uses a manual checklist. On a real Mac, verify `codesign`, `spctl`, Unix-socket permissions, all four built-in themes, restore, and a regular Codex restart as described in [macOS Runtime and Acceptance](docs/runtime-macos.en.md).
 
 ## FAQ
 

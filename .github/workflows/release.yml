@@ -147,6 +147,8 @@ jobs:
           npm run release:macos -- --release-root "$stage" --output "$artifacts" --icon-source "$GITHUB_WORKSPACE/assets/branding/open-chatgpt-skin-icon.svg"
           dmg="$(find "$artifacts" -maxdepth 1 -name '*.dmg' -print -quit)"
           npm run release:acceptance:macos -- --dmg "$dmg" --report "$diagnostics/macos-${{ matrix.arch }}-dmg-acceptance.json"
+          npm run release:checksums -- --output "$artifacts"
+          cp "$artifacts/checksums.txt" "$diagnostics/macos-${{ matrix.arch }}-checksums.txt"
           node -e 'const fs=require("fs");const path=process.argv[1];const output=process.argv[2];const values=fs.readdirSync(path).sort().map(name=>({name,bytes:fs.statSync(`${path}/${name}`).size}));fs.writeFileSync(output,JSON.stringify(values,null,2)+"\n")' "$artifacts" "$diagnostics/macos-${{ matrix.arch }}-artifacts.json"
           echo "RELEASE_DIAGNOSTICS=$diagnostics" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -176,25 +178,35 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: windows-release
-          path: artifacts
+          path: downloads/windows
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: macos-arm64-release
-          path: artifacts
+          path: downloads/macos-arm64
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: macos-x64-release
-          path: artifacts
+          path: downloads/macos-x64
       - name: Publish GitHub Release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir artifacts
+          for directory in downloads/windows downloads/macos-arm64 downloads/macos-x64; do
+            test "$(find "$directory" -maxdepth 1 -type f -name 'OpenChatGPTSkin_*' | wc -l | tr -d ' ')" -eq 2
+            for source in "$directory"/OpenChatGPTSkin_*; do
+              test -f "$source"
+              destination="artifacts/$(basename "$source")"
+              test ! -e "$destination"
+              cp "$source" "$destination"
+            done
+          done
           test "$(find artifacts -maxdepth 1 -type f -name 'OpenChatGPTSkin_*' | wc -l | tr -d ' ')" -eq 6
           (cd artifacts && sha256sum OpenChatGPTSkin_* > checksums.txt)
           (cd artifacts && sha256sum --check checksums.txt)
-          version="${GITHUB_REF_NAME#v}"
           notes="docs/releases/${GITHUB_REF_NAME}.md"
           test -f "$notes"
           prerelease=()

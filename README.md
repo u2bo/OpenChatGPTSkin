@@ -297,7 +297,7 @@ npm run runtime:acceptance -- --finalize
 
 验收证据必须脱敏，不得包含 PID、端口、路径、命令行、项目名、聊天内容或截图。
 
-macOS 当前使用手动验收清单；请在真实 Mac 上核对 `codesign`、`spctl`、Unix socket 权限、四个内置主题、恢复流程和普通 Codex 重启，详见 [macOS Runtime 说明](docs/runtime-macos.md)。
+macOS 安装包会在原生 CI 中完成自动验收；真实 Codex 的视觉与 Runtime 闭环仍使用手动清单。请在真实 Mac 上核对 `codesign`、`spctl`、Unix socket 权限、四个内置主题、恢复流程和普通 Codex 重启，详见 [macOS Runtime 说明](docs/runtime-macos.md)。
 
 ## 常见问题
 

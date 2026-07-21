@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { verifyReleasePayload } from "./acceptance.js";
 import { portableArtifactName } from "./artifact-names.js";
 import { readReleaseManifest } from "./payload.js";
+import { assertPathMissing } from "./release-files.js";
 import { runReleaseCommand } from "./release-command.js";
 
 export interface PortablePackageResult {
@@ -11,16 +12,6 @@ export interface PortablePackageResult {
   readonly name: string;
   readonly bytes: number;
   readonly sha256: string;
-}
-
-async function ensureMissing(path: string): Promise<void> {
-  try {
-    await access(path);
-    throw new Error(`Release artifact already exists: ${path}`);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
-    throw error;
-  }
 }
 
 export async function packagePortableRelease(
@@ -41,7 +32,7 @@ export async function packagePortableRelease(
   );
   await mkdir(outputDirectory, { recursive: true });
   const output = join(outputDirectory, name);
-  await ensureMissing(output);
+  await assertPathMissing(output, "Release artifact");
   const parent = dirname(releaseRoot);
   const directory = basename(releaseRoot);
   if (manifest.target.platform === "win32") {

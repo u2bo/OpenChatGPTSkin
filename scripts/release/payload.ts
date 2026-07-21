@@ -100,25 +100,34 @@ async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
 }
 
-function assertVersion(version: string): void {
-  if (!PRODUCT_VERSION_PATTERN.test(version)) {
-    throw new Error(`Release version is invalid: ${version}`);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function assertReleaseVersion(
+  version: unknown,
+): asserts version is string {
+  if (typeof version !== "string" ||
+    !PRODUCT_VERSION_PATTERN.test(version)) {
+    throw new Error(`Release version is invalid: ${String(version)}`);
   }
 }
 
-function assertBuildCommit(commit: string): void {
-  if (!/^[0-9a-f]{40}$/i.test(commit)) {
-    throw new Error(`Release build commit is invalid: ${commit}`);
+function assertBuildCommit(commit: unknown): asserts commit is string {
+  if (typeof commit !== "string" || !/^[0-9a-f]{40}$/i.test(commit)) {
+    throw new Error(`Release build commit is invalid: ${String(commit)}`);
   }
 }
 
-function assertNodeVersion(version: string): void {
-  if (!/^\d+\.\d+\.\d+$/.test(version)) {
-    throw new Error(`Release Node Runtime version is invalid: ${version}`);
+function assertNodeVersion(version: unknown): asserts version is string {
+  if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(
+      `Release Node Runtime version is invalid: ${String(version)}`,
+    );
   }
 }
 
-function assertTarget(platform: string, arch: string): void {
+export function assertReleaseTarget(platform: unknown, arch: unknown): void {
   if (platform !== "win32" && platform !== "darwin") {
     throw new Error(`Unsupported release platform: ${platform}`);
   }
@@ -430,10 +439,10 @@ async function writeLaunchers(
 export async function stageReleasePayload(
   options: StageReleasePayloadOptions,
 ): Promise<ReleaseManifest> {
-  assertVersion(options.version);
+  assertReleaseVersion(options.version);
   assertBuildCommit(options.buildCommit);
   assertNodeVersion(options.nodeVersion);
-  assertTarget(options.platform, options.arch);
+  assertReleaseTarget(options.platform, options.arch);
   const workspaceRoot = resolve(options.workspaceRoot);
   const releaseRoot = resolve(options.releaseRoot);
   const outputWithinWorkspace = relative(workspaceRoot, releaseRoot);
@@ -514,11 +523,58 @@ export async function stageReleasePayload(
 export async function readReleaseManifest(
   releaseRoot: string,
 ): Promise<ReleaseManifest> {
-  const manifest = await readJson<ReleaseManifest>(
+  const manifest = await readJson<unknown>(
     join(releaseRoot, RELEASE_MANIFEST_FILE),
   );
-  if (manifest.schemaVersion !== 1 || manifest.product !== PRODUCT) {
+  if (!isRecord(manifest) ||
+    manifest.schemaVersion !== 1 ||
+    manifest.product !== PRODUCT) {
     throw new Error("Release manifest identity is invalid");
   }
-  return manifest;
+  assertReleaseVersion(manifest.version);
+  if (!isRecord(manifest.target)) {
+    throw new Error("Release manifest target is missing");
+  }
+  assertReleaseTarget(manifest.target.platform, manifest.target.arch);
+  if (!isRecord(manifest.runtime)) {
+    throw new Error("Release manifest Runtime metadata is missing");
+  }
+  assertNodeVersion(manifest.runtime.nodeVersion);
+  if (!isRecord(manifest.build)) {
+    throw new Error("Release manifest build metadata is missing");
+  }
+  assertBuildCommit(manifest.build.commit);
+  const expectedEntry = manifest.target.platform === "win32"
+    ? "OpenChatGPTSkin.cmd"
+    : "OpenChatGPTSkin";
+  if (manifest.entry !== expectedEntry) {
+    throw new Error("Release manifest entry does not match its target");
+  }
+  if (!isRecord(manifest.themeCatalog) ||
+    !Number.isSafeInteger(manifest.themeCatalog.schemaVersion) ||
+    (manifest.themeCatalog.schemaVersion as number) < 1) {
+    throw new Error("Release manifest theme catalog is invalid");
+  }
+  if (!Array.isArray(manifest.themes) ||
+    manifest.themes.length === 0 ||
+    manifest.themes.some((theme) =>
+      typeof theme !== "string" ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(theme)
+    ) ||
+    new Set(manifest.themes).size !== manifest.themes.length ||
+    !isRecord(manifest.files) ||
+    Object.keys(manifest.files).length === 0) {
+    throw new Error("Release manifest contents are invalid");
+  }
+  for (const [path, metadata] of Object.entries(manifest.files)) {
+    assertSafeRelativePath(path);
+    if (!isRecord(metadata) ||
+      !Number.isSafeInteger(metadata.bytes) ||
+      (metadata.bytes as number) < 0 ||
+      typeof metadata.sha256 !== "string" ||
+      !/^[0-9a-f]{64}$/i.test(metadata.sha256)) {
+      throw new Error(`Release manifest file metadata is invalid: ${path}`);
+    }
+  }
+  return manifest as unknown as ReleaseManifest;
 }

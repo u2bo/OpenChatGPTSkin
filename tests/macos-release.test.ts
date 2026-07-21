@@ -27,11 +27,15 @@ import {
   assertMacBinaryArchitecture,
   buildMacDmg,
   generateMacIcon,
+  MAC_APPLICATIONS_LINK_NAME,
+  MAC_FIRST_LAUNCH_NOTICE,
+  MAC_FIRST_LAUNCH_NOTICE_NAME,
   macIconEntries,
 } from "../scripts/release/macos-dmg.js";
 import { acceptMacDmg } from "../scripts/release/macos-acceptance.js";
 import { RELEASE_ACCEPTANCE_SCENARIOS } from
   "../scripts/release/acceptance.js";
+import { readReleaseManifest } from "../scripts/release/payload.js";
 import {
   packagePortableRelease,
   writeReleaseChecksums,
@@ -45,6 +49,11 @@ describe("macOS release metadata", () => {
       .toBe("OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.tar.gz");
     expect(macDmgArtifactName("0.1.0-alpha.1", "x64"))
       .toBe("OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg");
+    expect(() => portableArtifactName(
+      "../escape",
+      "darwin",
+      "arm64",
+    )).toThrow("Release version is invalid");
   });
 
   it("converts supported prerelease versions to Apple bundle versions", () => {
@@ -121,6 +130,51 @@ describe("macOS app bundle", () => {
       await expect(access(
         join(result.appPath, "Contents", "Resources", "AppIcon.icns"),
       )).resolves.toBeUndefined();
+
+      const manifestPath = join(
+        result.payloadRoot,
+        "release-manifest.json",
+      );
+      const invalidManifest = JSON.parse(
+        await readFile(manifestPath, "utf8"),
+      ) as { target: { arch: string } };
+      invalidManifest.target.arch = "universal";
+      await writeFile(
+        manifestPath,
+        `${JSON.stringify(invalidManifest, null, 2)}\n`,
+        "utf8",
+      );
+      await expect(verifyMacAppBundleLayout(result.appPath))
+        .rejects.toThrow("Unsupported release architecture: universal");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects malformed Release manifest fields at the read boundary", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ocs-mac-manifest-"));
+    try {
+      const releaseRoot = await createMacPayloadFixture(root, "arm64");
+      const manifestPath = join(releaseRoot, "release-manifest.json");
+      const invalid = JSON.parse(
+        await readFile(manifestPath, "utf8"),
+      ) as {
+        files: Record<string, { sha256: string }>;
+      };
+      invalid.files["runtime/node"]!.sha256 = "invalid";
+      await writeFile(
+        manifestPath,
+        `${JSON.stringify(invalid, null, 2)}\n`,
+        "utf8",
+      );
+      await expect(readReleaseManifest(releaseRoot)).rejects.toThrow(
+        "Release manifest file metadata is invalid: runtime/node",
+      );
+
+      await writeFile(manifestPath, "null\n", "utf8");
+      await expect(readReleaseManifest(releaseRoot)).rejects.toThrow(
+        "Release manifest identity is invalid",
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -141,6 +195,15 @@ describe("macOS native distribution contract", () => {
       ["icon_512x512.png", 512],
       ["icon_512x512@2x.png", 1024],
     ]);
+  });
+
+  it("defines the drag-install link and bilingual first-launch notice", () => {
+    expect(MAC_APPLICATIONS_LINK_NAME).toBe("Applications");
+    expect(MAC_FIRST_LAUNCH_NOTICE_NAME).toContain("First Launch");
+    expect(MAC_FIRST_LAUNCH_NOTICE).toContain("未签名开发者预览");
+    expect(MAC_FIRST_LAUNCH_NOTICE).toContain(
+      "Unsigned developer preview",
+    );
   });
 
   it("accepts only the requested Mach-O architecture", () => {
@@ -258,5 +321,16 @@ describe("macOS release integration", () => {
     expect(workflow).toContain("name: macos-${{ matrix.arch }}-release");
     expect(workflow).toContain("OpenChatGPTSkin_*.dmg");
     expect(workflow).toContain("OpenChatGPTSkin_*.tar.gz");
+    expect(workflow).toContain(
+      "macos-${{ matrix.arch }}-checksums.txt",
+    );
+    for (const directory of [
+      "downloads/windows",
+      "downloads/macos-arm64",
+      "downloads/macos-x64",
+    ]) {
+      expect(workflow).toContain(directory);
+    }
+    expect(workflow).toContain('test ! -e "$destination"');
   });
 });

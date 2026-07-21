@@ -5,7 +5,6 @@ import {
   cp,
   mkdir,
   readFile,
-  rm,
   stat,
   writeFile,
 } from "node:fs/promises";
@@ -25,6 +24,10 @@ import {
   readReleaseManifest,
   type ReleaseArch,
 } from "./payload.js";
+import {
+  assertPathMissing,
+  rethrowAfterRemoving,
+} from "./release-files.js";
 
 export interface MacAppBundleResult {
   readonly appPath: string;
@@ -38,16 +41,6 @@ function isWithin(parent: string, child: string): boolean {
   return nested === "" ||
     (!isAbsolute(nested) && nested !== ".." && !nested.startsWith("../") &&
       !nested.startsWith("..\\"));
-}
-
-async function assertMissing(path: string): Promise<void> {
-  try {
-    await access(path);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
-    throw error;
-  }
-  throw new Error(`macOS app output already exists: ${path}`);
 }
 
 export async function buildMacAppBundle(options: {
@@ -74,7 +67,7 @@ export async function buildMacAppBundle(options: {
   if (isWithin(releaseRoot, appPath)) {
     throw new Error("macOS app output must be outside the release payload");
   }
-  await assertMissing(appPath);
+  await assertPathMissing(appPath, "macOS app output");
   await mkdir(outputDirectory, { recursive: true });
   const contents = join(appPath, "Contents");
   const payloadRoot = join(contents, "Resources", "payload");
@@ -105,8 +98,12 @@ export async function buildMacAppBundle(options: {
     await chmod(launcher, 0o755);
     await verifyMacAppBundleLayout(appPath);
   } catch (error) {
-    await rm(appPath, { recursive: true, force: true });
-    throw error;
+    return await rethrowAfterRemoving(
+      appPath,
+      error,
+      "macOS app assembly and cleanup failed",
+      true,
+    );
   }
   return {
     appPath,

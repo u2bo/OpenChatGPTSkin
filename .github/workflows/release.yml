@@ -15,7 +15,7 @@ env:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -28,7 +28,7 @@ jobs:
       - if: github.event_name == 'workflow_dispatch'
         run: npm run release:version
       - if: github.event_name == 'push'
-        run: npm run release:version -- --tag "${GITHUB_REF_NAME}"
+        run: npm run release:version -- --tag "$env:GITHUB_REF_NAME"
       - run: npm run verify
       - run: npm run studio:build
 

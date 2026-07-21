@@ -311,6 +311,18 @@ describe("macOS release integration", () => {
     );
     expect(workflow).toContain("workflow_dispatch:");
     expect(workflow).toMatch(
+      /verify:\r?\n\s+runs-on: windows-latest/,
+    );
+    expect(workflow).not.toMatch(
+      /verify:\r?\n\s+runs-on: ubuntu-latest/,
+    );
+    expect(workflow).toContain(
+      'run: npm run release:version -- --tag "$env:GITHUB_REF_NAME"',
+    );
+    expect(workflow).not.toContain(
+      'run: npm run release:version -- --tag "${GITHUB_REF_NAME}"',
+    );
+    expect(workflow).toMatch(
       /windows-x64:\r?\n\s+needs: verify/,
     );
     expect(workflow).not.toMatch(

@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <body>
+    <div class="group/application-menu-top-bar" data-rect="0,0,1280,36">
+      <button>File</button>
+    </div>
+    <aside class="app-shell-left-panel" data-rect="0,36,240,784">
+      <nav role="navigation" data-rect="0,36,240,740">
+        <button>Tasks</button>
+      </nav>
+    </aside>
+    <main role="main" class="main-surface" data-rect="240,36,1040,784">
+      <header class="app-header-tint" data-rect="240,36,1040,47">
+        <button data-rect="260,44,32,32">Back</button>
+      </header>
+      <section id="history-task-route" role="main" data-rect="240,83,1040,737">
+        <div class="thread-scroll-container" data-rect="240,83,1040,737">
+          <div
+            id="history-thread-content"
+            class="flex min-h-full shrink-0 flex-col justify-start"
+            data-rect="255,-1200,1010,2100"
+          >
+            <div class="text-size-chat text-token-text-secondary" data-rect="392,130,736,28">
+              <button data-rect="392,130,116,24">
+                <span id="history-processed" class="text-token-conversation-body" data-rect="393,133,95,18">
+                  Processed 1m 42s
+                </span>
+                <svg id="history-processed-icon" data-rect="492,135,14,14"></svg>
+              </button>
+            </div>
+            <div
+              id="history-markdown"
+              class="_markdownContent_l45ev_131"
+              data-rect="392,180,736,520"
+            >
+              <p>Historical assistant response.</p>
+              <ul id="history-list" class="_markdownText_l45ev_193 _list_l45ev_287" data-rect="392,230,736,120">
+                <li>First item</li>
+                <li>Second item</li>
+              </ul>
+              <div
+                id="history-code-1"
+                class="bg-token-text-code-block-background _codeBlock_l45ev_749"
+                style="background-color: rgb(24, 24, 24)"
+                data-rect="392,370,736,150"
+              >Code block one</div>
+              <div
+                id="history-code-2"
+                class="bg-token-text-code-block-background _codeBlock_l45ev_749"
+                style="background-color: rgb(24, 24, 24)"
+                data-rect="392,540,736,150"
+              >Code block two</div>
+              <div
+                id="history-code-3"
+                class="bg-token-text-code-block-background _codeBlock_l45ev_749"
+                style="background-color: rgb(24, 24, 24)"
+                data-rect="392,710,736,150"
+              >Code block three</div>
+              <div
+                id="history-resource-card"
+                class="bg-token-dropdown-background/50 [--thread-resource-card-row-padding-x:0.75rem] [--turn-diff-row-padding-y:0.25rem]"
+                style="background-color: rgba(47, 47, 47, 0.5)"
+                data-rect="392,880,736,92"
+              >
+                <button data-rect="408,896,704,60">
+                  <span>Edited exclude</span>
+                  <span class="text-token-text-secondary">+1 -0</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="app-shell-main-content-top-fade bg-gradient-to-b"
+          style="background-image: linear-gradient(rgb(255, 255, 255), transparent)"
+          data-rect="240,83,1040,16"
+        ></div>
+        <section id="history-composer-stack" data-rect="360,660,800,140">
+          <div class="composer-surface-chrome" data-rect="380,680,760,100">
+            <textarea aria-label="Prompt" data-rect="400,700,720,44"></textarea>
+            <button data-rect="1080,748,32,32">Send</button>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

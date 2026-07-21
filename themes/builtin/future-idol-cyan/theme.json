@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 2,
+  "kind": "theme",
+  "appearance": "light",
+  "id": "future-idol-cyan",
+  "name": "未来歌姬",
+  "description": "青蓝霓虹与未来舞台交织的清爽创作空间。",
+  "version": "1.2.2",
+  "author": "OpenChatGPTSkin",
+  "metadata": {
+    "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localized": {
+      "en": {
+        "name": "Future Idol",
+        "description": "A luminous cyan creative space shaped by a futuristic stage."
+      }
+    }
+  },
+  "assets": {
+    "background": "assets/background.webp"
+  },
+  "colors": {
+    "accent": "#087f9c",
+    "secondary": "#c23d9a",
+    "text": "#102d42",
+    "muted": "#4f6878",
+    "panel": "#f2fbff",
+    "border": "rgba(24, 148, 186, 0.34)",
+    "success": "#147457",
+    "warning": "#8a5800",
+    "danger": "#b4235f",
+    "info": "#006eaa",
+    "textSecondary": "#365a70",
+    "link": "#006e91",
+    "inputText": "#102d42",
+    "placeholder": "#4f6878",
+    "codeText": "#143c58"
+  },
+  "typography": {
+    "uiFamily": "Microsoft YaHei UI",
+    "codeFamily": "Cascadia Code",
+    "scale": 1,
+    "uiSize": 14,
+    "codeSize": 13,
+    "uiWeight": 500,
+    "codeWeight": 400,
+    "lineHeight": 1.5
+  },
+  "background": {
+    "positionX": 0.68,
+    "positionY": 0.48,
+    "scale": 1,
+    "blur": 0,
+    "brightness": 0.94,
+    "overlay": 0.04,
+    "safeArea": "left",
+    "taskMode": "full",
+    "taskOpacity": 0.52
+  },
+  "surfaces": {
+    "baseOpacity": 0.34,
+    "elevatedOpacity": 0.72,
+    "terminalOpacity": 0.82,
+    "blur": 0
+  },
+  "decorations": [
+    {
+      "type": "sparkles",
+      "enabled": true,
+      "intensity": 0.58
+    },
+    {
+      "type": "ribbon",
+      "enabled": true,
+      "intensity": 0.35
+    }
+  ],
+  "layout": {
+    "heroHeight": 380,
+    "cardColumns": 4,
+    "composerWidth": 0.74,
+    "sidebarDensity": "comfortable",
+    "moduleGap": 16,
+    "modules": [
+      {
+        "id": "sidebar",
+        "order": 0,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "topbar",
+        "order": 1,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "hero",
+        "order": 2,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "suggestions",
+        "order": 3,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "project-picker",
+        "order": 4,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "composer",
+        "order": 5,
+        "visible": true,
+        "size": "regular",
+        "align": "center",
+        "spacing": 12
+      },
+      {
+        "id": "task-background",
+        "order": 6,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 0
+      },
+      {
+        "id": "content-layer",
+        "order": 7,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      }
+    ]
+  },
+  "rights": {
+    "licenseId": "LicenseRef-OpenChatGPTSkin-Original",
+    "attribution": "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
+    "localOnly": false
+  }
+}

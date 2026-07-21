@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "kind": "theme",
+  "appearance": "light",
+  "id": "mountain-mist",
+  "name": "山岚云海",
+  "description": "山色、云海与晨光带来的沉静自然体验。",
+  "version": "1.2.2",
+  "author": "OpenChatGPTSkin",
+  "metadata": {
+    "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localized": {
+      "en": {
+        "name": "Mountain Mist",
+        "description": "A calm natural theme of mountain ranges, cloud seas, and morning light."
+      }
+    }
+  },
+  "assets": {
+    "background": "assets/background.webp"
+  },
+  "colors": {
+    "accent": "#3f7257",
+    "secondary": "#a77a32",
+    "text": "#17271f",
+    "muted": "#56675e",
+    "panel": "#f7f8f0",
+    "border": "rgba(63, 114, 87, 0.3)",
+    "success": "#2d704b",
+    "warning": "#88600f",
+    "danger": "#b33c4e",
+    "info": "#3b7380",
+    "textSecondary": "#465d51",
+    "link": "#2d684c",
+    "inputText": "#17271f",
+    "placeholder": "#56675e",
+    "codeText": "#244034"
+  },
+  "typography": {
+    "uiFamily": "Microsoft YaHei UI",
+    "codeFamily": "Cascadia Code",
+    "scale": 1,
+    "uiSize": 14,
+    "codeSize": 13,
+    "uiWeight": 500,
+    "codeWeight": 400,
+    "lineHeight": 1.5
+  },
+  "background": {
+    "positionX": 0.68,
+    "positionY": 0.48,
+    "scale": 1,
+    "blur": 0,
+    "brightness": 0.91,
+    "overlay": 0.06,
+    "safeArea": "left",
+    "taskMode": "full",
+    "taskOpacity": 0.56
+  },
+  "surfaces": {
+    "baseOpacity": 0.36,
+    "elevatedOpacity": 0.76,
+    "terminalOpacity": 0.84,
+    "blur": 0
+  },
+  "decorations": [
+    {
+      "type": "particles",
+      "enabled": true,
+      "intensity": 0.22
+    }
+  ],
+  "layout": {
+    "heroHeight": 380,
+    "cardColumns": 4,
+    "composerWidth": 0.74,
+    "sidebarDensity": "comfortable",
+    "moduleGap": 16,
+    "modules": [
+      {
+        "id": "sidebar",
+        "order": 0,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "topbar",
+        "order": 1,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "hero",
+        "order": 2,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "suggestions",
+        "order": 3,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "project-picker",
+        "order": 4,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "composer",
+        "order": 5,
+        "visible": true,
+        "size": "regular",
+        "align": "center",
+        "spacing": 12
+      },
+      {
+        "id": "task-background",
+        "order": 6,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 0
+      },
+      {
+        "id": "content-layer",
+        "order": 7,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      }
+    ]
+  },
+  "rights": {
+    "licenseId": "LicenseRef-OpenChatGPTSkin-Original",
+    "attribution": "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
+    "localOnly": false
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "references": [
+    { "path": "../theme-schema" },
+    { "path": "../theme-core" }
+  ],
+  "include": ["src/**/*.ts"]
+}

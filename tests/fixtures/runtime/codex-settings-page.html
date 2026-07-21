@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <body>
+    <div class="group/application-menu-top-bar" data-rect="0,0,1280,36">
+      <button>文件</button>
+      <button>编辑</button>
+      <button>视图</button>
+      <button>帮助</button>
+    </div>
+    <nav role="navigation" aria-label="Settings" data-rect="0,36,280,724">
+      <div role="link" data-rect="20,52,180,36">Back to app</div>
+      <input aria-label="Search settings" data-rect="20,96,220,36" />
+    </nav>
+    <main role="main" class="main-surface" data-rect="280,36,1000,724">
+      <header class="app-header-tint" data-rect="280,36,1000,52">
+        <button data-rect="300,48,32,32">返回</button>
+      </header>
+      <div
+        id="settings-content"
+        class="settings-content-surface"
+        style="background-color: rgb(24, 24, 24)"
+        data-rect="330,110,900,600"
+      >
+        <section id="settings-page" data-rect="330,110,900,600">
+          <div id="settings-title" data-rect="360,126,300,42">Personalization</div>
+          <section
+            id="appearance-settings"
+            role="region"
+            aria-label="外观设置"
+            style="background-color: rgb(32, 32, 32)"
+            data-rect="360,190,820,900"
+          >
+            <h2 data-rect="390,210,240,32">外观</h2>
+            <button data-rect="390,260,180,36">主题</button>
+            <textarea
+              id="personalization-instructions"
+              data-rect="390,310,700,72"
+            >Custom instructions</textarea>
+          </section>
+          <section
+            id="account-settings"
+            role="region"
+            aria-label="账户设置"
+            style="background-color: rgb(32, 32, 32)"
+            data-rect="360,1120,820,60"
+          >
+            <h2 data-rect="390,1130,240,32">账户</h2>
+          </section>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

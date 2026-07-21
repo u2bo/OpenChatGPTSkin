@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <body>
+    <nav role="navigation" data-rect="0,0,280,760"><button>Tasks</button></nav>
+    <main role="main" data-rect="280,0,1000,760">
+      <header id="native-topbar" data-rect="280,0,1000,64">
+        <button data-rect="300,16,32,32">Back</button>
+        <button data-rect="344,16,32,32">Layout</button>
+      </header>
+      <div
+        id="native-top-fade"
+        class="app-shell-main-content-top-fade"
+        data-rect="280,64,1000,16"
+      ></div>
+      <section id="native-content" data-rect="360,80,840,620">
+        <section id="native-hero" data-rect="380,100,800,180">
+          <h1 data-rect="500,180,560,48">What should we build?</h1>
+        </section>
+        <section id="native-suggestions" data-rect="380,300,800,150">
+          <button data-rect="380,300,188,150">Explore code</button>
+          <button data-rect="584,300,188,150">Build a feature</button>
+          <button data-rect="788,300,188,150">Review code</button>
+          <button data-rect="992,300,188,150">Fix a bug</button>
+        </section>
+        <section id="native-composer-stack" data-rect="430,470,700,230">
+          <div id="native-project-picker-stack" class="z-0 relative -mb-2" data-rect="430,530,700,43">
+            <div
+              id="native-project-picker"
+              class="bg-token-side-bar-background -mb-4.5"
+              style="background-color: rgb(31, 31, 31)"
+              data-rect="430,534,700,61"
+            >
+              <div
+                id="interactive-horizontal-scroll-fade"
+                class="horizontal-scroll-fade-mask"
+                role="group"
+                aria-label="Composer utilities"
+                data-rect="438,540,684,28"
+              >
+                <button aria-label="Switch project" data-rect="442,540,120,28">Example workspace</button>
+                <button data-rect="570,540,88,28">Local</button>
+              </div>
+            </div>
+          </div>
+          <div id="native-composer" data-rect="430,530,700,150">
+            <textarea aria-label="Prompt" data-rect="458,550,644,44"></textarea>
+            <button data-rect="458,620,32,32">Add</button>
+            <button data-rect="1070,620,32,32">Send</button>
+          </div>
+        </section>
+      </section>
+      <section id="native-marker" data-native-marker="true">Native marker</section>
+    </main>
+  </body>
+</html>

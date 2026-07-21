@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "themeId": "glacier-aurora",
+  "themeVersion": "1.2.2",
+  "files": {
+    "theme.json": {
+      "bytes": 3345,
+      "sha256": "594e4ba535194ac01fbb9d004fc8be003e6c4ccaf9fc5df439091ccb61e09232"
+    },
+    "assets/background.webp": {
+      "bytes": 258216,
+      "sha256": "17f369c5947134085dd5a4e5b0275f3064fa75dd079e9906aad4d019539738f4"
+    },
+    "preview.webp": {
+      "bytes": 66632,
+      "sha256": "6d30bbf7f0963edece52e32ed69c4e5a5f8ff094bf91fa84d428dcc2865a4c6b"
+    }
+  }
+}

@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+  <body>
+    <div class="group/application-menu-top-bar" data-rect="0,0,1280,36">
+      <button>文件</button>
+      <button>编辑</button>
+      <button>视图</button>
+      <button>帮助</button>
+    </div>
+    <section id="quick-chat" role="dialog" data-rect="720,160,520,560">
+      <nav id="quick-chat-breadcrumb" aria-label="Quick chat breadcrumb" data-rect="740,180,460,52">
+        <button>New chat</button>
+      </nav>
+      <div id="quick-chat-composer" class="composer-surface-chrome" data-rect="740,640,480,60">
+        <div
+          id="quick-chat-editor"
+          contenteditable="true"
+          aria-label="Send ChatGPT a message"
+          data-rect="820,652,280,32"
+        ></div>
+      </div>
+    </section>
+    <aside id="native-sidebar" class="app-shell-left-panel" data-rect="0,36,280,724">
+      <nav id="native-sidebar-navigation" role="navigation" data-rect="0,36,280,680">
+        <button>Tasks</button>
+        <button id="native-sidebar-expand" class="text-token-muted-foreground">Show more</button>
+      </nav>
+    </aside>
+    <main role="main" class="main-surface" data-rect="280,36,1000,724">
+      <header class="app-header-tint" data-rect="280,36,1000,52">
+        <button data-rect="300,48,32,32">Back</button>
+        <button data-rect="1228,48,32,32">Layout</button>
+      </header>
+      <section id="native-task-route" role="main" data-rect="280,88,1000,672">
+        <article id="native-thread" data-rect="300,108,410,470">
+          <h2 data-rect="320,120,280,32">Task conversation</h2>
+          <p>Build and verify the feature.</p>
+          <span id="native-processed-status" class="!text-token-text-tertiary">Processed 26m 4s</span>
+          <span id="native-history-title" class="text-token-foreground">Edited 6 files</span>
+          <table id="native-history-table" data-rect="320,220,360,120">
+            <thead><tr><th>Check</th><th>Result</th></tr></thead>
+            <tbody><tr><td>Build</td><td>Passed</td></tr></tbody>
+          </table>
+        </article>
+        <section id="native-workbench" aria-label="工作区" data-rect="730,108,530,470">
+          <section id="native-review-pane" aria-label="审阅" data-rect="730,108,530,220">
+            <button data-rect="750,126,90,32">审阅</button>
+          </section>
+          <section id="native-terminal-pane" aria-label="终端" data-rect="730,338,530,240">
+            <div id="native-terminal-console" role="terminal" data-rect="744,356,502,204">
+              PS D:\AIAgent&gt;
+              <textarea
+                id="native-terminal-helper-textarea"
+                aria-label="Terminal input"
+                data-rect="780,728,400,16"
+              ></textarea>
+            </div>
+          </section>
+          <section
+            id="native-browser-pane"
+            style="background-color: rgb(24, 24, 24)"
+            data-rect="760,170,460,150"
+          >Browser preview</section>
+        </section>
+        <div
+          id="native-history-scroll-fade"
+          class="app-shell-main-content-scroll-fade"
+          style="background-image: linear-gradient(rgb(255, 255, 255), transparent)"
+          data-rect="300,88,960,72"
+        ></div>
+        <section id="native-composer-stack" data-rect="340,570,400,170">
+          <div
+            id="native-composer-fade"
+            class="pointer-events-none bg-gradient-to-t from-token-main-surface-primary via-token-main-surface-primary"
+            style="background-image: linear-gradient(to top, rgb(24, 24, 24), transparent)"
+            data-rect="340,630,400,110"
+          ></div>
+          <div
+            id="native-composer-chrome"
+            class="bg-token-main-surface"
+            style="background-color: rgb(17, 17, 17)"
+            data-rect="350,580,380,150"
+          >
+            <div id="native-composer" class="composer-surface-chrome" data-rect="360,600,360,112">
+              <textarea aria-label="Prompt" data-rect="388,618,304,44"></textarea>
+              <button data-rect="388,670,32,32">Add</button>
+              <button data-rect="660,670,32,32">Send</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <div id="native-menu" role="menu" data-rect="400,36,340,310">
+      <button data-rect="420,56,300,36">Documentation</button>
+    </div>
+    <div id="native-dialog" role="dialog" aria-modal="true" data-rect="430,180,420,300">
+      <h2 data-rect="460,210,260,32">Settings</h2>
+    </div>
+  </body>
+</html>

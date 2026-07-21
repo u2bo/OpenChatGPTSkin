@@ -1,0 +1,48 @@
+{
+  "name": "open-chatgpt-skin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/u2bo/OpenChatGPTSkin.git"
+  },
+  "homepage": "https://github.com/u2bo/OpenChatGPTSkin",
+  "bugs": {
+    "url": "https://github.com/u2bo/OpenChatGPTSkin/issues"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "runtime/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "themes:sources": "tsx scripts/generate-builtin-sources.ts",
+    "themes:build": "tsx --tsconfig tsconfig.scripts.json scripts/build-theme-catalog.ts",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "runtime": "npm run build && node runtime/windows/dist/cli.js",
+    "runtime:probe": "npm run build && node runtime/windows/dist/probe-cli.js",
+    "runtime:acceptance": "npm run build && node runtime/windows/dist/acceptance-cli.js",
+    "studio:build": "npm run build -w @open-chatgpt-skin/theme-studio",
+    "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",
+    "verify": "npm run test && npm run typecheck && npm run build",
+    "verify:runtime": "npm run test && npm run typecheck && npm run build",
+    "verify:foundation": "npm run themes:build && npm run test && npm run typecheck && npm run build && node packages/theme-core/dist/cli.js catalog --root themes"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/ws": "^8.18.1",
+    "linkedom": "^0.18.12",
+    "sharp": "^0.34.5",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7",
+    "ws": "^8.18.3"
+  }
+}

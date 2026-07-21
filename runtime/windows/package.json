@@ -1,0 +1,22 @@
+{
+  "name": "@open-chatgpt-skin/windows-runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "open-chatgpt-skin-runtime": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@open-chatgpt-skin/cdp-adapter": "0.1.0",
+    "@open-chatgpt-skin/theme-core": "0.1.0",
+    "@open-chatgpt-skin/theme-schema": "0.1.0",
+    "zod": "^3.25.76"
+  }
+}

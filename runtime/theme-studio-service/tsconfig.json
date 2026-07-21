@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "references": [
+    { "path": "../../packages/cdp-adapter" },
+    { "path": "../../packages/theme-schema" },
+    { "path": "../../packages/theme-core" },
+    { "path": "../../packages/theme-studio-core" },
+    { "path": "../windows" }
+  ],
+  "include": ["src/**/*.ts"]
+}

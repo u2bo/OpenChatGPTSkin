@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "packageIdentity": "OpenAI.Codex",
+  "packageVersion": "26.707.12708.0",
+  "target": {
+    "type": "page",
+    "protocol": "app:",
+    "host": "-",
+    "pathCategory": "app-root"
+  },
+  "capabilities": {
+    "main": true,
+    "navigation": true,
+    "composer": true
+  },
+  "markerRoundTrip": true,
+  "loopbackOnly": true,
+  "windowActivationVerified": true,
+  "officialAppearanceRestored": true,
+  "managedExitVerified": true,
+  "cdpClosedVerified": true
+}

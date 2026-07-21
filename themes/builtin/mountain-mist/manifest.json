@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "themeId": "mountain-mist",
+  "themeVersion": "1.2.2",
+  "files": {
+    "theme.json": {
+      "bytes": 3357,
+      "sha256": "57d60274f8e054c7ba21975e7ed7141aea6df614075194d9e1486815a91a2b07"
+    },
+    "assets/background.webp": {
+      "bytes": 168214,
+      "sha256": "0775ffb516fdb1bfa417d1d063f6fc5b4fcf05adad4df28910e6e3512f5679cf"
+    },
+    "preview.webp": {
+      "bytes": 44740,
+      "sha256": "be5666fec297233bc6d886a8e6f52bcda300856bc0172d56e240b9326dcf0431"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@open-chatgpt-skin/theme-schema": [
+        "./packages/theme-schema/src/index.ts"
+      ],
+      "@open-chatgpt-skin/theme-core": [
+        "./packages/theme-core/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "packages/*/src/**/*.ts"
+  ]
+}

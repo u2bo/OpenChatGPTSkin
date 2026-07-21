@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <body>
+    <aside class="app-shell-left-panel" data-rect="0,0,240,822">
+      <nav role="navigation" data-rect="0,36,240,786"><button>New chat</button></nav>
+    </aside>
+    <main class="main-surface" data-rect="240,36,1040,786">
+      <header class="app-header-tint" data-rect="240,36,1040,46">
+        <div role="group" aria-label="Composer mode" data-rect="666,45,187,32">
+          <span id="mode-track" style="background-color: rgb(13, 13, 13)" data-rect="668,45,183,32"></span>
+          <span id="mode-selection" style="background-color: rgb(45, 45, 45)" data-rect="668,44,92,34"></span>
+          <button>Chat</button>
+          <button>Work</button>
+        </div>
+      </header>
+      <div
+        id="chatgpt-top-fade"
+        class="app-shell-main-content-top-fade"
+        data-rect="240,82,1040,16"
+      ></div>
+      <div role="main" id="chatgpt-landing" data-rect="240,82,1040,740">
+        <button aria-label="Workspace tools" data-rect="1180,90,28,28"></button>
+        <h1 data-rect="540,300,440,48">Ready when you are.</h1>
+        <div class="mx-auto w-full max-w-(--thread-content-max-width) px-toolbar" id="chatgpt-composer-width" data-rect="424,406,672,64">
+          <form data-rect="523,406,474,44">
+            <div class="relative flex w-full flex-col gap-2" data-rect="523,406,474,44">
+              <div
+                id="chatgpt-composer-input"
+                class="composer-surface-chrome bg-token-input-background/90 rounded-full"
+                style="background-color: rgb(45, 45, 45)"
+                data-rect="523,406,474,44"
+              >
+                <button data-rect="531,414,28,28">Add</button>
+                <div contenteditable="true" aria-label="Message ChatGPT" data-rect="567,418,311,20"></div>
+                <button data-rect="961,414,28,28">Send</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+    <div role="dialog" aria-label="Command palette" id="search-dialog" data-rect="380,159,520,487">
+      <div
+        id="search-dialog-shell"
+        style="background-color: rgb(45, 45, 45)"
+        data-rect="380,159,520,487"
+      >
+        <input role="combobox" placeholder="Search tasks" data-rect="385,164,510,33" />
+        <div role="listbox" data-rect="385,201,510,440">
+          <div role="option">Example task</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

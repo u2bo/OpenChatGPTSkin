@@ -1,0 +1,16 @@
+.worktrees/
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+*.log
+*.tmp
+.DS_Store
+.idea/
+.vscode/
+.superpowers/
+docs/superpowers/
+docs/assets/design-qa/
+design-qa.md
+private-themes/
+themes/local/

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "references": [
+    { "path": "../../packages/theme-studio-core" }
+  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

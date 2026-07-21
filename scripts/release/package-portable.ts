@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
-import { spawn } from "node:child_process";
 import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { verifyReleasePayload } from "./acceptance.js";
 import { readReleaseManifest } from "./payload.js";
+import { runReleaseCommand } from "./release-command.js";
 
 export interface PortablePackageResult {
   readonly path: string;
@@ -20,21 +20,6 @@ async function ensureMissing(path: string): Promise<void> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
     throw error;
   }
-}
-
-function run(command: string, args: readonly string[], cwd?: string): Promise<void> {
-  return new Promise<void>((resolveRun, rejectRun) => {
-    const child = spawn(command, args, {
-      ...(cwd ? { cwd } : {}),
-      stdio: "inherit",
-      windowsHide: true,
-    });
-    child.once("error", rejectRun);
-    child.once("exit", (code) => {
-      if (code === 0) resolveRun();
-      else rejectRun(new Error(`${command} exited with code ${String(code)}`));
-    });
-  });
 }
 
 export async function packagePortableRelease(
@@ -58,9 +43,16 @@ export async function packagePortableRelease(
   const parent = dirname(releaseRoot);
   const directory = basename(releaseRoot);
   if (manifest.target.platform === "win32") {
-    await run("7z", ["a", "-tzip", "-mx=9", output, directory], parent);
+    await runReleaseCommand(
+      "7z",
+      ["a", "-tzip", "-mx=9", output, directory],
+      { cwd: parent },
+    );
   } else {
-    await run("tar", ["-czf", output, "-C", parent, directory]);
+    await runReleaseCommand(
+      "tar",
+      ["-czf", output, "-C", parent, directory],
+    );
   }
   const bytes = await readFile(output);
   return {

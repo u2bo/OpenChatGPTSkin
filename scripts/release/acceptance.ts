@@ -21,6 +21,7 @@ export const RELEASE_ACCEPTANCE_SCENARIOS = [
   "staged-payload",
   "portable-archive",
   "installed-payload",
+  "macos-app-bundle",
 ] as const;
 
 export type ReleaseAcceptanceScenario =

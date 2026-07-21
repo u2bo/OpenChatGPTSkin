@@ -23,6 +23,15 @@ import {
   buildMacAppBundle,
   verifyMacAppBundleLayout,
 } from "../scripts/release/macos-app.js";
+import {
+  assertMacBinaryArchitecture,
+  buildMacDmg,
+  generateMacIcon,
+  macIconEntries,
+} from "../scripts/release/macos-dmg.js";
+import { acceptMacDmg } from "../scripts/release/macos-acceptance.js";
+import { RELEASE_ACCEPTANCE_SCENARIOS } from
+  "../scripts/release/acceptance.js";
 import { createMacPayloadFixture } from "./helpers/release-payload-fixture.js";
 
 describe("macOS release metadata", () => {
@@ -112,4 +121,81 @@ describe("macOS app bundle", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+});
+
+describe("macOS native distribution contract", () => {
+  it("requires the complete Apple iconset", () => {
+    expect(macIconEntries()).toEqual([
+      ["icon_16x16.png", 16],
+      ["icon_16x16@2x.png", 32],
+      ["icon_32x32.png", 32],
+      ["icon_32x32@2x.png", 64],
+      ["icon_128x128.png", 128],
+      ["icon_128x128@2x.png", 256],
+      ["icon_256x256.png", 256],
+      ["icon_256x256@2x.png", 512],
+      ["icon_512x512.png", 512],
+      ["icon_512x512@2x.png", 1024],
+    ]);
+  });
+
+  it("accepts only the requested Mach-O architecture", () => {
+    expect(() => assertMacBinaryArchitecture(
+      "Mach-O 64-bit executable arm64",
+      "arm64",
+      "runtime/node",
+    )).not.toThrow();
+    expect(() => assertMacBinaryArchitecture(
+      "Mach-O 64-bit executable x86_64",
+      "x64",
+      "runtime/node",
+    )).not.toThrow();
+    expect(() => assertMacBinaryArchitecture(
+      "Mach-O 64-bit executable x86_64",
+      "arm64",
+      "runtime/node",
+    )).toThrow("runtime/node does not target arm64");
+    expect(() => assertMacBinaryArchitecture(
+      "Mach-O universal binary with 2 architectures: [x86_64] [arm64]",
+      "arm64",
+      "runtime/node",
+    )).toThrow("runtime/node does not target arm64");
+  });
+
+  it("registers the app bundle acceptance scenario", () => {
+    expect(RELEASE_ACCEPTANCE_SCENARIOS).toContain("macos-app-bundle");
+  });
+
+  it.skipIf(process.platform === "darwin")(
+    "rejects native packaging outside macOS",
+    async () => {
+      await expect(generateMacIcon("source.svg", "AppIcon.icns"))
+        .rejects.toThrow("macOS icon generation requires Darwin");
+      await expect(buildMacDmg({
+        appPath: "OpenChatGPTSkin.app",
+        outputDirectory: "artifacts",
+        version: "0.1.0-alpha.1",
+        arch: "arm64",
+      })).rejects.toThrow("DMG packaging requires Darwin");
+      await expect(acceptMacDmg("OpenChatGPTSkin.dmg"))
+        .rejects.toThrow("macOS DMG acceptance requires Darwin");
+    },
+  );
+
+  it.skipIf(process.platform !== "darwin")(
+    "creates an icns with the native macOS toolchain",
+    async () => {
+      const root = await mkdtemp(join(tmpdir(), "ocs-mac-icon-"));
+      try {
+        const output = join(root, "AppIcon.icns");
+        await generateMacIcon(
+          "assets/branding/open-chatgpt-skin-icon.svg",
+          output,
+        );
+        expect((await stat(output)).size).toBeGreaterThan(0);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+  );
 });

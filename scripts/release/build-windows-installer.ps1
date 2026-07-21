@@ -38,9 +38,9 @@ $arguments = @(
   "/DOutputDirectory=$output",
   $script
 )
-$process = Start-Process -FilePath $iscc -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
-if ($process.ExitCode -ne 0) {
-  throw "Inno Setup compiler exited with code $($process.ExitCode)"
+& $iscc @arguments
+if ($LASTEXITCODE -ne 0) {
+  throw "Inno Setup compiler exited with code $LASTEXITCODE"
 }
 
 $installer = Join-Path $output "OpenChatGPTSkin_${Version}_windows_x64_Setup.exe"

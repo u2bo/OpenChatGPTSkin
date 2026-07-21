@@ -73,7 +73,10 @@ jobs:
         shell: pwsh
         run: |
           $releaseVersion = (Get-Content -Raw -LiteralPath package.json | ConvertFrom-Json).version
-          choco install innosetup --version $env:INNO_SETUP_VERSION --no-progress --yes
+          choco install innosetup --version $env:INNO_SETUP_VERSION --allow-downgrade --no-progress --yes
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup installation failed with exit code $LASTEXITCODE"
+          }
           & scripts/release/build-windows-installer.ps1 -ReleaseRoot $env:RELEASE_STAGE -OutputDirectory $env:RELEASE_ARTIFACTS -Version $releaseVersion
       - name: Accept Windows installer lifecycle
         shell: pwsh

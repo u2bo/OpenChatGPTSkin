@@ -150,9 +150,12 @@ describe("RuntimeStateStore recent requests", () => {
       "D:/install",
     );
     const store = new RuntimeStateStore(paths.sessionFile);
-    await store.write(activeState());
+    await store.write({
+      ...activeState(),
+      recentRequests: Array.from({ length: 31 }, (_, index) => recentRequest(index + 1)),
+    });
 
-    for (let index = 1; index <= 33; index += 1) {
+    for (let index = 32; index <= 33; index += 1) {
       await store.appendRecentRequest(recentRequest(index));
     }
 

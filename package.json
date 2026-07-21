@@ -37,9 +37,9 @@
     "release:macos": "tsx scripts/release/build-macos-distribution.ts",
     "release:acceptance:macos": "tsx scripts/release/accept-macos-distribution.ts",
     "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",
-    "verify": "npm run test && npm run typecheck && npm run build",
-    "verify:runtime": "npm run test && npm run typecheck && npm run build",
-    "verify:foundation": "npm run themes:build && npm run test && npm run typecheck && npm run build && node packages/theme-core/dist/cli.js catalog --root themes"
+    "verify": "npm run build && npm run test && npm run typecheck",
+    "verify:runtime": "npm run build && npm run test && npm run typecheck",
+    "verify:foundation": "npm run themes:build && npm run build && npm run test && npm run typecheck && node packages/theme-core/dist/cli.js catalog --root themes"
   },
   "engines": {
     "node": ">=22.0.0"

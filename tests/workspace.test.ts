@@ -26,7 +26,9 @@ describe("workspace packages", () => {
       runtime: "npm run build && node runtime/windows/dist/cli.js",
       "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",
       "studio:build": "npm run build -w @open-chatgpt-skin/theme-studio",
-      "verify:runtime": "npm run test && npm run typecheck && npm run build",
+      verify: "npm run build && npm run test && npm run typecheck",
+      "verify:runtime": "npm run build && npm run test && npm run typecheck",
+      "verify:foundation": "npm run themes:build && npm run build && npm run test && npm run typecheck && node packages/theme-core/dist/cli.js catalog --root themes",
     });
     expect(runtimePackage.bin).toMatchObject({
       "open-chatgpt-skin-runtime": "./dist/cli.js",

@@ -278,7 +278,8 @@ describe("PowerShellWindowsProvider", () => {
     try {
       await runAclPowerShell(`
         $ErrorActionPreference = "Stop"
-        $acl = Get-Acl -LiteralPath $env:OCS_TEST_ACL_PATH
+        $directory = [System.IO.DirectoryInfo]::new($env:OCS_TEST_ACL_PATH)
+        $acl = $directory.GetAccessControl()
         $users = [Security.Principal.SecurityIdentifier]::new("S-1-5-32-545")
         $inheritance = [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
           [Security.AccessControl.InheritanceFlags]::ObjectInherit
@@ -290,14 +291,15 @@ describe("PowerShellWindowsProvider", () => {
           [Security.AccessControl.AccessControlType]::Allow
         )
         $acl.AddAccessRule($rule)
-        Set-Acl -LiteralPath $env:OCS_TEST_ACL_PATH -AclObject $acl
+        $directory.SetAccessControl($acl)
       `, target);
 
       const provider = new PowerShellWindowsProvider(undefined, root);
       await provider.secureDirectory(target);
       const currentUserSid = await provider.currentUserSid();
       const result = JSON.parse(await runAclPowerShell(`
-        $acl = Get-Acl -LiteralPath $env:OCS_TEST_ACL_PATH
+        $directory = [System.IO.DirectoryInfo]::new($env:OCS_TEST_ACL_PATH)
+        $acl = $directory.GetAccessControl()
         [pscustomobject]@{
           protected = $acl.AreAccessRulesProtected
           identities = @($acl.Access | ForEach-Object {

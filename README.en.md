@@ -163,7 +163,7 @@ Download `OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip`, verify it, extract it 
 
 Developers can also download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.tar.gz`. Most users should choose the DMG.
 
-Maintainers working from Windows can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. The build itself runs on native GitHub-hosted ARM64/x64 macOS runners. Download test artifacts from that workflow run; a manual run never creates a tag or GitHub Release.
+Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. GitHub-hosted Windows, ARM64 macOS, and Intel macOS runners build Windows x64, macOS ARM64, and macOS x64 test artifacts. Download `windows-release`, `macos-arm64-release`, `macos-x64-release`, and their diagnostics from the completed run. A manual run never creates a tag or GitHub Release.
 
 ### Verify downloads
 

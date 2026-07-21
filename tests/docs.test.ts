@@ -232,6 +232,18 @@ describe("project documentation", () => {
     expect(contributing).toContain("workflow_dispatch");
     expect(notes).toContain("Intel x64");
     expect(notes).toContain("未完成实机验证");
+    expect(readme).toContain(
+      "Windows x64、macOS ARM64 和 macOS x64",
+    );
+    expect(readmeEn).toContain(
+      "Windows x64, macOS ARM64, and macOS x64",
+    );
+    expect(contributing).toContain(
+      "手动 `workflow_dispatch` 构建并上传 Windows 和两套 macOS 测试产物",
+    );
+    expect(notes).toContain(
+      "手动 `workflow_dispatch` 生成全平台测试产物",
+    );
     expect(`${readme}\n${readmeEn}\n${runtime}\n${runtimeEn}\n${notes}`)
       .not.toContain("macOS x64/ARM64 只生成 CI contract artifact");
     expect(`${readme}\n${readmeEn}\n${runtime}\n${runtimeEn}\n${notes}`)

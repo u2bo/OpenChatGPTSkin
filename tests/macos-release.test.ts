@@ -1,3 +1,13 @@
+import {
+  access,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   macDmgArtifactName,
@@ -9,6 +19,11 @@ import {
   renderMacLauncher,
   toAppleBundleVersion,
 } from "../scripts/release/macos-metadata.js";
+import {
+  buildMacAppBundle,
+  verifyMacAppBundleLayout,
+} from "../scripts/release/macos-app.js";
+import { createMacPayloadFixture } from "./helpers/release-payload-fixture.js";
 
 describe("macOS release metadata", () => {
   it("uses macos in user-facing names while preserving platform input", () => {
@@ -42,5 +57,59 @@ describe("macOS release metadata", () => {
     expect(launcher).toContain('OPEN_CHATGPT_SKIN_INSTALL_ROOT="$payload"');
     expect(launcher).toContain('exec "$payload/runtime/node"');
     expect(launcher).not.toContain("process.cwd");
+  });
+});
+
+describe("macOS app bundle", () => {
+  it("wraps the accepted payload without changing its manifest", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ocs-mac-app-"));
+    try {
+      const releaseRoot = await createMacPayloadFixture(root, "arm64");
+      const originalManifest = await readFile(
+        join(releaseRoot, "release-manifest.json"),
+        "utf8",
+      );
+      const iconPath = join(root, "AppIcon.icns");
+      await writeFile(iconPath, "icon", "utf8");
+
+      const result = await buildMacAppBundle({
+        releaseRoot,
+        outputDirectory: join(root, "bundle"),
+        iconPath,
+      });
+
+      expect(result).toMatchObject({
+        version: "0.1.0-alpha.1",
+        arch: "arm64",
+      });
+      expect(await readFile(
+        join(result.payloadRoot, "release-manifest.json"),
+        "utf8",
+      )).toBe(originalManifest);
+      expect(await readFile(
+        join(result.appPath, "Contents", "MacOS", "OpenChatGPTSkin"),
+        "utf8",
+      )).toContain('payload="$contents/Resources/payload"');
+      if (process.platform !== "win32") {
+        expect((await stat(
+          join(result.appPath, "Contents", "MacOS", "OpenChatGPTSkin"),
+        )).mode & 0o111).not.toBe(0);
+      }
+      await expect(verifyMacAppBundleLayout(result.appPath)).resolves
+        .toMatchObject({
+          version: "0.1.0-alpha.1",
+          arch: "arm64",
+        });
+      await expect(buildMacAppBundle({
+        releaseRoot,
+        outputDirectory: join(root, "bundle"),
+        iconPath,
+      })).rejects.toThrow("macOS app output already exists");
+      await expect(access(
+        join(result.appPath, "Contents", "Resources", "AppIcon.icns"),
+      )).resolves.toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

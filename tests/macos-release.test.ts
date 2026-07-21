@@ -240,4 +240,23 @@ describe("macOS release integration", () => {
     expect(packageJson.scripts?.["release:acceptance:macos"])
       .toBe("tsx scripts/release/accept-macos-distribution.ts");
   });
+
+  it("keeps manual macOS builds separate from tag publishing", async () => {
+    const workflow = await readFile(
+      ".github/workflows/release.yml",
+      "utf8",
+    );
+    expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).toMatch(
+      /windows-x64:\r?\n\s+if: github\.event_name == 'push'/,
+    );
+    expect(workflow).toMatch(
+      /publish:\r?\n\s+if: github\.event_name == 'push'/,
+    );
+    expect(workflow).toContain("npm run release:macos --");
+    expect(workflow).toContain("npm run release:acceptance:macos --");
+    expect(workflow).toContain("name: macos-${{ matrix.arch }}-release");
+    expect(workflow).toContain("OpenChatGPTSkin_*.dmg");
+    expect(workflow).toContain("OpenChatGPTSkin_*.tar.gz");
+  });
 });

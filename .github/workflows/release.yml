@@ -1,6 +1,7 @@
 name: Build and Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
@@ -24,11 +25,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run release:version -- --tag "${GITHUB_REF_NAME}"
+      - if: github.event_name == 'push'
+        run: npm run release:version -- --tag "${GITHUB_REF_NAME}"
       - run: npm run verify
       - run: npm run studio:build
 
   windows-x64:
+    if: github.event_name == 'push'
     needs: verify
     runs-on: windows-latest
     steps:
@@ -93,10 +96,12 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: windows-release
-          path: ${{ runner.temp }}\artifacts\*
+          path: |
+            ${{ runner.temp }}\artifacts\OpenChatGPTSkin_*.zip
+            ${{ runner.temp }}\artifacts\OpenChatGPTSkin_*_Setup.exe
           if-no-files-found: error
 
-  macos-contract:
+  macos-release:
     needs: verify
     strategy:
       fail-fast: false
@@ -125,7 +130,7 @@ jobs:
           root="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.rootDirectory)' "$metadata")"
           tar -xzf "$archive" -C "$RUNNER_TEMP"
           echo "NODE_ROOT=$RUNNER_TEMP/$root" >> "$GITHUB_ENV"
-      - name: Stage, accept, and package macOS contract artifact
+      - name: Stage, accept, and package macOS distribution
         shell: bash
         run: |
           set -euo pipefail
@@ -139,6 +144,9 @@ jobs:
           npm run release:package -- --release-root "$stage" --output "$artifacts"
           archive="$(find "$artifacts" -maxdepth 1 -name '*.tar.gz' -print -quit)"
           npm run release:acceptance:archive -- --archive "$archive" --report "$diagnostics/macos-${{ matrix.arch }}-archive-acceptance.json"
+          npm run release:macos -- --release-root "$stage" --output "$artifacts" --icon-source "$GITHUB_WORKSPACE/assets/branding/open-chatgpt-skin-icon.svg"
+          dmg="$(find "$artifacts" -maxdepth 1 -name '*.dmg' -print -quit)"
+          npm run release:acceptance:macos -- --dmg "$dmg" --report "$diagnostics/macos-${{ matrix.arch }}-dmg-acceptance.json"
           node -e 'const fs=require("fs");const path=process.argv[1];const output=process.argv[2];const values=fs.readdirSync(path).sort().map(name=>({name,bytes:fs.statSync(`${path}/${name}`).size}));fs.writeFileSync(output,JSON.stringify(values,null,2)+"\n")' "$artifacts" "$diagnostics/macos-${{ matrix.arch }}-artifacts.json"
           echo "RELEASE_DIAGNOSTICS=$diagnostics" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -149,14 +157,17 @@ jobs:
           if-no-files-found: warn
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: macos-${{ matrix.arch }}-contract
-          path: ${{ runner.temp }}/artifacts/*
+          name: macos-${{ matrix.arch }}-release
+          path: |
+            ${{ runner.temp }}/artifacts/OpenChatGPTSkin_*.dmg
+            ${{ runner.temp }}/artifacts/OpenChatGPTSkin_*.tar.gz
           if-no-files-found: error
 
   publish:
+    if: github.event_name == 'push'
     needs:
       - windows-x64
-      - macos-contract
+      - macos-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -166,12 +177,22 @@ jobs:
         with:
           name: windows-release
           path: artifacts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: macos-arm64-release
+          path: artifacts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: macos-x64-release
+          path: artifacts
       - name: Publish GitHub Release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          test "$(find artifacts -maxdepth 1 -type f -name 'OpenChatGPTSkin_*' | wc -l | tr -d ' ')" -eq 6
+          (cd artifacts && sha256sum OpenChatGPTSkin_* > checksums.txt)
           (cd artifacts && sha256sum --check checksums.txt)
           version="${GITHUB_REF_NAME#v}"
           notes="docs/releases/${GITHUB_REF_NAME}.md"

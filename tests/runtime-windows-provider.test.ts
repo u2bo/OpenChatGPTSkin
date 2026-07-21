@@ -98,6 +98,8 @@ describe("PowerShellWindowsProvider", () => {
     expect(POWERSHELL_SCRIPT).toContain(
       "& icacls.exe $path /inheritance:r /grant:r $userGrant $systemGrant",
     );
+    expect(POWERSHELL_SCRIPT).toContain("$verified = $directory.GetAccessControl()");
+    expect(POWERSHELL_SCRIPT).not.toContain("Get-Acl -LiteralPath $path");
     expect(POWERSHELL_SCRIPT).not.toContain("Set-Acl -LiteralPath $path");
   });
 

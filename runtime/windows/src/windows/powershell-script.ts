@@ -419,7 +419,8 @@ switch ($request.action) {
     if ($LASTEXITCODE -ne 0) { throw "icacls reset failed with exit code $LASTEXITCODE" }
     & icacls.exe $path /inheritance:r /grant:r $userGrant $systemGrant | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "icacls ACL update failed with exit code $LASTEXITCODE" }
-    $verified = Get-Acl -LiteralPath $path
+    $directory = [System.IO.DirectoryInfo]::new($path)
+    $verified = $directory.GetAccessControl()
     $expected = @($sid, "S-1-5-18") | Sort-Object
     $actual = @($verified.Access | ForEach-Object {
       $_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value

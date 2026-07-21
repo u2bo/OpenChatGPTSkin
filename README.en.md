@@ -3,7 +3,7 @@
 [简体中文](README.md) · [English](README.en.md)
 
 ![Status](https://img.shields.io/badge/status-alpha-f59e0b)
-![Platform](https://img.shields.io/badge/release-Windows%20x64-0078d4)
+![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20Preview-0078d4)
 ![Node.js](https://img.shields.io/badge/Node.js-22%20bundled-339933)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
 ![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)
@@ -31,7 +31,7 @@
 </details>
 
 > [!IMPORTANT]
-> `v0.1.0-alpha.1` is a **Windows developer preview** with a Windows x64 portable ZIP and per-user Setup. Both bundle Node.js and require neither Git nor development dependencies. macOS remains a source preview and is not attached to the public Release until real-Mac, signing, and Gatekeeper acceptance is complete. Save your work and **fully quit the regular Codex app** before applying or restoring a theme. OpenChatGPTSkin manages only the Codex instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
+> `v0.1.0-alpha.1` provides both a **Windows developer preview** and an **unsigned macOS developer preview**. Windows includes an x64 portable ZIP and per-user Setup; macOS includes separate Apple Silicon ARM64 and Intel x64 DMGs/portable archives. Every artifact bundles Node.js and requires neither Git nor development dependencies. macOS has not completed the real-Codex visual loop, Developer ID signing, or notarization. Use the standard Control-click → **Open** flow below and do not disable Gatekeeper. Save your work and **fully quit the regular Codex app** before applying or restoring a theme. OpenChatGPTSkin manages only the Codex instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
@@ -65,7 +65,7 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 | Four original built-in themes | Complete |
 | Windows Runtime launch/switch/pause/restore | Alpha |
 | Windows x64 portable ZIP and per-user Setup | Alpha |
-| macOS Runtime launch/switch/pause/restore | Source preview; real-Mac acceptance pending |
+| macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; real-Mac acceptance pending |
 | Theme Studio editing/preview/version/import/export/apply | Alpha |
 | Codex plugin-market installation | Not available yet |
 | Automatic updates, SEA single-file executable, theme marketplace | Planned |
@@ -154,6 +154,17 @@ The installer is unsigned, so Windows SmartScreen may warn. Download only from t
 
 Download `OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.cmd`. The portable build does not register an installation and needs no global Node.js or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
 
+### macOS DMG (unsigned developer preview)
+
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg`. Intel x64 compatibility depends on an official Codex build for that architecture and has not completed real-device validation.
+2. Verify SHA-256 as shown below, open the DMG, and drag `OpenChatGPTSkin.app` to Applications.
+3. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt. Do not disable Gatekeeper or use `xattr` to remove quarantine metadata.
+4. Theme Studio opens in the default browser after its health check succeeds. Replacing or deleting the `.app` keeps personal themes, drafts, and Runtime state under `~/Library/Application Support/OpenChatGPTSkin`.
+
+Developers can also download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.tar.gz`. Most users should choose the DMG.
+
+Maintainers working from Windows can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. The build itself runs on native GitHub-hosted ARM64/x64 macOS runners. Download test artifacts from that workflow run; a manual run never creates a tag or GitHub Release.
+
 ### Verify downloads
 
 Run from the download directory:
@@ -162,6 +173,15 @@ Run from the download directory:
 Get-FileHash .\OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip -Algorithm SHA256
 Get-FileHash .\OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
+```
+
+macOS Terminal:
+
+```bash
+shasum -a 256 OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg
+# On Intel:
+shasum -a 256 OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg
+cat checksums.txt
 ```
 
 Each hash must exactly match the corresponding line in `checksums.txt`. Do not run a mismatched artifact.
@@ -183,14 +203,14 @@ npm run verify:foundation
 
 When upgrading from the pre-rename development build, the first CLI or Theme Studio start atomically adopts the previous personal themes, drafts, and Runtime state only when the new-brand data directory does not exist. If both directories exist, the new directory wins and neither side is merged or overwritten.
 
-Installing a newer Setup over the existing version, or replacing a portable directory, updates program files without moving or overwriting `%LOCALAPPDATA%\OpenChatGPTSkin`. Uninstall keeps personal themes, drafts, versions, and Runtime state by default. The data directory is removed only when an interactive uninstall explicitly selects deletion and confirms the irreversible warning.
+Installing a newer Setup, replacing a portable directory, or replacing the macOS `.app` updates program files without moving or overwriting `%LOCALAPPDATA%\OpenChatGPTSkin` or `~/Library/Application Support/OpenChatGPTSkin`. Windows uninstall keeps personal themes, drafts, versions, and Runtime state by default. The data directory is removed only when an interactive uninstall explicitly selects deletion and confirms the irreversible warning.
 
 ## Quick start
 
 ### Theme Studio (recommended)
 
 1. Save your work and choose **Quit Codex** from the Codex menu or system tray. Make sure the regular app is fully closed.
-2. Setup users launch from the Start menu; portable users double-click `OpenChatGPTSkin.cmd`; source users run:
+2. Windows Setup users launch from the Start menu, portable users double-click `OpenChatGPTSkin.cmd`, macOS users launch `OpenChatGPTSkin.app` from Applications, and source users run:
 
    ```powershell
    npm run studio:dev
@@ -255,7 +275,7 @@ npm run runtime -- restore
 - `restore` restores the official appearance and waits for a normal managed-Codex exit to finish cleanup.
 - Do not use Task Manager to force-close Codex while restore is pending.
 
-See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. The automated Probe/Acceptance flow remains Windows-only; macOS uses the manual real-Mac checklist.
+See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. macOS DMGs complete package, bundled-Runtime, Theme Studio, and four-theme acceptance on native ARM64/x64 runners. Real-Codex Runtime probes and visual-loop acceptance still require the manual real-device checklist.
 
 ### Compatibility probe and real-app acceptance (Windows)
 
@@ -293,7 +313,7 @@ Fully quit the regular Codex app through **Quit Codex**, then retry the original
 
 ### Why can I not install this from the Codex Plugins page?
 
-OpenChatGPTSkin is a separate local Theme Studio and Desktop Runtime, not a Codex plugin-market plugin. Windows users install it from the GitHub Release Setup or portable ZIP. It does not modify Codex installation files and does not appear in the Codex Plugins page.
+OpenChatGPTSkin is a separate local Theme Studio and Desktop Runtime, not a Codex plugin-market plugin. Windows users install the Setup or portable ZIP; macOS users install the DMG for their architecture. It does not modify Codex installation files and does not appear in the Codex Plugins page.
 
 ### Why is **Apply to Codex** disabled after an edit?
 

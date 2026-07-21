@@ -1,4 +1,4 @@
-# macOS Runtime and Real-Mac Acceptance (Developer Preview)
+# macOS Runtime, Distribution, and Real-Mac Acceptance (Unsigned Developer Preview)
 
 [简体中文](runtime-macos.md) · [Back to README](../README.en.md)
 
@@ -7,14 +7,14 @@ OpenChatGPTSkin now has a macOS Runtime adapter. Theme Studio, the theme engine,
 > [!WARNING]
 > The implementation passes TypeScript, unit tests, and macOS command-contract tests on Windows. It has not yet completed the visual Codex loop on a real Mac. Publish it as a developer preview; do not treat expected behavior in this document as real-device evidence.
 
-GitHub Actions assembles bundled Node.js, native `sharp`, the single-file Theme Studio, and all four themes on separate macOS x64 and ARM64 runners, then runs the same portable Release Acceptance used for Windows. These builds remain CI contract artifacts only. They are not attached to a public GitHub Release until the real-device, signing, notarization, and Gatekeeper checklist on this page is complete.
+GitHub Actions assembles bundled Node.js, native `sharp`, the single-file Theme Studio, and all four themes on separate macOS x64 and ARM64 runners. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
 
 ## Requirements
 
 - A Mac with the official Codex Desktop app installed.
 - The app at `/Applications/Codex.app` or `~/Applications/Codex.app`.
-- Node.js `>=22.0.0` with npm.
-- `npm ci` completed at the repository root.
+- DMG users need no global Node.js, npm, or Git.
+- Source development requires Node.js `>=22.0.0`, npm, and `npm ci` at the repository root.
 - Before applying a theme, choose **Quit Codex** and ensure the regular app has fully exited.
 
 OpenAI's official troubleshooting manual retains this Codex App compatibility path:
@@ -25,9 +25,20 @@ OpenAI's official troubleshooting manual retains this Codex App compatibility pa
 
 It also documents the macOS app log directory as `~/Library/Logs/com.openai.codex/YYYY/MM/DD`. See [OpenAI Codex troubleshooting](https://learn.chatgpt.com/docs/troubleshooting). The Runtime does not hard-code the GUI executable name; it reads `CFBundleExecutable` from `Contents/Info.plist`.
 
+## Install the unsigned preview
+
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg`. Intel x64 still requires a matching official Codex build and real-device evidence.
+2. Run `shasum -a 256 <filename>` and compare it with `checksums.txt` from the GitHub Release.
+3. Open the DMG and drag `OpenChatGPTSkin.app` to Applications.
+4. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt.
+
+OpenChatGPTSkin is not yet Developer ID signed or notarized. Do not disable Gatekeeper, use `xattr` to remove quarantine metadata, or change global security settings. Program resources inside the app bundle are an immutable release payload. Personal themes, drafts, Runtime state, and logs remain under `~/Library/Application Support/OpenChatGPTSkin`; replacing or deleting the `.app` does not automatically delete them.
+
+Maintainers can manually run the **Build and Release** workflow through `workflow_dispatch`. Native ARM64/x64 runners generate test DMGs, but a manual run never creates a tag or GitHub Release.
+
 ## Usage
 
-The commands are the same on both platforms:
+Installed users start OpenChatGPTSkin from Applications, then apply, switch, or restore themes in the browser-based Theme Studio. Source-mode commands are the same on both platforms:
 
 ```bash
 npm run studio:dev
@@ -68,7 +79,8 @@ Enumerating macOS windows normally requires Accessibility consent. OpenChatGPTSk
 | Identity | Appx Manifest, signatures, BlockMap | Info.plist, Developer ID, deep codesign, notarization |
 | Local control | Named Pipe secured to current user + SYSTEM | Unix socket owned by current UID, mode `0600` |
 | Data root | `%LOCALAPPDATA%\OpenChatGPTSkin` | `~/Library/Application Support/OpenChatGPTSkin` |
-| Automated Probe/Acceptance | Available | Not yet; use the manual checklist |
+| Release-package acceptance | ZIP, Setup, and installer lifecycle | Payload, `.tar.gz`, `.app`, Mach-O, and DMG mount |
+| Real-Codex probe/visual acceptance | Available | Not automated; use the manual checklist below |
 
 The historical path and package name `runtime/windows` / `@open-chatgpt-skin/windows-runtime` remain for compatibility and to avoid an unrelated repository-wide move. Its Controller and public provider interface are now platform-neutral.
 
@@ -76,7 +88,7 @@ The historical path and package name `runtime/windows` / `@open-chatgpt-skin/win
 
 Use a test account/workspace with no private projects or sensitive chats:
 
-1. Fully quit Codex, then run `npm run build` and the macOS-related tests.
+1. Fully quit Codex, install from a verified DMG, and use Control-click → **Open** for the first launch. Source maintainers also run `npm run build` and the macOS-related tests.
 2. Verify the official identity:
 
    ```bash

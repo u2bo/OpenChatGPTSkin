@@ -198,4 +198,43 @@ describe("project documentation", () => {
       expect(info.size).toBeLessThan(500_000);
     }
   });
+
+  it("documents the unsigned macOS preview without overstating compatibility", async () => {
+    const [
+      readme,
+      readmeEn,
+      runtime,
+      runtimeEn,
+      notes,
+      contributing,
+    ] = await Promise.all([
+      readFile("README.md", "utf8"),
+      readFile("README.en.md", "utf8"),
+      readFile("docs/runtime-macos.md", "utf8"),
+      readFile("docs/runtime-macos.en.md", "utf8"),
+      readFile("docs/releases/v0.1.0-alpha.1.md", "utf8"),
+      readFile("CONTRIBUTING.md", "utf8"),
+    ]);
+    for (const name of [
+      "OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg",
+      "OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg",
+    ]) {
+      expect(readme).toContain(name);
+      expect(notes).toContain(name);
+    }
+    expect(readme).toContain("右键");
+    expect(readme).toContain("未签名");
+    expect(readmeEn).toContain("unsigned developer preview");
+    expect(runtime).toContain(
+      "~/Library/Application Support/OpenChatGPTSkin",
+    );
+    expect(runtimeEn).toContain("Control-click");
+    expect(contributing).toContain("workflow_dispatch");
+    expect(notes).toContain("Intel x64");
+    expect(notes).toContain("未完成实机验证");
+    expect(`${readme}\n${readmeEn}\n${runtime}\n${runtimeEn}\n${notes}`)
+      .not.toContain("macOS x64/ARM64 只生成 CI contract artifact");
+    expect(`${readme}\n${readmeEn}\n${runtime}\n${runtimeEn}\n${notes}`)
+      .not.toContain("macOS x64/ARM64 builds remain CI contract artifacts");
+  });
 });

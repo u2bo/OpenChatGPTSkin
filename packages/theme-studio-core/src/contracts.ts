@@ -4,6 +4,7 @@ import {
   ThemeIdSchema,
   ThemeVersionSchema,
 } from "@open-chatgpt-skin/theme-schema";
+import { PRODUCT_VERSION_PATTERN } from "./security.js";
 
 export const STUDIO_PROTOCOL_VERSION = 2 as const;
 
@@ -47,7 +48,7 @@ export const StudioCapabilitySchema = z.enum([
 
 export const StudioBootstrapSchema = z.object({
   protocolVersion: z.literal(STUDIO_PROTOCOL_VERSION),
-  studioVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+  studioVersion: z.string().regex(PRODUCT_VERSION_PATTERN),
   repositoryUrl: z.string().url().startsWith("https://github.com/").nullable().default(null),
   capabilities: z.array(StudioCapabilitySchema),
   runtime: StudioRuntimeStatusSchema,

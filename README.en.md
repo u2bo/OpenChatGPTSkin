@@ -2,9 +2,9 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-developer%20preview-f59e0b)
-![Platform](https://img.shields.io/badge/platform-Windows%2011%20%7C%20macOS-0078d4)
-![Node.js](https://img.shields.io/badge/Node.js-%3E%3D%2022-339933)
+![Status](https://img.shields.io/badge/status-alpha-f59e0b)
+![Platform](https://img.shields.io/badge/release-Windows%20x64-0078d4)
+![Node.js](https://img.shields.io/badge/Node.js-22%20bundled-339933)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
 ![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)
 [![LINUX DO Community](https://img.shields.io/badge/community-LINUX%20DO-f0b90b)](https://linux.do/)
@@ -31,7 +31,7 @@
 </details>
 
 > [!IMPORTANT]
-> This release provides **Windows and macOS developer previews** and currently runs from source. A Codex plugin-market installation, one-click installer, and standalone executable are not available yet. Save your work and **fully quit the regular Codex app** before starting Theme Studio or the Runtime. OpenChatGPTSkin manages only the Codex instance it launches. It never force-terminates an existing Codex process and does not modify `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration. Windows has the recorded real-app compatibility gate; macOS has the cross-platform implementation and contract tests run on Windows, but still requires real-Mac visual acceptance.
+> `v0.1.0-alpha.1` is a **Windows developer preview** with a Windows x64 portable ZIP and per-user Setup. Both bundle Node.js and require neither Git nor development dependencies. macOS remains a source preview and is not attached to the public Release until real-Mac, signing, and Gatekeeper acceptance is complete. Save your work and **fully quit the regular Codex app** before applying or restoring a theme. OpenChatGPTSkin manages only the Codex instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
@@ -63,11 +63,12 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 |---|---|
 | Theme Schema v2 and `.ocskin` validate/pack/unpack | Complete |
 | Four original built-in themes | Complete |
-| Windows Runtime launch/switch/pause/restore | Developer preview |
-| macOS Runtime launch/switch/pause/restore | Developer preview; real-Mac acceptance pending |
-| Theme Studio editing/preview/version/import/export/apply | Developer preview |
+| Windows Runtime launch/switch/pause/restore | Alpha |
+| Windows x64 portable ZIP and per-user Setup | Alpha |
+| macOS Runtime launch/switch/pause/restore | Source preview; real-Mac acceptance pending |
+| Theme Studio editing/preview/version/import/export/apply | Alpha |
 | Codex plugin-market installation | Not available yet |
-| Standalone installer, SEA executable, theme marketplace | Planned |
+| Automatic updates, SEA single-file executable, theme marketplace | Planned |
 
 ## Features
 
@@ -141,14 +142,33 @@ A dark navy, glacial cyan, and aurora-violet theme for low-light environments an
 
 ## Installation
 
-### Requirements
+### Windows Setup (recommended)
 
-- Windows 11, or macOS with the official Codex Desktop app installed
-- Official Codex Desktop installed
-- Node.js `>= 22.0.0` with npm
-- Git, or a downloaded source archive
+1. Download `OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases).
+2. Verify SHA-256, then run Setup. It installs for the current user under `%LOCALAPPDATA%\Programs\OpenChatGPTSkin` and does not request administrator privileges.
+3. Start OpenChatGPTSkin from the Start menu. The production Theme Studio opens in your default browser only after its local health check succeeds.
+
+The installer is unsigned, so Windows SmartScreen may warn. Download only from this project's GitHub Release and compare against `checksums.txt`. Choose **More info → Run anyway** only after you have verified the source and hash.
+
+### Windows portable ZIP
+
+Download `OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.cmd`. The portable build does not register an installation and needs no global Node.js or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
+
+### Verify downloads
+
+Run from the download directory:
+
+```powershell
+Get-FileHash .\OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-Content .\checksums.txt
+```
+
+Each hash must exactly match the corresponding line in `checksums.txt`. Do not run a mismatched artifact.
 
 ### Install from source
+
+Source development requires Windows 11 or macOS, official Codex Desktop, Node.js `>= 22.0.0`, and npm. Git can be replaced with a downloaded source archive.
 
 Clone or download the repository from GitHub, then run from its root:
 
@@ -159,43 +179,33 @@ npm ci
 npm run verify:foundation
 ```
 
-`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all four built-in themes. This preview has no global installation step; run all commands from the repository root.
+`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all four built-in themes. Source-mode commands run from the repository root.
 
 When upgrading from the pre-rename development build, the first CLI or Theme Studio start atomically adopts the previous personal themes, drafts, and Runtime state only when the new-brand data directory does not exist. If both directories exist, the new directory wins and neither side is merged or overwritten.
 
+Installing a newer Setup over the existing version, or replacing a portable directory, updates program files without moving or overwriting `%LOCALAPPDATA%\OpenChatGPTSkin`. Uninstall keeps personal themes, drafts, versions, and Runtime state by default. The data directory is removed only when an interactive uninstall explicitly selects deletion and confirms the irreversible warning.
+
 ## Quick start
-
-Theme Studio links to the project repository by default:
-
-```text
-https://github.com/u2bo/OpenChatGPTSkin.git
-```
-
-Maintainers of a fork or mirror can override it before startup:
-
-```powershell
-$env:OPEN_CHATGPT_SKIN_REPOSITORY_URL="https://github.com/<owner>/OpenChatGPTSkin.git"
-```
-
-Only `https://github.com/` URLs are accepted.
 
 ### Theme Studio (recommended)
 
 1. Save your work and choose **Quit Codex** from the Codex menu or system tray. Make sure the regular app is fully closed.
-2. Start Theme Studio:
+2. Setup users launch from the Start menu; portable users double-click `OpenChatGPTSkin.cmd`; source users run:
 
    ```powershell
    npm run studio:dev
    ```
 
-3. Open the random `127.0.0.1` URL printed by the command.
+3. Release builds open the browser after the random `127.0.0.1` service passes its health check. Source development mode prints the URL for manual opening.
 4. Select a built-in theme. Theme Studio enters the editor immediately when no draft exists. If a draft already exists, choose **Load existing draft** or **Overwrite existing draft**; Cancel leaves the theme library unchanged.
 5. Edit colors, background, typography, decorations, or safe module layout, and preview the home/task views.
 6. Select **Save version**. Property edits do not create versions automatically.
 7. Select **Apply to Codex**. Theme Studio sends the exact saved `{id, version}` to the Runtime.
-8. Use **Restore original skin** or `npm run runtime -- restore` when you want the official appearance back.
+8. Use **Restore original skin** when you want the official appearance back. Source developers may also run `npm run runtime -- restore`.
 
-### Runtime directly
+Theme Studio links to `https://github.com/u2bo/OpenChatGPTSkin.git` by default. Fork and mirror maintainers may set `OPEN_CHATGPT_SKIN_REPOSITORY_URL` before a source launch; only `https://github.com/` URLs are accepted.
+
+### Runtime directly (source developers)
 
 ```powershell
 npm run runtime -- list-themes
@@ -226,6 +236,8 @@ npm run runtime -- import --theme-file "D:\Themes\personal-theme.ocskin"
 Import validates the schema, media signatures, size limits, manifest hashes, and Zip Slip safety. It does not start the Controller or connect to Codex.
 
 ## Runtime commands
+
+These commands are for source developers. Setup and portable users can apply, switch, and restore themes from Theme Studio.
 
 ```powershell
 npm run runtime -- list-themes
@@ -281,7 +293,7 @@ Fully quit the regular Codex app through **Quit Codex**, then retry the original
 
 ### Why can I not install this from the Codex Plugins page?
 
-The source-level Theme Studio and Windows/macOS Runtime loop is delivered, but the installable Codex plugin, installer, SEA binary, and theme marketplace have not been released. This README will change only when those deliverables exist.
+OpenChatGPTSkin is a separate local Theme Studio and Desktop Runtime, not a Codex plugin-market plugin. Windows users install it from the GitHub Release Setup or portable ZIP. It does not modify Codex installation files and does not appear in the Codex Plugins page.
 
 ### Why is **Apply to Codex** disabled after an edit?
 
@@ -334,6 +346,7 @@ UI adaptation changes must include deterministic page fixtures/tests. Theme cont
 
 ## Documentation
 
+- [v0.1.0-alpha.1 Release Notes](docs/releases/v0.1.0-alpha.1.md)
 - [Custom Theme Guide](docs/custom-theme-guide.en.md)
 - [Theme Studio Developer Guide](docs/theme-studio.md)
 - [Theme Format and Safety Rules](docs/theme-format.md)

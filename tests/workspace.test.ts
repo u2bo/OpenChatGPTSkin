@@ -6,7 +6,7 @@ import { THEME_SCHEMA_VERSION } from "@open-chatgpt-skin/theme-schema";
 describe("workspace packages", () => {
   it("exports stable foundation versions", () => {
     expect(THEME_SCHEMA_VERSION).toBe(2);
-    expect(THEME_CORE_VERSION).toBe("0.1.0");
+    expect(THEME_CORE_VERSION).toBe("0.1.0-alpha.1");
   });
 
   it("declares the Runtime CLI and its built executable", async () => {
@@ -33,11 +33,11 @@ describe("workspace packages", () => {
     });
     expect(runtimePackage.dependencies).toHaveProperty(
       "@open-chatgpt-skin/theme-schema",
-      "0.1.0",
+      "0.1.0-alpha.1",
     );
     expect(studioPackage.dependencies).toHaveProperty(
       "@open-chatgpt-skin/theme-schema",
-      "0.1.0",
+      "0.1.0-alpha.1",
     );
     expect(studioServicePackage.bin).toMatchObject({
       "open-chatgpt-skin-studio": "./dist/cli.js",

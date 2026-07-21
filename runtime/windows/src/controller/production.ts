@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { THEME_CORE_VERSION } from "@open-chatgpt-skin/theme-core";
 import { RuntimeControlDispatcher } from "../control/dispatcher.js";
 import { ControllerLock } from "../control/controller-lock.js";
 import { sendControlRequest } from "../control/pipe-client.js";
@@ -35,7 +36,8 @@ import { ThemeEngine } from "./theme-engine.js";
 
 const STARTUP_TIMEOUT_MS = 20_000;
 const MAX_STARTUP_LINE_BYTES = 8 * 1024;
-export const RUNTIME_VERSION = "0.1.0";
+export const RUNTIME_VERSION = process.env.OPEN_CHATGPT_SKIN_VERSION ??
+  THEME_CORE_VERSION;
 
 const RuntimeControllerStartupResponseSchema = z.object({
   startupId: z.string().uuid(),

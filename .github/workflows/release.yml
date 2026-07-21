@@ -1,0 +1,186 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22.18.0"
+  INNO_SETUP_VERSION: "6.4.3"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run release:version -- --tag "${GITHUB_REF_NAME}"
+      - run: npm run verify
+      - run: npm run studio:build
+
+  windows-x64:
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run studio:build
+      - name: Fetch official Node Runtime
+        shell: pwsh
+        run: |
+          $metadata = npm run --silent release:node -- --version $env:NODE_VERSION --platform win32 --arch x64 --output $env:RUNNER_TEMP | ConvertFrom-Json
+          7z x $metadata.archivePath "-o$env:RUNNER_TEMP" -y
+          "NODE_ROOT=$env:RUNNER_TEMP\$($metadata.rootDirectory)" >> $env:GITHUB_ENV
+      - name: Stage and accept payload
+        shell: pwsh
+        run: |
+          $stage = "$env:RUNNER_TEMP\release\OpenChatGPTSkin"
+          $diagnostics = "$env:RUNNER_TEMP\release-diagnostics"
+          New-Item -ItemType Directory -Path $diagnostics -Force | Out-Null
+          npm run release:stage -- --output $stage --node-executable "$env:NODE_ROOT\node.exe" --node-license "$env:NODE_ROOT\LICENSE" --node-version $env:NODE_VERSION --build-commit $env:GITHUB_SHA --platform win32 --arch x64
+          Copy-Item -LiteralPath "$stage\release-manifest.json" -Destination "$diagnostics\windows-release-manifest.json"
+          npm run release:acceptance -- --release-root $stage --scenario staged-payload --report "$diagnostics\windows-staged-acceptance.json"
+          "RELEASE_STAGE=$stage" >> $env:GITHUB_ENV
+          "RELEASE_DIAGNOSTICS=$diagnostics" >> $env:GITHUB_ENV
+      - name: Package and accept portable archive
+        shell: pwsh
+        run: |
+          $artifacts = "$env:RUNNER_TEMP\artifacts"
+          npm run release:package -- --release-root $env:RELEASE_STAGE --output $artifacts
+          $archive = (Get-ChildItem -LiteralPath $artifacts -Filter '*.zip' | Select-Object -First 1).FullName
+          "RELEASE_ARTIFACTS=$artifacts" >> $env:GITHUB_ENV
+          npm run release:acceptance:archive -- --archive $archive --report "$env:RELEASE_DIAGNOSTICS\windows-archive-acceptance.json"
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          choco install innosetup --version $env:INNO_SETUP_VERSION --no-progress --yes
+          & scripts/release/build-windows-installer.ps1 -ReleaseRoot $env:RELEASE_STAGE -OutputDirectory $env:RELEASE_ARTIFACTS -Version ($env:GITHUB_REF_NAME -replace '^v','')
+          npm run release:checksums -- --output $env:RELEASE_ARTIFACTS
+      - name: Accept Windows installer lifecycle
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem -LiteralPath $env:RELEASE_ARTIFACTS -Filter '*_Setup.exe' | Select-Object -First 1).FullName
+          & scripts/release/accept-windows-installer.ps1 -SetupPath $setup -InstallDirectory "$env:RUNNER_TEMP\installed\OpenChatGPTSkin" -DataDirectory "$env:LOCALAPPDATA\OpenChatGPTSkin" -ReportPath "$env:RELEASE_DIAGNOSTICS\windows-installer-acceptance.json"
+      - name: Record Windows artifact sizes
+        if: ${{ always() }}
+        shell: pwsh
+        run: |
+          if ($env:RELEASE_DIAGNOSTICS -and $env:RELEASE_ARTIFACTS) {
+            $items = @(Get-ChildItem -LiteralPath $env:RELEASE_ARTIFACTS -File -ErrorAction SilentlyContinue | Sort-Object Name | ForEach-Object { [ordered]@{ name = $_.Name; bytes = $_.Length } })
+            $items | ConvertTo-Json | Set-Content -LiteralPath "$env:RELEASE_DIAGNOSTICS\windows-artifacts.json" -Encoding utf8
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() }}
+        with:
+          name: windows-release-diagnostics
+          path: ${{ runner.temp }}\release-diagnostics\*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-release
+          path: ${{ runner.temp }}\artifacts\*
+          if-no-files-found: error
+
+  macos-contract:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x64
+          - runner: macos-15
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run studio:build
+      - name: Fetch official Node Runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata="$(npm run --silent release:node -- --version "$NODE_VERSION" --platform darwin --arch "${{ matrix.arch }}" --output "$RUNNER_TEMP")"
+          archive="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.archivePath)' "$metadata")"
+          root="$(node -e 'const value=JSON.parse(process.argv[1]); process.stdout.write(value.rootDirectory)' "$metadata")"
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          echo "NODE_ROOT=$RUNNER_TEMP/$root" >> "$GITHUB_ENV"
+      - name: Stage, accept, and package macOS contract artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/release/OpenChatGPTSkin"
+          artifacts="$RUNNER_TEMP/artifacts"
+          diagnostics="$RUNNER_TEMP/release-diagnostics"
+          mkdir -p "$diagnostics"
+          npm run release:stage -- --output "$stage" --node-executable "$NODE_ROOT/bin/node" --node-license "$NODE_ROOT/LICENSE" --node-version "$NODE_VERSION" --build-commit "$GITHUB_SHA" --platform darwin --arch "${{ matrix.arch }}"
+          cp "$stage/release-manifest.json" "$diagnostics/macos-${{ matrix.arch }}-release-manifest.json"
+          npm run release:acceptance -- --release-root "$stage" --scenario staged-payload --report "$diagnostics/macos-${{ matrix.arch }}-staged-acceptance.json"
+          npm run release:package -- --release-root "$stage" --output "$artifacts"
+          archive="$(find "$artifacts" -maxdepth 1 -name '*.tar.gz' -print -quit)"
+          npm run release:acceptance:archive -- --archive "$archive" --report "$diagnostics/macos-${{ matrix.arch }}-archive-acceptance.json"
+          node -e 'const fs=require("fs");const path=process.argv[1];const output=process.argv[2];const values=fs.readdirSync(path).sort().map(name=>({name,bytes:fs.statSync(`${path}/${name}`).size}));fs.writeFileSync(output,JSON.stringify(values,null,2)+"\n")' "$artifacts" "$diagnostics/macos-${{ matrix.arch }}-artifacts.json"
+          echo "RELEASE_DIAGNOSTICS=$diagnostics" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: ${{ always() }}
+        with:
+          name: macos-${{ matrix.arch }}-release-diagnostics
+          path: ${{ runner.temp }}/release-diagnostics/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: macos-${{ matrix.arch }}-contract
+          path: ${{ runner.temp }}/artifacts/*
+          if-no-files-found: error
+
+  publish:
+    needs:
+      - windows-x64
+      - macos-contract
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: windows-release
+          path: artifacts
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          (cd artifacts && sha256sum --check checksums.txt)
+          version="${GITHUB_REF_NAME#v}"
+          notes="docs/releases/${GITHUB_REF_NAME}.md"
+          test -f "$notes"
+          prerelease=()
+          if [[ "$version" == *-* ]]; then
+            prerelease=(--prerelease)
+          fi
+          gh release create "$GITHUB_REF_NAME" artifacts/* \
+            --title "OpenChatGPTSkin $GITHUB_REF_NAME" \
+            --notes-file "$notes" \
+            "${prerelease[@]}"

@@ -10,7 +10,7 @@
 ![Theme Studio 自定义主题界面](assets/screenshots/theme-studio.webp)
 
 > [!IMPORTANT]
-> 当前版本从源码运行，支持 Windows 11 与 macOS 开发者预览。应用主题前必须完全退出普通 Codex。主题只允许数据和本地素材，不能包含任意 JavaScript、HTML、CSS、可执行文件、网络素材 URL 或自定义 DOM 选择器。macOS 的真实应用视觉验收仍需按 [macOS Runtime 说明](runtime-macos.md) 在 Mac 上完成。
+> Windows x64 用户可使用 GitHub Release 的 Setup 或便携 ZIP；Windows/macOS 开发者也可从源码运行。应用主题前必须完全退出普通 Codex。主题只允许数据和本地素材，不能包含任意 JavaScript、HTML、CSS、可执行文件、网络素材 URL 或自定义 DOM 选择器。macOS 的真实应用视觉验收仍需按 [macOS Runtime 说明](runtime-macos.md) 在 Mac 上完成，当前不提供公开 macOS Release 资产。
 
 ## 选择哪种方式
 

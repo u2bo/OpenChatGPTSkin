@@ -32,6 +32,29 @@ describe("desktop Runtime platform selection", () => {
       .toBe("/Users/tester/Library/Application Support/OpenChatGPTSkin");
   });
 
+  it("uses one explicit absolute install root for packaged resources", () => {
+    const paths = createProductionRuntimePaths(metaUrl, {
+      platform: "win32",
+      env: {
+        LOCALAPPDATA: "C:\\Users\\tester\\AppData\\Local",
+        OPEN_CHATGPT_SKIN_INSTALL_ROOT: "D:\\Apps\\OpenChatGPTSkin",
+      },
+    });
+
+    expect(paths.installRoot.replaceAll("\\", "/"))
+      .toBe("D:/Apps/OpenChatGPTSkin");
+    expect(paths.themesRoot.replaceAll("\\", "/"))
+      .toBe("D:/Apps/OpenChatGPTSkin/themes");
+
+    expect(() => createProductionRuntimePaths(metaUrl, {
+      platform: "win32",
+      env: {
+        LOCALAPPDATA: "C:\\Users\\tester\\AppData\\Local",
+        OPEN_CHATGPT_SKIN_INSTALL_ROOT: ".\\portable",
+      },
+    })).toThrow(expect.objectContaining({ code: "RUNTIME_ENVIRONMENT_INVALID" }));
+  });
+
   it("fails closed on unsupported desktop platforms", () => {
     expect(() => createProductionRuntimePaths(metaUrl, {
       platform: "linux",

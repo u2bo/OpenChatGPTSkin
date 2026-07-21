@@ -7,6 +7,8 @@ OpenChatGPTSkin now has a macOS Runtime adapter. Theme Studio, the theme engine,
 > [!WARNING]
 > The implementation passes TypeScript, unit tests, and macOS command-contract tests on Windows. It has not yet completed the visual Codex loop on a real Mac. Publish it as a developer preview; do not treat expected behavior in this document as real-device evidence.
 
+GitHub Actions assembles bundled Node.js, native `sharp`, the single-file Theme Studio, and all four themes on separate macOS x64 and ARM64 runners, then runs the same portable Release Acceptance used for Windows. These builds remain CI contract artifacts only. They are not attached to a public GitHub Release until the real-device, signing, notarization, and Gatekeeper checklist on this page is complete.
+
 ## Requirements
 
 - A Mac with the official Codex Desktop app installed.

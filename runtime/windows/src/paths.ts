@@ -1,10 +1,12 @@
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { lstat, rename } from "node:fs/promises";
 import { RuntimeError } from "./errors.js";
 
 const PRODUCT_DATA_DIRECTORY = "OpenChatGPTSkin";
+export const OPEN_CHATGPT_SKIN_INSTALL_ROOT =
+  "OPEN_CHATGPT_SKIN_INSTALL_ROOT";
 // Compatibility-only source for the one-time pre-rename data migration.
 const LEGACY_PRODUCT_DATA_DIRECTORY = "OpenCodexSkin";
 
@@ -48,6 +50,27 @@ export interface ProductionRuntimeEnvironment {
   readonly platform?: NodeJS.Platform;
   readonly env?: NodeJS.ProcessEnv;
   readonly homeDirectory?: string;
+  readonly installRoot?: string;
+}
+
+function productionInstallRoot(
+  metaUrl: string,
+  environment: ProductionRuntimeEnvironment,
+): string {
+  const configured = environment.installRoot ??
+    environment.env?.[OPEN_CHATGPT_SKIN_INSTALL_ROOT] ??
+    process.env[OPEN_CHATGPT_SKIN_INSTALL_ROOT];
+  if (configured !== undefined) {
+    if (!isAbsolute(configured) || configured.includes("\0")) {
+      throw new RuntimeError(
+        "RUNTIME_ENVIRONMENT_INVALID",
+        "OpenChatGPTSkin install root must be an absolute path",
+        "Start OpenChatGPTSkin from its packaged launcher or remove the invalid install-root override.",
+      );
+    }
+    return resolve(configured);
+  }
+  return resolve(dirname(fileURLToPath(metaUrl)), "../../..");
 }
 
 function productionDataRootFor(
@@ -85,7 +108,7 @@ export function createProductionRuntimePaths(
   metaUrl: string = import.meta.url,
   environment: ProductionRuntimeEnvironment = {},
 ): RuntimePaths {
-  const installRoot = resolve(dirname(fileURLToPath(metaUrl)), "../../..");
+  const installRoot = productionInstallRoot(metaUrl, environment);
   return createRuntimePaths(productionDataRoot(environment), installRoot);
 }
 

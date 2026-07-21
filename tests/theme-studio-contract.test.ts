@@ -21,7 +21,7 @@ describe("Theme Studio Bridge contracts", () => {
   it("parses strict bootstrap and event payloads", () => {
     expect(StudioBootstrapSchema.parse({
       protocolVersion: STUDIO_PROTOCOL_VERSION,
-      studioVersion: "0.1.0",
+      studioVersion: "0.1.0-alpha.1",
       capabilities: ["studio-shell"],
       runtime: stoppedRuntime,
     })).toMatchObject({ protocolVersion: 2, repositoryUrl: null });
@@ -45,6 +45,12 @@ describe("Theme Studio Bridge contracts", () => {
         selectedTheme: { id: "Bad ID", version: "latest" },
       },
       unsafe: true,
+    })).toThrow();
+    expect(() => StudioBootstrapSchema.parse({
+      protocolVersion: 2,
+      studioVersion: "0.1.0-preview",
+      capabilities: ["studio-shell"],
+      runtime: stoppedRuntime,
     })).toThrow();
   });
 

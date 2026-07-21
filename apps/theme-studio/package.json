@@ -1,6 +1,6 @@
 {
   "name": "@open-chatgpt-skin/theme-studio",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +8,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit"
   },
   "dependencies": {
-    "@open-chatgpt-skin/theme-schema": "0.1.0",
-    "@open-chatgpt-skin/theme-studio-core": "0.1.0",
+    "@open-chatgpt-skin/theme-schema": "0.1.0-alpha.1",
+    "@open-chatgpt-skin/theme-studio-core": "0.1.0-alpha.1",
     "@phosphor-icons/react": "^2.1.10",
     "react": "19.0.0",
     "react-dom": "19.0.0"
@@ -22,6 +22,7 @@
     "@types/react-dom": "19.0.3",
     "@vitejs/plugin-react": "4.3.4",
     "jsdom": "26.0.0",
-    "vite": "6.1.0"
+    "vite": "6.1.0",
+    "vite-plugin-singlefile": "^2.3.0"
   }
 }

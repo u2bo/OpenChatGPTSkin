@@ -1,6 +1,6 @@
 {
   "name": "open-chatgpt-skin",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "private": true,
   "type": "module",
   "repository": {
@@ -27,6 +27,13 @@
     "runtime:probe": "npm run build && node runtime/windows/dist/probe-cli.js",
     "runtime:acceptance": "npm run build && node runtime/windows/dist/acceptance-cli.js",
     "studio:build": "npm run build -w @open-chatgpt-skin/theme-studio",
+    "release:stage": "tsx scripts/release/stage-release.ts",
+    "release:acceptance": "tsx scripts/release/accept-release.ts",
+    "release:package": "tsx scripts/release/package-release.ts",
+    "release:acceptance:archive": "tsx scripts/release/accept-portable.ts",
+    "release:checksums": "tsx scripts/release/write-checksums.ts",
+    "release:version": "tsx scripts/release/verify-version.ts",
+    "release:node": "tsx scripts/release/fetch-node-runtime.ts",
     "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",
     "verify": "npm run test && npm run typecheck && npm run build",
     "verify:runtime": "npm run test && npm run typecheck && npm run build",

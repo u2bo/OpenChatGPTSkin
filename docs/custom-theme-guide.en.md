@@ -10,7 +10,7 @@ This guide covers two supported customization paths:
 ![Customizing a theme in Theme Studio](assets/screenshots/theme-studio.webp)
 
 > [!IMPORTANT]
-> This preview runs from source and supports Windows 11 and macOS. Fully quit the regular Codex app before applying a theme. Themes may contain data and local media only—never arbitrary JavaScript, HTML, CSS, executables, remote asset URLs, or custom DOM selectors. Real-app visual acceptance on macOS must still be completed on a Mac using the [macOS Runtime guide](runtime-macos.en.md).
+> Windows x64 users can install the GitHub Release Setup or use the portable ZIP; Windows and macOS developers may also run from source. Fully quit the regular Codex app before applying a theme. Themes may contain data and local media only—never arbitrary JavaScript, HTML, CSS, executables, remote asset URLs, or custom DOM selectors. Real-app visual acceptance on macOS must still be completed on a Mac using the [macOS Runtime guide](runtime-macos.en.md), and no public macOS Release asset is available yet.
 
 ## Choose a workflow
 

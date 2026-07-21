@@ -5,6 +5,7 @@ import type {
   ServerResponse,
 } from "node:http";
 import { fileURLToPath } from "node:url";
+import { THEME_CORE_VERSION } from "@open-chatgpt-skin/theme-core";
 import type { StudioRuntimeStatus } from "@open-chatgpt-skin/theme-studio-core";
 import { OPEN_CHATGPT_SKIN_REPOSITORY_URL } from "@open-chatgpt-skin/theme-studio-core";
 import { createServer as createViteServer } from "vite";
@@ -84,7 +85,7 @@ export async function startThemeStudioDevHost(
   const cspNonce = randomBytes(18).toString("base64");
   let middleware: StudioMiddleware | null = null;
   const server = await startThemeStudioServer({
-    studioVersion: "0.1.0",
+    studioVersion: THEME_CORE_VERSION,
     repositoryUrl: process.env.OPEN_CHATGPT_SKIN_REPOSITORY_URL ??
       OPEN_CHATGPT_SKIN_REPOSITORY_URL,
     runtimeStatus: dependencies.runtimeStatus,

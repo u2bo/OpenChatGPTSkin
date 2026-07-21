@@ -80,7 +80,7 @@ describe("project documentation", () => {
       "不会修改 WindowsApps、`app.asar`",
       "不要使用任务管理器强制结束",
       "Theme Studio 完整本地闭环",
-      "尚未提供可安装的 Codex 插件、安装器或 SEA 打包",
+      "Windows x64 便携 ZIP 与用户级 Setup",
     ]) {
       expect(documented).toContain(required);
     }
@@ -120,7 +120,7 @@ describe("project documentation", () => {
   });
 
   it("ships bilingual release documentation, custom-theme prompts, and screenshots", async () => {
-    const [readme, readmeEn, guide, guideEn, contributing, license, macRuntime, macRuntimeEn] = await Promise.all([
+    const [readme, readmeEn, guide, guideEn, contributing, license, macRuntime, macRuntimeEn, releaseNotes] = await Promise.all([
       readFile("README.md", "utf8"),
       readFile("README.en.md", "utf8"),
       readFile("docs/custom-theme-guide.md", "utf8"),
@@ -129,11 +129,12 @@ describe("project documentation", () => {
       readFile("LICENSE", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"),
       readFile("docs/runtime-macos.en.md", "utf8"),
+      readFile("docs/releases/v0.1.0-alpha.1.md", "utf8"),
     ]);
 
     for (const required of [
       "README.en.md",
-      "status-developer%20preview",
+      "status-alpha",
       "docs/custom-theme-guide.md",
       "docs/assets/screenshots/theme-studio.webp",
       "docs/assets/screenshots/index1.webp",
@@ -168,6 +169,16 @@ describe("project documentation", () => {
     expect(macRuntime).toContain("尚未在真实 Mac 上完成 Codex 视觉闭环验收");
     expect(macRuntimeEn).toContain("real Mac");
     expect(macRuntimeEn).toContain("RUNTIME_ENVIRONMENT_INVALID");
+    expect(readme).toContain("OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe");
+    expect(readme).toContain("checksums.txt");
+    expect(readme).toContain("SmartScreen");
+    expect(readme).toContain("默认保留个人主题");
+    expect(readmeEn).toContain("Windows x64 portable ZIP");
+    expect(releaseNotes).toContain("Windows x64");
+    expect(releaseNotes).toContain("SHA-256");
+    expect(releaseNotes).toContain("SmartScreen");
+    expect(releaseNotes).toContain("macOS");
+    expect(releaseNotes).toContain("English");
 
     for (const name of [
       "theme-studio.webp",

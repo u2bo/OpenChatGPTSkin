@@ -67,8 +67,7 @@ begin
 
   if not DelTree(DataRoot, True, True, True) then
     MsgBox(
-      '个人数据未能全部删除。请关闭 OpenChatGPTSkin 和 Codex 后，手动删除：' +
-      #13#10 + DataRoot,
+      '个人数据未能全部删除。请关闭 OpenChatGPTSkin 和 Codex 后，手动删除：' + #13#10 + DataRoot,
       mbError,
       MB_OK
     );

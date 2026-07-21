@@ -11,7 +11,7 @@ permissions:
 
 env:
   NODE_VERSION: "22.18.0"
-  INNO_SETUP_VERSION: "6.4.3"
+  INNO_SETUP_VERSION: "6.7.1"
 
 jobs:
   verify:

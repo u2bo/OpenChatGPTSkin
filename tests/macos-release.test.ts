@@ -361,16 +361,19 @@ describe("macOS release integration", () => {
   });
 
   it("pins Inno Setup deterministically and streams compiler diagnostics", async () => {
-    const [workflow, installerScript] = await Promise.all([
+    const [workflow, installerScript, installerDefinition] = await Promise.all([
       readFile(".github/workflows/release.yml", "utf8"),
       readFile("scripts/release/build-windows-installer.ps1", "utf8"),
+      readFile("scripts/release/windows-installer.iss", "utf8"),
     ]);
 
+    expect(workflow).toContain('INNO_SETUP_VERSION: "6.7.1"');
     expect(workflow).toContain(
       "choco install innosetup --version $env:INNO_SETUP_VERSION --allow-downgrade --no-progress --yes",
     );
     expect(workflow).toContain("if ($LASTEXITCODE -ne 0) {");
     expect(installerScript).toContain("& $iscc @arguments");
     expect(installerScript).not.toContain("Start-Process -FilePath $iscc");
+    expect(installerDefinition).not.toMatch(/^\s*#13#10/m);
   });
 });

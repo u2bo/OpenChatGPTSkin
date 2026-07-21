@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { verifyReleasePayload } from "./acceptance.js";
+import { portableArtifactName } from "./artifact-names.js";
 import { readReleaseManifest } from "./payload.js";
 import { runReleaseCommand } from "./release-command.js";
 
@@ -33,10 +34,11 @@ export async function packagePortableRelease(
   }
   await verifyReleasePayload(releaseRoot);
   const manifest = await readReleaseManifest(releaseRoot);
-  const suffix = manifest.target.platform === "win32" ? ".zip" : ".tar.gz";
-  const name = `OpenChatGPTSkin_${manifest.version}_${
-    manifest.target.platform === "win32" ? "windows" : "darwin"
-  }_${manifest.target.arch}${suffix}`;
+  const name = portableArtifactName(
+    manifest.version,
+    manifest.target.platform,
+    manifest.target.arch,
+  );
   await mkdir(outputDirectory, { recursive: true });
   const output = join(outputDirectory, name);
   await ensureMissing(output);
@@ -67,9 +69,12 @@ export async function writeReleaseChecksums(
   outputDirectoryInput: string,
 ): Promise<string> {
   const outputDirectory = resolve(outputDirectoryInput);
+  const releaseSuffixes = [".zip", ".tar.gz", ".exe", ".dmg"] as const;
   const files = (await readdir(outputDirectory, { withFileTypes: true }))
-    .filter((entry) => entry.isFile() &&
-      (entry.name.endsWith(".zip") || entry.name.endsWith(".tar.gz") || entry.name.endsWith(".exe")))
+    .filter((entry) =>
+      entry.isFile() &&
+      releaseSuffixes.some((suffix) => entry.name.endsWith(suffix))
+    )
     .map((entry) => entry.name)
     .sort();
   if (files.length === 0) throw new Error("No Release artifacts are available for checksums");

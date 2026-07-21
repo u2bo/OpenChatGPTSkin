@@ -32,6 +32,10 @@ import {
 import { acceptMacDmg } from "../scripts/release/macos-acceptance.js";
 import { RELEASE_ACCEPTANCE_SCENARIOS } from
   "../scripts/release/acceptance.js";
+import {
+  packagePortableRelease,
+  writeReleaseChecksums,
+} from "../scripts/release/package-portable.js";
 import { createMacPayloadFixture } from "./helpers/release-payload-fixture.js";
 
 describe("macOS release metadata", () => {
@@ -198,4 +202,42 @@ describe("macOS native distribution contract", () => {
       }
     },
   );
+});
+
+describe("macOS release integration", () => {
+  it("packages Darwin with macos names and checksums the DMG", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ocs-mac-package-"));
+    try {
+      const releaseRoot = await createMacPayloadFixture(root, "arm64");
+      const output = join(root, "artifacts");
+      const portable = await packagePortableRelease(releaseRoot, output);
+      expect(portable.name)
+        .toBe("OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.tar.gz");
+      await writeFile(
+        join(output, "OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg"),
+        "dmg",
+        "utf8",
+      );
+      const checksumsPath = await writeReleaseChecksums(output);
+      const checksums = await readFile(checksumsPath, "utf8");
+      expect(checksums).toContain(
+        "OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.tar.gz",
+      );
+      expect(checksums).toContain(
+        "OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg",
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("exposes the macOS build and acceptance commands", async () => {
+    const packageJson = JSON.parse(
+      await readFile("package.json", "utf8"),
+    ) as { readonly scripts?: Readonly<Record<string, string>> };
+    expect(packageJson.scripts?.["release:macos"])
+      .toBe("tsx scripts/release/build-macos-distribution.ts");
+    expect(packageJson.scripts?.["release:acceptance:macos"])
+      .toBe("tsx scripts/release/accept-macos-distribution.ts");
+  });
 });

@@ -25,8 +25,8 @@ const BUILTIN_THEME_IDS = [
   "glacier-aurora",
 ] as const;
 
-type ReleasePlatform = "win32" | "darwin";
-type ReleaseArch = "x64" | "arm64";
+export type ReleasePlatform = "win32" | "darwin";
+export type ReleaseArch = "x64" | "arm64";
 
 interface PackageJson {
   readonly name?: string;

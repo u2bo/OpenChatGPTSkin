@@ -304,18 +304,32 @@ describe("macOS release integration", () => {
       .toBe("tsx scripts/release/accept-macos-distribution.ts");
   });
 
-  it("keeps manual macOS builds separate from tag publishing", async () => {
+  it("builds all platforms manually while keeping publishing tag-only", async () => {
     const workflow = await readFile(
       ".github/workflows/release.yml",
       "utf8",
     );
     expect(workflow).toContain("workflow_dispatch:");
     expect(workflow).toMatch(
-      /windows-x64:\r?\n\s+if: github\.event_name == 'push'/,
+      /windows-x64:\r?\n\s+needs: verify/,
+    );
+    expect(workflow).not.toMatch(
+      /windows-x64:\r?\n\s+if: github\.event_name/,
     );
     expect(workflow).toMatch(
       /publish:\r?\n\s+if: github\.event_name == 'push'/,
     );
+    expect(workflow).toContain(
+      "if: github.event_name == 'workflow_dispatch'",
+    );
+    expect(workflow).toContain(
+      "$releaseVersion = (Get-Content -Raw -LiteralPath package.json | ConvertFrom-Json).version",
+    );
+    expect(workflow).toContain("-Version $releaseVersion");
+    expect(workflow).not.toContain(
+      "-Version ($env:GITHUB_REF_NAME -replace '^v','')",
+    );
+    expect(workflow).toContain("windows-checksums.txt");
     expect(workflow).toContain("npm run release:macos --");
     expect(workflow).toContain("npm run release:acceptance:macos --");
     expect(workflow).toContain("name: macos-${{ matrix.arch }}-release");

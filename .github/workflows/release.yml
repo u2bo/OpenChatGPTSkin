@@ -25,13 +25,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
+      - if: github.event_name == 'workflow_dispatch'
+        run: npm run release:version
       - if: github.event_name == 'push'
         run: npm run release:version -- --tag "${GITHUB_REF_NAME}"
       - run: npm run verify
       - run: npm run studio:build
 
   windows-x64:
-    if: github.event_name == 'push'
     needs: verify
     runs-on: windows-latest
     steps:
@@ -71,14 +72,16 @@ jobs:
       - name: Build Windows installer
         shell: pwsh
         run: |
+          $releaseVersion = (Get-Content -Raw -LiteralPath package.json | ConvertFrom-Json).version
           choco install innosetup --version $env:INNO_SETUP_VERSION --no-progress --yes
-          & scripts/release/build-windows-installer.ps1 -ReleaseRoot $env:RELEASE_STAGE -OutputDirectory $env:RELEASE_ARTIFACTS -Version ($env:GITHUB_REF_NAME -replace '^v','')
-          npm run release:checksums -- --output $env:RELEASE_ARTIFACTS
+          & scripts/release/build-windows-installer.ps1 -ReleaseRoot $env:RELEASE_STAGE -OutputDirectory $env:RELEASE_ARTIFACTS -Version $releaseVersion
       - name: Accept Windows installer lifecycle
         shell: pwsh
         run: |
           $setup = (Get-ChildItem -LiteralPath $env:RELEASE_ARTIFACTS -Filter '*_Setup.exe' | Select-Object -First 1).FullName
           & scripts/release/accept-windows-installer.ps1 -SetupPath $setup -InstallDirectory "$env:RUNNER_TEMP\installed\OpenChatGPTSkin" -DataDirectory "$env:LOCALAPPDATA\OpenChatGPTSkin" -ReportPath "$env:RELEASE_DIAGNOSTICS\windows-installer-acceptance.json"
+          npm run release:checksums -- --output $env:RELEASE_ARTIFACTS
+          Copy-Item -LiteralPath "$env:RELEASE_ARTIFACTS\checksums.txt" -Destination "$env:RELEASE_DIAGNOSTICS\windows-checksums.txt"
       - name: Record Windows artifact sizes
         if: ${{ always() }}
         shell: pwsh

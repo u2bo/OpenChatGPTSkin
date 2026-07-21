@@ -27,6 +27,11 @@ export const RELEASE_ACCEPTANCE_SCENARIOS = [
 export type ReleaseAcceptanceScenario =
   typeof RELEASE_ACCEPTANCE_SCENARIOS[number];
 
+const INSTALLED_PAYLOAD_FILES = new Set([
+  "unins000.dat",
+  "unins000.exe",
+]);
+
 export interface ReleaseAcceptanceReport extends ReleasePayloadVerification {
   readonly scenario: ReleaseAcceptanceScenario;
   readonly durationMs: number;
@@ -162,11 +167,13 @@ async function payloadFiles(
 
 export async function verifyReleasePayload(
   releaseRoot: string,
+  scenario: ReleaseAcceptanceScenario = "staged-payload",
 ): Promise<ReleasePayloadVerification> {
   const manifest = await readReleaseManifest(releaseRoot);
   const listed = Object.keys(manifest.files).sort();
   const actual = (await payloadFiles(releaseRoot))
-    .filter((path) => path !== "release-manifest.json");
+    .filter((path) => path !== "release-manifest.json" &&
+      !(scenario === "installed-payload" && INSTALLED_PAYLOAD_FILES.has(path)));
   if (JSON.stringify(listed) !== JSON.stringify(actual)) {
     throw new Error("Release manifest file list does not match the payload");
   }
@@ -303,7 +310,7 @@ export async function acceptReleasePayload(
   scenario: ReleaseAcceptanceScenario = "staged-payload",
 ): Promise<ReleaseAcceptanceReport> {
   const startedAt = Date.now();
-  const verification = await verifyReleasePayload(releaseRoot);
+  const verification = await verifyReleasePayload(releaseRoot, scenario);
   const manifest = await readReleaseManifest(releaseRoot);
   if (manifest.target.platform !== process.platform || manifest.target.arch !== process.arch) {
     throw new Error(

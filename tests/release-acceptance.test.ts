@@ -359,6 +359,27 @@ describe("Release Acceptance", () => {
       .rejects.toMatchObject({ code: "EEXIST" });
   });
 
+  it("allows only Inno Setup metadata outside the installed payload manifest", async () => {
+    const fixture = await createReleaseFixture();
+    const releaseRoot = await createReleaseRoot();
+    await stageReleasePayload(releaseOptions(fixture, releaseRoot));
+    await Promise.all([
+      writeFile(join(releaseRoot, "unins000.dat"), "inno metadata"),
+      writeFile(join(releaseRoot, "unins000.exe"), "inno uninstaller"),
+    ]);
+
+    await expect(verifyReleasePayload(releaseRoot)).rejects.toThrow(
+      "Release manifest file list does not match the payload",
+    );
+    await expect(verifyReleasePayload(releaseRoot, "installed-payload"))
+      .resolves.toMatchObject({ filesVerified: expect.any(Number) });
+
+    await writeFile(join(releaseRoot, "unexpected.txt"), "not installer metadata");
+    await expect(verifyReleasePayload(releaseRoot, "installed-payload")).rejects.toThrow(
+      "Release manifest file list does not match the payload",
+    );
+  });
+
   it.skipIf(process.platform !== "win32")(
     "rejects a case-variant output path inside the source workspace on Windows",
     async () => {

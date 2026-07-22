@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
 import { ArrowRight } from "@phosphor-icons/react/ArrowRight";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
@@ -31,6 +31,8 @@ import {
   createTaskSurfaceBackgroundCss,
   createThemeVisualModel,
   DEFAULT_LAYOUT_MODULES,
+  resolveHomeWelcome,
+  type ResolvedCompositionLayer,
   type SuggestionIconSlot,
   type ThemeDraftDocument,
   type ThemeInterfaceImageVisual,
@@ -50,6 +52,21 @@ interface PreviewInterfaceImage {
   readonly url: string;
   readonly objectPosition: string;
 }
+
+const COMPOSITION_ANCHOR_TRANSFORMS: Readonly<Record<
+  ResolvedCompositionLayer["anchor"],
+  string
+>> = {
+  "top-left": "translate(0%, 0%)",
+  "top-center": "translate(-50%, 0%)",
+  "top-right": "translate(-100%, 0%)",
+  "center-left": "translate(0%, -50%)",
+  center: "translate(-50%, -50%)",
+  "center-right": "translate(-100%, -50%)",
+  "bottom-left": "translate(0%, -100%)",
+  "bottom-center": "translate(-50%, -100%)",
+  "bottom-right": "translate(-100%, -100%)",
+};
 
 const DEFAULT_MODULES = DEFAULT_LAYOUT_MODULES;
 const SUGGESTION_SLOTS: readonly SuggestionIconSlot[] = [
@@ -100,6 +117,56 @@ function previewInterfaceImage(
     url,
     objectPosition: `${visual.positionXPercent}% ${visual.positionYPercent}%`,
   };
+}
+
+function CompositionSurface({
+  surface,
+  layers,
+  theme,
+  assetUrls,
+}: {
+  readonly surface: ResolvedCompositionLayer["surface"];
+  readonly layers: readonly ResolvedCompositionLayer[];
+  readonly theme: ThemeDraftDocument | undefined;
+  readonly assetUrls: StudioDraft["assetUrls"] | undefined;
+}) {
+  const rendered = layers.flatMap((layer) => {
+    if (layer.surface !== surface) return [];
+    const path = layer.asset.kind === "portrait"
+      ? theme?.assets.portrait
+      : theme?.assets.decorations?.[layer.asset.assetKey];
+    const url = path ? assetUrls?.[path] : undefined;
+    if (!url) return [];
+    return [(
+      <img
+        key={layer.id}
+        data-testid={`composition-layer-${layer.id}`}
+        src={url}
+        alt=""
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{
+          left: `${layer.positionXPercent}%`,
+          top: `${layer.positionYPercent}%`,
+          width: `${layer.widthPercent}%`,
+          opacity: layer.opacity,
+          transform: `${COMPOSITION_ANCHOR_TRANSFORMS[layer.anchor]} rotate(${layer.rotationDeg}deg)`,
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      />
+    )];
+  });
+  if (rendered.length === 0) return null;
+  return (
+    <div
+      className="preview-composition-surface"
+      data-composition-surface={surface}
+      aria-hidden="true"
+    >
+      {rendered}
+    </div>
+  );
 }
 
 function moduleById(modules: readonly LayoutModule[], id: ModuleId): LayoutModule {
@@ -219,11 +286,20 @@ function MainTopbar() {
   );
 }
 
-function Hero({ module, locale }: { readonly module: LayoutModule; readonly locale: StudioLocale }) {
+function Hero({
+  module,
+  lines,
+  composition,
+}: {
+  readonly module: LayoutModule;
+  readonly lines: readonly string[];
+  readonly composition: ReactNode;
+}) {
   return (
     <section className="codex-hero preview-module" data-module="hero" data-size={module.size} data-align={module.align}>
+      {composition}
       <TerminalWindow weight="duotone" />
-      <h2>{locale === "en" ? "What should we do in the sample workspace?" : "我们应该在示例工作区中做些什么？"}</h2>
+      <h2>{lines.map((line, index) => <span key={`${index}-${line}`}>{line}</span>)}</h2>
     </section>
   );
 }
@@ -233,11 +309,13 @@ function Suggestions({
   columns,
   locale,
   images,
+  composition,
 }: {
   readonly module: LayoutModule;
   readonly columns: number;
   readonly locale: StudioLocale;
   readonly images: Readonly<Record<SuggestionIconSlot, PreviewInterfaceImage | undefined>>;
+  readonly composition: ReactNode;
 }) {
   return (
     <section
@@ -247,6 +325,7 @@ function Suggestions({
       data-align={module.align}
       style={{ "--suggestion-columns": String(columns) } as CSSProperties}
     >
+      {composition}
       {SUGGESTIONS.map(({ label, icon: Icon, color }, index) => {
         const image = images[SUGGESTION_SLOTS[index]!];
         return (
@@ -331,23 +410,33 @@ export function PreviewCanvas({
   readonly locale?: StudioLocale;
 }) {
   const theme = draft?.theme;
-  const visual = theme ? createThemeVisualModel(theme) : null;
+  const visual = useMemo(() => theme ? createThemeVisualModel(theme) : null, [theme]);
   const uiFontKey = theme?.typography.uiFontAssetKey;
   const codeFontKey = theme?.typography.codeFontAssetKey;
+  const displayFontKey = theme?.typography.displayFontAssetKey;
   const uiFontPath = uiFontKey ? theme?.assets.fonts?.[uiFontKey] : undefined;
   const codeFontPath = codeFontKey ? theme?.assets.fonts?.[codeFontKey] : undefined;
   const uiFontUrl = uiFontPath ? draft?.assetUrls[uiFontPath] : undefined;
   const codeFontUrl = codeFontPath ? draft?.assetUrls[codeFontPath] : undefined;
+  const displayFontPath = displayFontKey ? theme?.assets.fonts?.[displayFontKey] : undefined;
+  const displayFontUrl = displayFontPath ? draft?.assetUrls[displayFontPath] : undefined;
   const [fontError, setFontError] = useState<string | null>(null);
 
   useEffect(() => {
     setFontError(null);
     if (typeof FontFace === "undefined" || !document.fonts) return;
     const fontSet = document.fonts as MutableFontFaceSet;
-    const definitions = [
+    const candidates = [
       uiFontKey && uiFontUrl ? { family: `ocs-${uiFontKey}`, url: uiFontUrl } : null,
       codeFontKey && codeFontUrl ? { family: `ocs-${codeFontKey}`, url: codeFontUrl } : null,
+      displayFontKey && displayFontUrl
+        ? { family: `ocs-${displayFontKey}`, url: displayFontUrl }
+        : null,
     ].filter((value): value is { readonly family: string; readonly url: string } => value !== null);
+    const definitions = Array.from(new Map(candidates.map((definition) => [
+      `${definition.family}\u0000${definition.url}`,
+      definition,
+    ])).values());
     if (definitions.length === 0) return;
 
     let cancelled = false;
@@ -367,7 +456,7 @@ export function PreviewCanvas({
       cancelled = true;
       for (const face of loadedFaces) fontSet.delete(face);
     };
-  }, [codeFontKey, codeFontUrl, locale, uiFontKey, uiFontUrl]);
+  }, [codeFontKey, codeFontUrl, displayFontKey, displayFontUrl, locale, uiFontKey, uiFontUrl]);
 
   const backgroundUrl = theme?.assets.background
     ? draft?.assetUrls[theme.assets.background]
@@ -407,6 +496,11 @@ export function PreviewCanvas({
     "--preview-line-height": String(visual?.typography.lineHeight ?? 1.5),
     "--preview-ui-family": visual?.typography.uiFamily ?? "Microsoft YaHei UI",
     "--preview-code-family": visual?.typography.codeFamily ?? "Cascadia Code",
+    "--preview-display-family": visual?.displayTypography.family ?? "Microsoft YaHei UI",
+    "--preview-display-size": `${visual?.displayTypography.size ?? 31}px`,
+    "--preview-display-weight": String(visual?.displayTypography.weight ?? 400),
+    "--preview-display-line-height": String(visual?.displayTypography.lineHeight ?? 1.15),
+    "--preview-display-letter-spacing": `${visual?.displayTypography.letterSpacingEm ?? -0.045}em`,
     "--preview-hero-height": `${visual?.layout.heroHeight ?? 380}px`,
     "--preview-background-x": `${visual?.background.positionXPercent ?? 50}%`,
     "--preview-background-y": `${visual?.background.positionYPercent ?? 50}%`,
@@ -434,6 +528,23 @@ export function PreviewCanvas({
   const composer = moduleById(modules, "composer");
   const taskBackground = moduleById(modules, "task-background");
   const contentLayer = moduleById(modules, "content-layer");
+  const resolvedWelcome = resolveHomeWelcome(visual?.welcome?.localized, {
+    locale,
+    projectName: locale === "en" ? "Sample workspace" : "星崎皮肤实验室",
+  });
+  const welcomeLines = resolvedWelcome.kind === "custom"
+    ? resolvedWelcome.lines
+    : [locale === "en"
+      ? "What should we do in the sample workspace?"
+      : "我们应该在示例工作区中做些什么？"];
+  const compositionSurface = (surface: ResolvedCompositionLayer["surface"]) => (
+    <CompositionSurface
+      surface={surface}
+      layers={visual?.composition.layers ?? []}
+      theme={theme}
+      assetUrls={draft?.assetUrls}
+    />
+  );
 
   return (
     <div className="codex-preview-frame">
@@ -451,6 +562,7 @@ export function PreviewCanvas({
             )
             : "transparent",
         }} />
+        {compositionSurface("viewport")}
         <div className="preview-decorations" aria-hidden="true">
           {(theme?.decorations ?? []).filter((item) => item.enabled).flatMap((item, decorationIndex) => {
             const count = Math.round(item.intensity * 10);
@@ -486,10 +598,11 @@ export function PreviewCanvas({
             />
           ) : null}
           <main className="codex-main-surface" data-preview-mode={mode}>
+            {compositionSurface("main")}
             {topbar.visible ? <MainTopbar /> : null}
             {mode === "task" ? <TaskWorkspace composer={composer} locale={locale} /> : (
               <div className="codex-home-content">
-                {hero.visible ? <div className="codex-module-slot" style={moduleStyle(hero)}><Hero module={hero} locale={locale} /></div> : null}
+                {hero.visible ? <div className="codex-module-slot" style={moduleStyle(hero)}><Hero module={hero} lines={welcomeLines} composition={compositionSurface("home-hero")} /></div> : null}
                 {suggestions.visible ? (
                   <div className="codex-module-slot" style={moduleStyle(suggestions)}>
                     <Suggestions
@@ -497,6 +610,7 @@ export function PreviewCanvas({
                       columns={theme?.layout.cardColumns ?? 4}
                       locale={locale}
                       images={suggestionImages}
+                      composition={compositionSurface("suggestions")}
                     />
                   </div>
                 ) : null}

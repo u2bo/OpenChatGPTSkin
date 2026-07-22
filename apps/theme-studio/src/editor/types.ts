@@ -1,4 +1,6 @@
 export type StudioTool =
+  | "content"
+  | "composition"
   | "colors"
   | "background"
   | "imagery"
@@ -13,6 +15,8 @@ export const STUDIO_TOOLS: readonly {
   readonly label: string;
   readonly labelEn: string;
 }[] = [
+  { id: "content", label: "内容", labelEn: "Content" },
+  { id: "composition", label: "视觉图层", labelEn: "Visual layers" },
   { id: "colors", label: "颜色", labelEn: "Colors" },
   { id: "background", label: "背景", labelEn: "Background" },
   { id: "imagery", label: "界面素材", labelEn: "Interface imagery" },

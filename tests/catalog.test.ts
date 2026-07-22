@@ -1,4 +1,4 @@
-import { readFile, stat } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
@@ -13,6 +13,8 @@ import {
   validateThemeBundle,
 } from "@open-chatgpt-skin/theme-core";
 import { validateStudioDraft } from "@open-chatgpt-skin/theme-studio-core";
+import { CharacterThemeTemplateSchema } from
+  "../scripts/character-theme-template.js";
 
 describe("built-in catalog", () => {
   it("ships four complete public themes without local authorization recipes", async () => {
@@ -28,6 +30,12 @@ describe("built-in catalog", () => {
       entry.ready &&
       entry.licenseId === "LicenseRef-OpenChatGPTSkin-Original"
     )).toBe(true);
+    expect((await readdir(resolve("themes", "sources"))).sort()).toEqual([
+      "future-idol-cyan",
+      "glacier-aurora",
+      "mountain-mist",
+      "rose-carpet-star",
+    ]);
 
     for (const entry of catalog.builtins) {
       const directory = resolve("themes", entry.path);
@@ -55,8 +63,15 @@ describe("built-in catalog", () => {
       expect(license).toContain("Source SHA-256");
       expect(license).toContain("Background SHA-256");
       expect(license).toContain("Prompt:");
-      expect(license).toContain("AI-generated original background supplied by the project owner");
-      const sourcePath = join(directory, "assets", "source.png");
+      expect(license).toContain(
+        "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
+      );
+      const sourceDirectory = resolve("themes", "sources", entry.id);
+      const template = CharacterThemeTemplateSchema.parse(JSON.parse(
+        await readFile(join(sourceDirectory, "template.json"), "utf8"),
+      ));
+      expect(template.theme.id).toBe(entry.id);
+      const sourcePath = join(sourceDirectory, "assets", "background.png");
       const sourceInfo = await stat(sourcePath);
       expect(sourceInfo.isFile()).toBe(true);
       expect(sourceInfo.size).toBeLessThanOrEqual(50 * 1024 * 1024);
@@ -66,15 +81,15 @@ describe("built-in catalog", () => {
       expect(sourceMetadata.height).toBeGreaterThanOrEqual(900);
       expect(sourceMetadata.width! / sourceMetadata.height!).toBeCloseTo(16 / 9, 2);
       expect(theme).toMatchObject({
-        schemaVersion: 3,
+        schemaVersion: 4,
         version: "1.3.0",
         assets: {
-          profileAvatar: "assets/background.webp",
+          profileAvatar: "assets/profile-avatar.webp",
           suggestionIcons: {
-            card1: "assets/background.webp",
-            card2: "assets/background.webp",
-            card3: "assets/background.webp",
-            card4: "assets/background.webp",
+            card1: "assets/suggestion-card1.webp",
+            card2: "assets/suggestion-card2.webp",
+            card3: "assets/suggestion-card3.webp",
+            card4: "assets/suggestion-card4.webp",
           },
         },
         background: {

@@ -4,16 +4,36 @@
   "themeVersion": "1.3.0",
   "files": {
     "theme.json": {
-      "bytes": 3595,
-      "sha256": "8e4b943a7e54e2c3eddb145b5340a01c94fc91bdfbba9397181bf48f83591e0e"
+      "bytes": 3817,
+      "sha256": "2f05c837a3e5765e4ae44678cab57f4809dad1783300b1da2f05b28f972438cc"
     },
     "assets/background.webp": {
       "bytes": 168214,
       "sha256": "0775ffb516fdb1bfa417d1d063f6fc5b4fcf05adad4df28910e6e3512f5679cf"
     },
+    "assets/profile-avatar.webp": {
+      "bytes": 11364,
+      "sha256": "d5622f04102f2035bc2b937a17609cf84d255f867d704ff04ef606a1ae58bbbf"
+    },
+    "assets/suggestion-card1.webp": {
+      "bytes": 4082,
+      "sha256": "db6f56aebe57dcca77b59e771cb0be09c15573606f339c059e04ba5d0ad7cb31"
+    },
+    "assets/suggestion-card2.webp": {
+      "bytes": 6924,
+      "sha256": "9c0ad2e83bea6fef214478a71d2b3635b6e1ccea0075c384489f93c85be2abf7"
+    },
+    "assets/suggestion-card3.webp": {
+      "bytes": 4082,
+      "sha256": "db6f56aebe57dcca77b59e771cb0be09c15573606f339c059e04ba5d0ad7cb31"
+    },
+    "assets/suggestion-card4.webp": {
+      "bytes": 6924,
+      "sha256": "9c0ad2e83bea6fef214478a71d2b3635b6e1ccea0075c384489f93c85be2abf7"
+    },
     "preview.webp": {
-      "bytes": 44740,
-      "sha256": "be5666fec297233bc6d886a8e6f52bcda300856bc0172d56e240b9326dcf0431"
+      "bytes": 44712,
+      "sha256": "f218126b72559add79203152980dd98b074a1cf23229e7d388059eb7367f3390"
     }
   }
 }

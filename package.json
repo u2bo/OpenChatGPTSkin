@@ -18,7 +18,6 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "themes:sources": "tsx scripts/generate-builtin-sources.ts",
     "themes:build": "tsx --tsconfig tsconfig.scripts.json scripts/build-theme-catalog.ts",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",

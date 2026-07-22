@@ -1,0 +1,213 @@
+{
+  "theme": {
+    "schemaVersion": 4,
+    "kind": "theme",
+    "appearance": "dark",
+    "id": "glacier-aurora",
+    "name": "冰川极光",
+    "description": "深蓝冰川与极光交汇的专注暗色主题。",
+    "version": "1.3.0",
+    "author": "OpenChatGPTSkin",
+    "metadata": {
+      "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "localized": {
+        "en": {
+          "name": "Glacier Aurora",
+          "description": "A focused dark theme where deep-blue glaciers meet the aurora."
+        }
+      }
+    },
+    "assets": {
+      "background": "assets/background.webp",
+      "profileAvatar": "assets/profile-avatar.webp",
+      "suggestionIcons": {
+        "card1": "assets/suggestion-card1.webp",
+        "card2": "assets/suggestion-card2.webp",
+        "card3": "assets/suggestion-card3.webp",
+        "card4": "assets/suggestion-card4.webp"
+      }
+    },
+    "colors": {
+      "accent": "#54dfd0",
+      "secondary": "#9f82ff",
+      "text": "#f0f9ff",
+      "muted": "#8fa8c0",
+      "panel": "#081a30",
+      "border": "rgba(84, 223, 208, 0.34)",
+      "success": "#5cdfa8",
+      "warning": "#f2c46d",
+      "danger": "#ff8da1",
+      "info": "#6fc8ff",
+      "textSecondary": "#c6d9eb",
+      "link": "#75e9df",
+      "inputText": "#f0f9ff",
+      "placeholder": "#91abc3",
+      "codeText": "#ddf8ff"
+    },
+    "typography": {
+      "uiFamily": "Microsoft YaHei UI",
+      "codeFamily": "Cascadia Code",
+      "scale": 1,
+      "uiSize": 14,
+      "codeSize": 13,
+      "uiWeight": 500,
+      "codeWeight": 400,
+      "lineHeight": 1.5,
+      "displayFamily": "Microsoft YaHei UI",
+      "displaySize": 28,
+      "displayWeight": 500,
+      "displayLineHeight": 1.5,
+      "displayLetterSpacing": 0
+    },
+    "background": {
+      "positionX": 0.68,
+      "positionY": 0.5,
+      "scale": 1.05,
+      "blur": 0,
+      "brightness": 1,
+      "overlay": 0,
+      "safeArea": "none",
+      "taskMode": "full",
+      "taskOpacity": 0.18
+    },
+    "surfaces": {
+      "baseOpacity": 0.26,
+      "elevatedOpacity": 0.78,
+      "terminalOpacity": 0.84,
+      "blur": 0
+    },
+    "decorations": [
+      {
+        "type": "sparkles",
+        "enabled": true,
+        "intensity": 0.26
+      }
+    ],
+    "layout": {
+      "heroHeight": 380,
+      "cardColumns": 4,
+      "composerWidth": 0.74,
+      "sidebarDensity": "comfortable",
+      "moduleGap": 16,
+      "modules": [
+        {
+          "id": "sidebar",
+          "order": 0,
+          "visible": true,
+          "size": "regular",
+          "align": "stretch",
+          "spacing": 12
+        },
+        {
+          "id": "topbar",
+          "order": 1,
+          "visible": true,
+          "size": "regular",
+          "align": "stretch",
+          "spacing": 12
+        },
+        {
+          "id": "hero",
+          "order": 2,
+          "visible": true,
+          "size": "expanded",
+          "align": "stretch",
+          "spacing": 16
+        },
+        {
+          "id": "suggestions",
+          "order": 3,
+          "visible": true,
+          "size": "regular",
+          "align": "stretch",
+          "spacing": 16
+        },
+        {
+          "id": "project-picker",
+          "order": 4,
+          "visible": true,
+          "size": "regular",
+          "align": "stretch",
+          "spacing": 16
+        },
+        {
+          "id": "composer",
+          "order": 5,
+          "visible": true,
+          "size": "regular",
+          "align": "center",
+          "spacing": 12
+        },
+        {
+          "id": "task-background",
+          "order": 6,
+          "visible": true,
+          "size": "regular",
+          "align": "stretch",
+          "spacing": 0
+        },
+        {
+          "id": "content-layer",
+          "order": 7,
+          "visible": true,
+          "size": "regular",
+          "align": "stretch",
+          "spacing": 12
+        }
+      ]
+    },
+    "rights": {
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Original",
+      "attribution": "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
+      "localOnly": false
+    },
+    "composition": {
+      "layers": []
+    }
+  },
+  "outputs": {
+    "assets/background.webp": {
+      "kind": "file",
+      "file": "assets/background.png"
+    },
+    "assets/profile-avatar.webp": {
+      "kind": "background-crop",
+      "positionX": 0.68,
+      "positionY": 0.35
+    },
+    "assets/suggestion-card1.webp": {
+      "kind": "background-crop",
+      "positionX": 0.2,
+      "positionY": 0.25
+    },
+    "assets/suggestion-card2.webp": {
+      "kind": "background-crop",
+      "positionX": 0.8,
+      "positionY": 0.25
+    },
+    "assets/suggestion-card3.webp": {
+      "kind": "background-crop",
+      "positionX": 0.2,
+      "positionY": 0.75
+    },
+    "assets/suggestion-card4.webp": {
+      "kind": "background-crop",
+      "positionX": 0.8,
+      "positionY": 0.75
+    },
+    "preview.webp": {
+      "kind": "background-crop",
+      "positionX": 0.5,
+      "positionY": 0.5
+    }
+  },
+  "provenance": [
+    {
+      "file": "assets/background.png",
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Original",
+      "attribution": "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "generationPrompt": "Photorealistic original blue glacier and dark arctic sea beneath sweeping cyan, green, and violet aurora, deep navy star field, monumental ice formation on the right, spacious low-detail night-sky interface-safe area on the left, no people, no logos, no text, 16:9."
+    }
+  ]
+}

@@ -271,6 +271,8 @@ export class RuntimeController {
       if (!isUnavailableThemeVersion(error)) throw error;
     }
 
+    await this.dependencies.themes.preflight(this.requirePage(), candidate);
+
     const pending = this.withPending(state, "switch", requestId, candidateTheme);
     await this.writeTransition(state, pending);
 

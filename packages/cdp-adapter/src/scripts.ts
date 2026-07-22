@@ -6,6 +6,8 @@ const MANAGED_NODE_SELECTOR = [
   'style[data-open-chatgpt-skin="theme"]',
   'style[data-open-chatgpt-skin="fonts"]',
   'div[data-open-chatgpt-skin="decorations"]',
+  'div[data-open-chatgpt-skin="welcome"]',
+  'div[data-open-chatgpt-skin="composition-layer"]',
   'span[data-open-chatgpt-skin-interface-image]',
 ].join(",");
 const MANAGED_SURFACE_SELECTOR = "[data-open-chatgpt-skin-surface]";
@@ -14,8 +16,10 @@ const INTERFACE_HOST_SELECTOR = "[data-open-chatgpt-skin-interface-host]";
 const NATIVE_ICON_SELECTOR = "[data-open-chatgpt-skin-native-icon]";
 const SURFACE_MARKER_KEY = "__openChatgptSkinMarkSurfaces";
 const SURFACE_OBSERVER_KEY = "__openChatgptSkinSurfaceObserver";
+const SURFACE_REFRESH_LISTENER_KEY = "__openChatgptSkinSurfaceRefreshListener";
 const SHADOW_SHEETS_KEY = "__openChatgptSkinShadowSheets";
 const OVERLAP_RELIEF_PROPERTY = "--ocs-home-overlap-relief";
+export const COMPOSITION_UNDERLAY_Z_INDEX = -1 as const;
 const TEXTBOX_SELECTOR = "textarea,[contenteditable=true],[role=textbox]";
 const COMPOSER_EXCLUSION_SELECTOR = [
   NATIVE_CODEX_SURFACE_SELECTORS.terminal,
@@ -108,10 +112,17 @@ export const REMOVE_EXPRESSION = `(() => {
   const observerKey = ${JSON.stringify(SURFACE_OBSERVER_KEY)};
   const markerKey = ${JSON.stringify(SURFACE_MARKER_KEY)};
   const shadowSheetsKey = ${JSON.stringify(SHADOW_SHEETS_KEY)};
+  const refreshListenerKey = ${JSON.stringify(SURFACE_REFRESH_LISTENER_KEY)};
   const observer = window[observerKey];
   if (observer && typeof observer.disconnect === "function") observer.disconnect();
   delete window[observerKey];
   delete window[markerKey];
+  const refreshListener = window[refreshListenerKey];
+  if (typeof refreshListener === "function") {
+    window.removeEventListener("resize", refreshListener);
+    window.removeEventListener("scroll", refreshListener, true);
+  }
+  delete window[refreshListenerKey];
   const shadowRecords = Array.isArray(window[shadowSheetsKey])
     ? window[shadowSheetsKey]
     : [];
@@ -125,6 +136,11 @@ export const REMOVE_EXPRESSION = `(() => {
   delete window[shadowSheetsKey];
   if (Array.isArray(window[shadowSheetsKey])) window[shadowSheetsKey] = undefined;
   document.documentElement.style.removeProperty(${JSON.stringify(OVERLAP_RELIEF_PROPERTY)});
+  for (const node of document.querySelectorAll('[data-open-chatgpt-skin="welcome"]')) {
+    const record = node.__openChatgptSkinWelcomeRecord;
+    if (record?.heading?.style) record.heading.style.visibility = record.visibility;
+    node.remove();
+  }
   const selector = ${JSON.stringify(MANAGED_NODE_SELECTOR)};
   for (const node of document.querySelectorAll(selector)) node.remove();
   const surfaceSelector = ${JSON.stringify(MANAGED_SURFACE_SELECTOR)};
@@ -167,6 +183,123 @@ export const PROBE_EXPRESSION = `(() => {
   };
 })()`;
 
+export function preflightExpression(theme: CompiledTheme): string {
+  const payload = JSON.stringify(theme);
+  const nativeSelectors = JSON.stringify(NATIVE_CODEX_SURFACE_SELECTORS);
+  return `(() => {
+    const theme = ${payload};
+    const nativeSelectors = ${nativeSelectors};
+    const visible = (node) => {
+      if (!node) return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+    const main = Array.from(document.querySelectorAll(nativeSelectors.shellMain))
+      .find((node) => visible(node) &&
+        !node.closest('[data-open-chatgpt-skin="composition-layer"]')) || null;
+    if (!main) {
+      return { valid: false, welcomeSupported: false, requiredLayersResolved: false };
+    }
+    const pathname = (() => {
+      try { return new URL(window.location.href).pathname.toLowerCase(); }
+      catch { return ""; }
+    })();
+    const routeSegments = pathname.split("/");
+    const taskPath = routeSegments.some((segment) =>
+      /^(?:tasks?|threads?|workspaces?)$/.test(segment)
+    );
+    const settingsPath = routeSegments.some((segment) =>
+      /^(?:settings|preferences)$/.test(segment)
+    );
+    const settingsPagePresent = ${SETTINGS_PAGE_DETECTION_EXPRESSION};
+    const composer = Array.from(main.querySelectorAll(
+      ${JSON.stringify(TEXTBOX_SELECTOR)}
+    )).find((node) => visible(node) &&
+      !node.closest(${JSON.stringify(COMPOSER_EXCLUSION_SELECTOR)})) || null;
+    const managedHomeRoutes = Array.from(document.querySelectorAll(
+      '[data-open-chatgpt-skin-surface="home-route"]'
+    )).filter((node) => visible(node) && main.contains(node));
+    const routeMains = Array.from(main.querySelectorAll(nativeSelectors.routeMain))
+      .filter((node) => node !== main && visible(node));
+    const modeSwitcher = Array.from(document.querySelectorAll(nativeSelectors.modeSwitcher))
+      .find((node) => visible(node));
+    const chatGptLandingRoutes = modeSwitcher && composer ? routeMains.filter((node) => {
+      if (!node.contains(composer)) return false;
+      const routeRect = node.getBoundingClientRect();
+      const composerRect = composer.getBoundingClientRect();
+      return composerRect.bottom <= routeRect.bottom - Math.max(96, routeRect.height * 0.15);
+    }) : [];
+    const activeHome = (managedHomeRoutes.length === 1 ||
+      Boolean(main.querySelector(nativeSelectors.homeMarker)) ||
+      chatGptLandingRoutes.length === 1) &&
+      !taskPath && !settingsPath && !settingsPagePresent;
+    const suggestionMarkers = Array.from(document.querySelectorAll(
+      '[data-open-chatgpt-skin-surface="suggestions"]'
+    )).filter((node) => visible(node) && main.contains(node));
+    const inferredSuggestions = Array.from(main.querySelectorAll("section,div"))
+      .filter((node) => visible(node) && (!composer || !node.contains(composer)))
+      .filter((node) => {
+        const buttons = Array.from(node.children).filter((child) =>
+          child.matches("button,[role=button]") && visible(child)
+        );
+        return buttons.length >= 3 && buttons.length <= 8;
+      });
+    const suggestionCandidates = suggestionMarkers.length > 0
+      ? suggestionMarkers
+      : inferredSuggestions;
+    const suggestions = suggestionCandidates.length === 1 ? suggestionCandidates[0] : null;
+    const headingMarkers = Array.from(document.querySelectorAll(
+      '[data-open-chatgpt-skin-surface="home-heading"]'
+    )).filter((node) => visible(node) && main.contains(node));
+    const inferredHeadings = Array.from(main.querySelectorAll("h1,h2,[role=heading]"))
+      .filter((node) => visible(node) &&
+        (!composer || !composer.contains(node)) &&
+        (!suggestions || !suggestions.contains(node)));
+    const headingCandidates = headingMarkers.length > 0 ? headingMarkers : inferredHeadings;
+    const heading = headingCandidates.length === 1 ? headingCandidates[0] : null;
+    const heroMarkers = Array.from(document.querySelectorAll(
+      '[data-open-chatgpt-skin-surface="hero"]'
+    )).filter((node) => visible(node) && main.contains(node));
+    const heroCandidates = heroMarkers.length > 0
+      ? heroMarkers
+      : (heading ? [heading] : []);
+    const hero = heroCandidates.length === 1 ? heroCandidates[0] : null;
+    const locale = String(document.documentElement.lang || "en").toLowerCase()
+      .startsWith("zh") ? "zh-CN" : "en";
+    const welcomeLines = theme.welcome?.localized?.[locale];
+    const projectButton = Array.from(main.querySelectorAll("button,[role=button]"))
+      .filter((node) => visible(node) && /(?:switch project|project|项目)/i.test(
+        [node.getAttribute("aria-label") || "", node.getAttribute("data-testid") || ""]
+          .join(" ")
+      ))[0];
+    const projectName = String(projectButton?.textContent || "").trim();
+    const needsProjectName = Array.isArray(welcomeLines) && welcomeLines.some((line) =>
+      Array.isArray(line) && line.some((token) => token?.kind === "projectName")
+    );
+    const nativeWelcomeFallback = !Array.isArray(welcomeLines) || welcomeLines.length === 0 ||
+      (needsProjectName && !projectName);
+    const welcomeSupported = !theme.welcome || !activeHome || nativeWelcomeFallback ||
+      Boolean(heading && hero);
+    const applicable = (surface) => surface === "viewport" || surface === "main" ||
+      activeHome;
+    const resolved = (surface) => {
+      if (surface === "viewport") return Boolean(document.documentElement);
+      if (surface === "main") return Boolean(main);
+      if (surface === "home-hero") return Boolean(hero);
+      if (surface === "suggestions") return Boolean(suggestions);
+      return false;
+    };
+    const requiredLayersResolved = theme.compositionLayers
+      .filter((layer) => layer.required && applicable(layer.surface))
+      .every((layer) => resolved(layer.surface));
+    return {
+      valid: welcomeSupported && requiredLayersResolved,
+      welcomeSupported,
+      requiredLayersResolved,
+    };
+  })()`;
+}
+
 export function applyExpression(theme: CompiledTheme): string {
   const payload = JSON.stringify(theme);
   const nativeSelectors = JSON.stringify(NATIVE_CODEX_SURFACE_SELECTORS);
@@ -176,7 +309,9 @@ export function applyExpression(theme: CompiledTheme): string {
     const observerKey = ${JSON.stringify(SURFACE_OBSERVER_KEY)};
     const markerKey = ${JSON.stringify(SURFACE_MARKER_KEY)};
     const shadowSheetsKey = ${JSON.stringify(SHADOW_SHEETS_KEY)};
+    const refreshListenerKey = ${JSON.stringify(SURFACE_REFRESH_LISTENER_KEY)};
     const shadowThemeCss = ${JSON.stringify(REVIEW_SHADOW_THEME_CSS)};
+    const compositionUnderlayZIndex = ${COMPOSITION_UNDERLAY_Z_INDEX};
     const detachShadowThemeRecord = (record) => {
       if (record.sheet && record.root?.adoptedStyleSheets) {
         record.root.adoptedStyleSheets = Array.from(record.root.adoptedStyleSheets)
@@ -198,10 +333,24 @@ export function applyExpression(theme: CompiledTheme): string {
     }
     delete window[observerKey];
     delete window[markerKey];
+    const previousRefreshListener = window[refreshListenerKey];
+    if (typeof previousRefreshListener === "function") {
+      window.removeEventListener("resize", previousRefreshListener);
+      window.removeEventListener("scroll", previousRefreshListener, true);
+    }
+    delete window[refreshListenerKey];
     clearShadowThemes();
     const overlapReliefProperty = ${JSON.stringify(OVERLAP_RELIEF_PROPERTY)};
     document.documentElement.style.removeProperty(overlapReliefProperty);
     const managedSelector = ${JSON.stringify(MANAGED_NODE_SELECTOR)};
+    const restoreWelcome = (node) => {
+      const record = node?.__openChatgptSkinWelcomeRecord;
+      if (record?.heading?.style) record.heading.style.visibility = record.visibility;
+      if (node?.parentNode) node.parentNode.removeChild(node);
+    };
+    for (const node of document.querySelectorAll('[data-open-chatgpt-skin="welcome"]')) {
+      restoreWelcome(node);
+    }
     for (const node of document.querySelectorAll(managedSelector)) node.remove();
     const surfaceSelector = ${JSON.stringify(MANAGED_SURFACE_SELECTOR)};
     for (const node of document.querySelectorAll(surfaceSelector)) {
@@ -233,6 +382,197 @@ export function applyExpression(theme: CompiledTheme): string {
     const insideThreadConversation = (node) => Boolean(node && node.closest(
       ${JSON.stringify(THREAD_CONVERSATION_SELECTOR)}
     ));
+    const verificationRecord = {
+      themeId: theme.themeId,
+      welcomeExpected: false,
+      welcomeSupported: true,
+      requiredLayerIds: [],
+      requiredLayersResolved: true,
+    };
+    const syncWelcome = (main, hero, heading, activeHome) => {
+      const existing = document.querySelector('[data-open-chatgpt-skin="welcome"]');
+      verificationRecord.welcomeExpected = false;
+      verificationRecord.welcomeSupported = true;
+      if (!theme.welcome || !activeHome) {
+        if (existing) restoreWelcome(existing);
+        return;
+      }
+      const locale = String(document.documentElement.lang || "en").toLowerCase()
+        .startsWith("zh") ? "zh-CN" : "en";
+      const lines = theme.welcome.localized[locale];
+      if (!Array.isArray(lines) || lines.length === 0) {
+        if (existing) restoreWelcome(existing);
+        return;
+      }
+      const projectButton = Array.from(main.querySelectorAll("button,[role=button]"))
+        .filter((node) => visible(node) && /(?:switch project|project|项目)/i.test(
+          [node.getAttribute("aria-label") || "", node.getAttribute("data-testid") || ""]
+            .join(" ")
+        ))[0];
+      const projectName = String(projectButton?.textContent || "").trim();
+      if (projectButton) projectButton.dataset.openChatgptSkinSurface = "project-name";
+      const needsProjectName = lines.some((line) => Array.isArray(line) &&
+        line.some((token) => token?.kind === "projectName"));
+      if (needsProjectName && !projectName) {
+        if (existing) restoreWelcome(existing);
+        return;
+      }
+      if (!hero || !heading) {
+        verificationRecord.welcomeSupported = false;
+        if (existing) restoreWelcome(existing);
+        return;
+      }
+      const resolvedLines = lines.map((line) => line.map((token) => {
+        if (token.kind === "text") return token.value;
+        if (token.kind === "projectName") return projectName;
+        throw new Error("THEME_WELCOME_INVALID");
+      }).join(""));
+      verificationRecord.welcomeExpected = true;
+      let overlay = existing;
+      if (overlay?.__openChatgptSkinWelcomeRecord?.heading !== heading) {
+        restoreWelcome(overlay);
+        overlay = null;
+      }
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.dataset.openChatgptSkin = "welcome";
+        overlay.dataset.openChatgptSkinOwner = theme.themeId;
+        overlay.setAttribute("aria-hidden", "true");
+        overlay.__openChatgptSkinWelcomeRecord = {
+          heading,
+          visibility: heading.style.visibility,
+        };
+        document.body.append(overlay);
+      }
+      while (overlay.firstChild) overlay.removeChild(overlay.firstChild);
+      for (const line of resolvedLines) {
+        const lineNode = document.createElement("div");
+        lineNode.append(document.createTextNode(line));
+        overlay.append(lineNode);
+      }
+      const rect = heading.getBoundingClientRect();
+      Object.assign(overlay.style, {
+        position: "fixed",
+        left: String(rect.left) + "px",
+        top: String(rect.top) + "px",
+        width: String(rect.width) + "px",
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: "0",
+        color: "var(--ocs-text)",
+        fontFamily: theme.welcome.displayFamily,
+        fontSize: String(theme.welcome.displaySizePx) + "px",
+        fontWeight: String(theme.welcome.displayWeight),
+        lineHeight: String(theme.welcome.displayLineHeight),
+        letterSpacing: String(theme.welcome.displayLetterSpacingEm) + "em",
+      });
+      heading.style.visibility = "hidden";
+    };
+    const syncCompositionLayers = (main, hero, suggestions, activeHome) => {
+      const descriptors = Array.isArray(theme.compositionLayers)
+        ? theme.compositionLayers
+        : [];
+      const anchorTransforms = {
+        "top-left": "translate(0%, 0%)",
+        "top-center": "translate(-50%, 0%)",
+        "top-right": "translate(-100%, 0%)",
+        "center-left": "translate(0%, -50%)",
+        "center": "translate(-50%, -50%)",
+        "center-right": "translate(-100%, -50%)",
+        "bottom-left": "translate(0%, -100%)",
+        "bottom-center": "translate(-50%, -100%)",
+        "bottom-right": "translate(-100%, -100%)",
+      };
+      const targetFor = (surface) => {
+        if (surface === "viewport") return document.documentElement;
+        if (surface === "main") return main;
+        if (!activeHome) return null;
+        if (surface === "home-hero") return hero;
+        if (surface === "suggestions") return suggestions;
+        return null;
+      };
+      const existingHosts = Array.from(document.querySelectorAll(
+        '[data-open-chatgpt-skin="composition-layer"]'
+      ));
+      const applicable = (descriptor) => descriptor.surface === "viewport" ||
+        descriptor.surface === "main" || activeHome;
+      verificationRecord.requiredLayerIds = descriptors
+        .filter((descriptor) => descriptor.required && applicable(descriptor))
+        .map((descriptor) => descriptor.id);
+      verificationRecord.requiredLayersResolved = true;
+      const desiredHosts = new Set();
+      for (const surface of ["viewport", "main", "home-hero", "suggestions"]) {
+        const surfaceLayers = descriptors.filter((descriptor) => descriptor.surface === surface);
+        if (surfaceLayers.length === 0) continue;
+        const target = targetFor(surface);
+        if (!target) continue;
+        let host = existingHosts.find((candidate) =>
+          candidate.dataset.openChatgptSkinCompositionSurface === surface &&
+          candidate.dataset.openChatgptSkinOwner === theme.themeId
+        );
+        if (!host) {
+          host = document.createElement("div");
+          host.dataset.openChatgptSkin = "composition-layer";
+          host.dataset.openChatgptSkinCompositionSurface = surface;
+          host.dataset.openChatgptSkinOwner = theme.themeId;
+          host.setAttribute("aria-hidden", "true");
+          document.body.append(host);
+        }
+        desiredHosts.add(host);
+        host.dataset.openChatgptSkinSurface = "composition-host";
+        const rect = surface === "viewport" ? null : target.getBoundingClientRect();
+        Object.assign(host.style, {
+          position: "fixed",
+          left: rect ? String(rect.left) + "px" : "0px",
+          top: rect ? String(rect.top) + "px" : "0px",
+          width: rect ? String(rect.width) + "px" : "100vw",
+          height: rect ? String(rect.height) + "px" : "100vh",
+          pointerEvents: "none",
+          overflow: "visible",
+          zIndex: String(compositionUnderlayZIndex),
+        });
+        const desiredLayers = new Set();
+        for (const descriptor of surfaceLayers) {
+          const dataUrl = theme.assetDataUrls[descriptor.asset];
+          const anchorTransform = anchorTransforms[descriptor.anchor];
+          if (typeof dataUrl !== "string" || typeof anchorTransform !== "string") continue;
+          let layer = Array.from(host.querySelectorAll('[data-open-chatgpt-skin-layer-id]'))
+            .find((candidate) => candidate.dataset.openChatgptSkinLayerId === descriptor.id);
+          if (!layer) {
+            layer = document.createElement("img");
+            layer.dataset.openChatgptSkinLayerId = descriptor.id;
+            layer.setAttribute("aria-hidden", "true");
+            layer.tabIndex = -1;
+            host.append(layer);
+          }
+          desiredLayers.add(layer);
+          layer.src = dataUrl;
+          Object.assign(layer.style, {
+            position: "absolute",
+            left: String(descriptor.positionXPercent) + "%",
+            top: String(descriptor.positionYPercent) + "%",
+            width: String(descriptor.widthPercent) + "%",
+            height: "auto",
+            opacity: String(descriptor.opacity),
+            transform: anchorTransform + " rotate(" + String(descriptor.rotationDeg) + "deg)",
+            pointerEvents: "none",
+            userSelect: "none",
+          });
+        }
+        for (const layer of host.querySelectorAll('[data-open-chatgpt-skin-layer-id]')) {
+          if (!desiredLayers.has(layer)) layer.remove();
+        }
+      }
+      for (const host of existingHosts) {
+        if (!desiredHosts.has(host)) host.remove();
+      }
+      verificationRecord.requiredLayersResolved = verificationRecord.requiredLayerIds
+        .every((layerId) => document.querySelectorAll(
+          '[data-open-chatgpt-skin="composition-layer"]' +
+          '[data-open-chatgpt-skin-owner="' + theme.themeId + '"] ' +
+          '[data-open-chatgpt-skin-layer-id="' + layerId + '"]'
+        ).length === 1);
+    };
     const overlapsThreadConversation = (node) => Boolean(node && (
       insideThreadConversation(node) || node.querySelector(
         ${JSON.stringify(THREAD_CONVERSATION_SELECTOR)}
@@ -866,7 +1206,7 @@ export function applyExpression(theme: CompiledTheme): string {
         }
       }
 
-      const heading = taskRoute || settingsRoute ? null : Array.from(main.querySelectorAll("h1,h2,[role=heading],*"))
+      const headingCandidates = taskRoute || settingsRoute ? [] : Array.from(main.querySelectorAll("h1,h2,[role=heading],*"))
         .filter((node) => {
           if (!visible(node) || (composer && composer.contains(node)) ||
             (suggestions && suggestions.contains(node))) return false;
@@ -875,7 +1215,8 @@ export function applyExpression(theme: CompiledTheme): string {
           return rect.width >= 100 && rect.height >= 24 && fontSize >= 24;
         })
         .sort((left, right) => right.getBoundingClientRect().width -
-          left.getBoundingClientRect().width)[0];
+          left.getBoundingClientRect().width);
+      const heading = headingCandidates.length === 1 ? headingCandidates[0] : null;
       let hero = heading;
       if (heading) {
         const heroCandidates = [];
@@ -892,6 +1233,17 @@ export function applyExpression(theme: CompiledTheme): string {
         hero = heroCandidates[heroCandidates.length - 1] || heading;
       }
       mark(hero, "hero");
+      const activeHome = Boolean(homeRoute || main.querySelector(nativeSelectors.homeMarker)) &&
+        !taskPath && !settingsPath && !taskRoute && !settingsRoute;
+      mark(activeHome ? homeRoute : null, "home-route");
+      mark(activeHome ? heading : null, "home-heading");
+      syncWelcome(
+        main,
+        hero,
+        heading,
+        activeHome,
+      );
+      syncCompositionLayers(main, hero, suggestions, activeHome);
 
       const mainRect = main.getBoundingClientRect();
       const explicitTopbar = Array.from(main.querySelectorAll(
@@ -1006,7 +1358,9 @@ export function applyExpression(theme: CompiledTheme): string {
 
     const style = document.createElement("style");
     style.dataset.openChatgptSkin = "theme";
+    style.dataset.openChatgptSkinOwner = theme.themeId;
     style.dataset.openChatgptSkinBackgroundReady = "true";
+    style.__openChatgptSkinVerificationRecord = verificationRecord;
     style.textContent = ":root{--ocs-background-image:url(" + theme.backgroundDataUrl + ")}" +
       theme.themeCss;
     document.head.append(style);
@@ -1077,6 +1431,9 @@ export function applyExpression(theme: CompiledTheme): string {
     document.body.append(decorations);
     markSurfaces();
     window[markerKey] = markSurfaces;
+    window[refreshListenerKey] = markSurfaces;
+    window.addEventListener("resize", markSurfaces);
+    window.addEventListener("scroll", markSurfaces, true);
     const observer = new window.MutationObserver(() => markSurfaces());
     observer.observe(document.body, {
       childList: true,
@@ -1108,6 +1465,26 @@ export const VERIFY_EXPRESSION = `(() => {
   const composerVisible = ${VISIBLE_COMPOSER_EXPRESSION};
   const decorations = document.querySelector('[data-open-chatgpt-skin="decorations"]');
   const theme = document.querySelector('[data-open-chatgpt-skin="theme"]');
+  const verificationRecord = theme?.__openChatgptSkinVerificationRecord;
+  const managedLayers = Array.from(document.querySelectorAll(
+    '[data-open-chatgpt-skin-layer-id]'
+  ));
+  const welcomeNodes = Array.from(document.querySelectorAll(
+    '[data-open-chatgpt-skin="welcome"]'
+  ));
+  const welcomeValid = Boolean(verificationRecord?.welcomeSupported) &&
+    (verificationRecord.welcomeExpected
+      ? welcomeNodes.length === 1 &&
+        welcomeNodes[0].dataset.openChatgptSkinOwner === verificationRecord.themeId &&
+        welcomeNodes[0].style.pointerEvents === "none" &&
+        welcomeNodes[0].__openChatgptSkinWelcomeRecord?.heading?.style?.visibility === "hidden"
+      : welcomeNodes.length === 0);
+  const requiredLayersResolved = Boolean(verificationRecord?.requiredLayersResolved) &&
+    verificationRecord.requiredLayerIds.every((layerId) => managedLayers.filter((layer) =>
+      layer.dataset.openChatgptSkinLayerId === layerId &&
+      layer.closest('[data-open-chatgpt-skin="composition-layer"]')
+        ?.dataset.openChatgptSkinOwner === verificationRecord.themeId
+    ).length === 1);
   const mainSurface = document.querySelector('[data-open-chatgpt-skin-surface="main"]');
   const sidebarSurface = document.querySelector('[data-open-chatgpt-skin-surface="sidebar"]');
   const composerSurface = document.querySelector('[data-open-chatgpt-skin-surface="composer"]');
@@ -1121,6 +1498,9 @@ export const VERIFY_EXPRESSION = `(() => {
   const composerOptional = ${SETTINGS_PAGE_DETECTION_EXPRESSION};
   return {
     themeMarkers: document.querySelectorAll('[data-open-chatgpt-skin="theme"]').length,
+    welcomeValid,
+    requiredLayersResolved,
+    managedLayerCount: managedLayers.length,
     fontMarkers: document.querySelectorAll('[data-open-chatgpt-skin="fonts"]').length,
     decorationMarkers: document.querySelectorAll('[data-open-chatgpt-skin="decorations"]').length,
     backgroundReady: Boolean(theme && theme.dataset.openChatgptSkinBackgroundReady === "true"),

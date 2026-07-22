@@ -75,6 +75,43 @@ describe("RuntimeController theme commands", () => {
     });
   });
 
+  it("keeps the previous theme active when candidate preflight fails", async () => {
+    const fixture = await createRuntimeControllerFixture({
+      preflightError: "THEME_REQUIRED_LAYER_UNRESOLVED",
+    });
+
+    await fixture.controller.launch("mountain-mist", crypto.randomUUID());
+    await expect(fixture.controller.switchTheme(
+      "glacier-aurora",
+      crypto.randomUUID(),
+    )).rejects.toMatchObject({ code: "THEME_REQUIRED_LAYER_UNRESOLVED" });
+
+    expect(fixture.calls()).toContain("preflight-theme");
+    expect(fixture.calls()).not.toContain("cleanup-theme");
+    expect(await fixture.controller.status()).toMatchObject({
+      status: "active",
+      selectedTheme: { id: "mountain-mist" },
+      appliedTheme: { id: "mountain-mist" },
+      skinApplied: true,
+    });
+    await expect(fixture.page.adapter.verify()).resolves.toMatchObject({ valid: true });
+  });
+
+  it("preflights the candidate before cleaning the current theme", async () => {
+    const fixture = await createRuntimeControllerFixture();
+
+    await fixture.controller.launch("mountain-mist", crypto.randomUUID());
+    await fixture.controller.switchTheme("glacier-aurora", crypto.randomUUID());
+
+    const calls = fixture.calls();
+    const preflight = calls.indexOf("preflight-theme");
+    const cleanup = calls.indexOf("cleanup-theme");
+    const candidateApply = calls.lastIndexOf("apply-theme");
+    expect(preflight).toBeGreaterThanOrEqual(0);
+    expect(preflight).toBeLessThan(cleanup);
+    expect(cleanup).toBeLessThan(candidateApply);
+  });
+
   it("degrades without lying when both candidate and rollback fail", async () => {
     const fixture = await createRuntimeControllerFixture({ failApplyAfterLaunch: true });
 

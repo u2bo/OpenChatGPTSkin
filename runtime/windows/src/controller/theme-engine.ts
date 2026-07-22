@@ -28,6 +28,29 @@ export class ThemeEngine {
     return this.repository.load(theme);
   }
 
+  async preflight(session: RuntimePageSession, theme: LoadedRuntimeTheme): Promise<void> {
+    try {
+      const result = await session.adapter.preflight(theme.compiled);
+      if (!result.welcomeSupported) {
+        throw new RuntimeThemeError(
+          "THEME_HOME_WELCOME_UNSUPPORTED",
+          "Active home welcome surface is unsupported",
+        );
+      }
+      if (!result.requiredLayersResolved) {
+        throw new RuntimeThemeError(
+          "THEME_REQUIRED_LAYER_UNRESOLVED",
+          "A required visual layer surface is unresolved",
+        );
+      }
+      if (!result.valid) {
+        throw new RuntimeThemeError("THEME_VERIFY_FAILED", "Theme preflight failed");
+      }
+    } catch (error) {
+      throw runtimeFailure(error);
+    }
+  }
+
   async apply(session: RuntimePageSession, theme: LoadedRuntimeTheme): Promise<void> {
     try {
       await session.adapter.apply(theme.compiled);

@@ -99,8 +99,17 @@ export interface AdapterProbe {
   readonly missing: readonly string[];
 }
 
+export interface AdapterPreflight {
+  readonly valid: boolean;
+  readonly welcomeSupported: boolean;
+  readonly requiredLayersResolved: boolean;
+}
+
 export interface AdapterVerification {
   readonly valid: boolean;
+  readonly welcomeValid: boolean;
+  readonly requiredLayersResolved: boolean;
+  readonly managedLayerCount: number;
   readonly backgroundReady: boolean;
   readonly themeMarkers: number;
   readonly fontMarkers: number;
@@ -128,6 +137,7 @@ export interface OfficialAppearanceVerification {
 
 export interface RuntimeThemeAdapter {
   probe(): Promise<AdapterProbe>;
+  preflight(theme: CompiledTheme): Promise<AdapterPreflight>;
   apply(theme: CompiledTheme): Promise<void>;
   verify(): Promise<AdapterVerification>;
   verifyOfficialAppearance(): Promise<OfficialAppearanceVerification>;

@@ -1,6 +1,9 @@
 import type {
+  CompiledWelcomeLine,
   SuggestionIconSlot,
+  ThemeCompositionLayer,
   ThemeLayout,
+  ThemeLocale,
 } from "@open-chatgpt-skin/theme-schema";
 
 export interface CompiledDecoration {
@@ -16,7 +19,7 @@ export interface CompiledDecoration {
   readonly opacity: number;
   readonly scale: number;
   readonly placement: "background" | "corners" | "hero" | "cards";
-  readonly dataUrl?: string;
+  readonly asset?: number;
 }
 
 export interface CompiledInterfaceImage {
@@ -26,12 +29,36 @@ export interface CompiledInterfaceImage {
 }
 
 export interface CompiledInterfaceImagery {
-  readonly dataUrls: readonly string[];
   readonly profileAvatar?: CompiledInterfaceImage;
   readonly suggestionIcons: Readonly<Partial<Record<
     SuggestionIconSlot,
     CompiledInterfaceImage
   >>>;
+}
+
+export interface CompiledWelcome {
+  readonly localized: Readonly<Partial<Record<
+    ThemeLocale,
+    readonly CompiledWelcomeLine[]
+  >>>;
+  readonly displayFamily: string;
+  readonly displaySizePx: number;
+  readonly displayWeight: number;
+  readonly displayLineHeight: number;
+  readonly displayLetterSpacingEm: number;
+}
+
+export interface CompiledCompositionLayer {
+  readonly id: string;
+  readonly asset: number;
+  readonly surface: ThemeCompositionLayer["surface"];
+  readonly anchor: ThemeCompositionLayer["anchor"];
+  readonly positionXPercent: number;
+  readonly positionYPercent: number;
+  readonly widthPercent: number;
+  readonly opacity: number;
+  readonly rotationDeg: number;
+  readonly required: boolean;
 }
 
 export interface CompiledTheme {
@@ -43,6 +70,9 @@ export interface CompiledTheme {
   readonly layout: ThemeLayout;
   readonly decorations: readonly CompiledDecoration[];
   readonly interfaceImagery: CompiledInterfaceImagery;
+  readonly assetDataUrls: readonly string[];
+  readonly welcome?: CompiledWelcome;
+  readonly compositionLayers: readonly CompiledCompositionLayer[];
   readonly totalBytes: number;
 }
 

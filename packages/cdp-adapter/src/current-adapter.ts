@@ -21,9 +21,7 @@ const CONTROLLED_IMAGE_DATA_URL =
 
 function assertControlledImageDataUrls(theme: CompiledTheme): void {
   if (!CONTROLLED_IMAGE_DATA_URL.test(theme.backgroundDataUrl) ||
-    theme.decorations.some((decoration) =>
-      decoration.dataUrl !== undefined && !CONTROLLED_IMAGE_DATA_URL.test(decoration.dataUrl)
-    ) || theme.interfaceImagery.dataUrls.some((url) =>
+    theme.assetDataUrls.some((url) =>
       !CONTROLLED_IMAGE_DATA_URL.test(url)
     )) {
     throw new RuntimeThemeError("THEME_APPLY_FAILED", "compiled image data URL is invalid");

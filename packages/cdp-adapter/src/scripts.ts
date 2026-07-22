@@ -302,7 +302,7 @@ export function applyExpression(theme: CompiledTheme): string {
         if (!host || !descriptor) return;
         const dataUrl = descriptor.asset === "background"
           ? theme.backgroundDataUrl
-          : theme.interfaceImagery.dataUrls[descriptor.asset];
+          : theme.assetDataUrls[descriptor.asset];
         if (typeof dataUrl !== "string") return;
         host.dataset.openChatgptSkinInterfaceHost = key;
         if (nativeIcon) nativeIcon.dataset.openChatgptSkinNativeIcon = key;
@@ -1059,9 +1059,11 @@ export function applyExpression(theme: CompiledTheme): string {
           background: "var(--ocs-secondary)",
           ...decorationPosition(descriptor.placement, index)
         });
-        if (descriptor.dataUrl) {
+        if (descriptor.asset !== undefined) {
+          const dataUrl = theme.assetDataUrls[descriptor.asset];
+          if (typeof dataUrl !== "string") continue;
           Object.assign(item.style, {
-            backgroundImage: "url(" + descriptor.dataUrl + ")",
+            backgroundImage: "url(" + dataUrl + ")",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",

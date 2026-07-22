@@ -97,4 +97,24 @@ describe("Runtime control protocol", () => {
       },
     })).toThrow();
   });
+
+  it.each([
+    "THEME_SCHEMA_VERSION_UNSUPPORTED",
+    "THEME_WELCOME_INVALID",
+    "THEME_DISPLAY_FONT_MISSING",
+    "THEME_COMPOSITION_INVALID",
+    "THEME_HOME_WELCOME_UNSUPPORTED",
+    "THEME_REQUIRED_LAYER_UNRESOLVED",
+  ] as const)("accepts the public v4 Runtime error code %s", (code) => {
+    expect(ControlResponseSchema.parse({
+      protocolVersion: 1,
+      requestId: request.requestId,
+      ok: false,
+      error: {
+        code,
+        message: "Theme request was rejected safely.",
+        nextAction: "Repair the theme or restore the previous theme.",
+      },
+    })).toMatchObject({ error: { code } });
+  });
 });

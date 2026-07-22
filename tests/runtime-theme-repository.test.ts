@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
 import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { strFromU8, strToU8, zipSync } from "fflate";
 import {
+  createOcskinFiles,
   loadThemeDirectory,
   packTheme,
   ThemeStore,
@@ -124,6 +127,36 @@ describe("RuntimeThemeRepository", () => {
       });
       await expect(repositoryWithStore.load({ id: "imported-mountain", version: "3.2.1" }))
         .resolves.toMatchObject({ compiled: { themeId: "imported-mountain" } });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves public schema errors from imported theme packages", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ocs-runtime-import-v4-error-"));
+    try {
+      const source = await loadThemeDirectory(resolve("themes/builtin/mountain-mist"));
+      const entries = Object.fromEntries(createOcskinFiles(source));
+      const invalidTheme = JSON.parse(strFromU8(entries["theme.json"]!));
+      invalidTheme.schemaVersion = 99;
+      const themeBytes = strToU8(`${JSON.stringify(invalidTheme, null, 2)}\n`);
+      entries["theme.json"] = themeBytes;
+      const manifest = JSON.parse(strFromU8(entries["manifest.json"]!));
+      manifest.files["theme.json"] = {
+        bytes: themeBytes.length,
+        sha256: createHash("sha256").update(themeBytes).digest("hex"),
+      };
+      entries["manifest.json"] = strToU8(`${JSON.stringify(manifest, null, 2)}\n`);
+      const archive = join(root, "unsupported-schema.ocskin");
+      await writeFile(archive, zipSync(entries, { level: 9 }));
+      const repositoryWithStore = new RuntimeThemeRepository(
+        resolve("themes"),
+        join(root, "theme-store"),
+      );
+
+      await expect(repositoryWithStore.importFile(archive)).rejects.toMatchObject({
+        code: "THEME_SCHEMA_VERSION_UNSUPPORTED",
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

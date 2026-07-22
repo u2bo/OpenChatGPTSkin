@@ -116,8 +116,8 @@ function compiledTheme() {
     backgroundDataUrl: "data:image/webp;base64,AA==",
     themeCss: ":root{--ocs-accent:#4f8f78}body{background-image:var(--ocs-background-image)}",
     fontCss: "",
+    assetDataUrls: [],
     interfaceImagery: {
-      dataUrls: [],
       profileAvatar: {
         asset: "background" as const,
         positionXPercent: 50,
@@ -154,6 +154,7 @@ function compiledTheme() {
       scale: 1,
       placement: "background" as const,
     }],
+    compositionLayers: [],
     totalBytes: 100,
   };
 }
@@ -830,6 +831,10 @@ describe("CurrentCodexAdapter", () => {
     await expect(adapter.apply({
       ...compiledTheme(),
       backgroundDataUrl: "javascript:alert(1)",
+    })).rejects.toMatchObject({ code: "THEME_APPLY_FAILED" });
+    await expect(adapter.apply({
+      ...compiledTheme(),
+      assetDataUrls: ["javascript:alert(1)"],
     })).rejects.toMatchObject({ code: "THEME_APPLY_FAILED" });
     expect(await client.evaluate<number>(
       "document.querySelectorAll('[data-open-chatgpt-skin]').length",

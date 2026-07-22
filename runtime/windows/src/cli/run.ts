@@ -1,4 +1,9 @@
-import { runtimeErrorCode, RuntimeError, type RuntimeErrorCode } from "../errors.js";
+import {
+  isRuntimeThemeV4ErrorCode,
+  runtimeErrorCode,
+  RuntimeError,
+  type RuntimeErrorCode,
+} from "../errors.js";
 import {
   CONTROL_PROTOCOL_VERSION,
   type ControlRequest,
@@ -70,6 +75,7 @@ function isRuntimeCode(error: unknown, code: RuntimeErrorCode): boolean {
 
 function exitForError(error: unknown): number {
   if (error instanceof RuntimeError) {
+    if (isRuntimeThemeV4ErrorCode(error.code)) return RUNTIME_CLI_EXIT.validation;
     switch (error.code) {
       case "THEME_NOT_FOUND":
       case "THEME_NOT_READY":

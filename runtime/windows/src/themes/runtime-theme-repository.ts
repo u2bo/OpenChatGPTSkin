@@ -17,7 +17,7 @@ import {
   RuntimeThemeError,
   type CompiledTheme,
 } from "@open-chatgpt-skin/cdp-adapter";
-import { RuntimeError } from "../errors.js";
+import { isRuntimeErrorCode, RuntimeError } from "../errors.js";
 import {
   RUNTIME_BUILTIN_THEME_IDS,
   RuntimeBuiltinThemeIdSchema,
@@ -40,6 +40,13 @@ export interface LoadedRuntimeTheme {
   readonly descriptor: RuntimeThemeDescriptor;
   readonly bundle: ValidatedThemeBundle;
   readonly compiled: CompiledTheme;
+}
+
+function runtimeValidationError(error: ThemeValidationError): RuntimeError {
+  return new RuntimeError(
+    isRuntimeErrorCode(error.code) ? error.code : "THEME_NOT_READY",
+    error.message,
+  );
 }
 
 export class RuntimeThemeRepository {
@@ -88,7 +95,7 @@ export class RuntimeThemeRepository {
     } catch (error) {
       if (error instanceof RuntimeError) throw error;
       if (error instanceof ThemeValidationError) {
-        throw new RuntimeError("THEME_NOT_READY", error.message);
+        throw runtimeValidationError(error);
       }
       throw error;
     }
@@ -126,7 +133,13 @@ export class RuntimeThemeRepository {
       );
     }
 
-    const bundle = await loadThemeDirectory(join(this.themesRoot, ...entry.path.split("/")));
+    let bundle: ValidatedThemeBundle;
+    try {
+      bundle = await loadThemeDirectory(join(this.themesRoot, ...entry.path.split("/")));
+    } catch (error) {
+      if (error instanceof ThemeValidationError) throw runtimeValidationError(error);
+      throw error;
+    }
     if (bundle.theme.id !== entry.id || bundle.theme.version !== entry.version) {
       throw new RuntimeError("THEME_NOT_READY", `Theme metadata does not match catalog: ${lookup.id}`);
     }
@@ -160,6 +173,7 @@ export class RuntimeThemeRepository {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         throw new RuntimeError("THEME_NOT_FOUND", `Unknown Runtime theme: ${id}@${version}`);
       }
+      if (error instanceof ThemeValidationError) throw runtimeValidationError(error);
       throw error;
     }
     if (bundle.theme.kind !== "theme" || bundle.theme.id !== id ||

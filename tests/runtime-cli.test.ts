@@ -210,6 +210,20 @@ describe("Runtime CLI arguments", () => {
     expect(await runRuntimeCli(["status"], dependencies, io([]))).toBe(expectedExit);
   });
 
+  it.each([
+    "THEME_SCHEMA_VERSION_UNSUPPORTED",
+    "THEME_WELCOME_INVALID",
+    "THEME_DISPLAY_FONT_MISSING",
+    "THEME_COMPOSITION_INVALID",
+    "THEME_HOME_WELCOME_UNSUPPORTED",
+    "THEME_REQUIRED_LAYER_UNRESOLVED",
+  ] as const)("maps %s to the theme validation exit", async (code) => {
+    const dependencies = fakeCliDependencies();
+    vi.mocked(dependencies.send).mockRejectedValue(new RuntimeError(code, "invalid theme"));
+
+    expect(await runRuntimeCli(["status"], dependencies, io([]))).toBe(65);
+  });
+
   it("retries a Pipe winner after a Controller startup race", async () => {
     const dependencies = fakeCliDependencies({ pipeAvailable: false });
     vi.mocked(dependencies.startController)

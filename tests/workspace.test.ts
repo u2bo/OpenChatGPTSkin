@@ -5,7 +5,7 @@ import { THEME_SCHEMA_VERSION } from "@open-chatgpt-skin/theme-schema";
 
 describe("workspace packages", () => {
   it("exports stable foundation versions", () => {
-    expect(THEME_SCHEMA_VERSION).toBe(3);
+    expect(THEME_SCHEMA_VERSION).toBe(4);
     expect(THEME_CORE_VERSION).toBe("0.1.0");
   });
 

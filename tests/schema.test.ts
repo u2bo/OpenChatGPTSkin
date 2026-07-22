@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  compileWelcomeLines,
   createThemeVisualModel,
   DEFAULT_LAYOUT_MODULES,
-  ThemeDocumentSchema,
   isSafeThemePath,
   parseThemeDocument,
+  resolveHomeWelcome,
 } from "@open-chatgpt-skin/theme-schema";
 
 const validTheme = {
@@ -68,10 +69,238 @@ const validTheme = {
 };
 
 describe("ThemeDocumentSchema", () => {
+  it("migrates v3 to v4 without opting into content overrides", () => {
+    const parsed = parseThemeDocument(validTheme);
+
+    expect(parsed).toMatchObject({
+      schemaVersion: 4,
+      composition: { layers: [] },
+      typography: {
+        displayFamily: validTheme.typography.uiFamily,
+        displaySize: 28,
+        displayWeight: validTheme.typography.uiWeight,
+        displayLineHeight: validTheme.typography.lineHeight,
+        displayLetterSpacing: 0,
+      },
+    });
+    expect(parsed.home).toBeUndefined();
+  });
+
+  it("resolves localized welcome text with a real project name", () => {
+    const parsed = parseThemeDocument({
+      ...parseThemeDocument(validTheme),
+      home: {
+        welcome: {
+          localized: {
+            "zh-CN": { lines: ["在「{projectName}」中，", "一起创造吧"] },
+            en: { lines: ["Create in {projectName}"] },
+          },
+        },
+      },
+    });
+    const localized = Object.fromEntries(Object.entries(
+      parsed.home!.welcome.localized,
+    ).map(([locale, value]) => [locale, compileWelcomeLines(value.lines)]));
+
+    expect(resolveHomeWelcome(localized, {
+      locale: "zh-CN",
+      projectName: "DataMate",
+    })).toEqual({
+      kind: "custom",
+      lines: ["在「DataMate」中，", "一起创造吧"],
+    });
+    expect(resolveHomeWelcome(localized, { locale: "zh-CN" })).toEqual({
+      kind: "native",
+    });
+    expect(resolveHomeWelcome(localized, {
+      locale: "en",
+      projectName: "DataMate",
+    })).toEqual({
+      kind: "custom",
+      lines: ["Create in DataMate"],
+    });
+  });
+
+  it.each([
+    ["unknown placeholder", ["Hello {userName}"]],
+    ["too many lines", ["1", "2", "3", "4"]],
+    ["html", ["<b>Hello</b>"]],
+    ["markdown link", ["[Hello](https://example.com)"]],
+    ["markdown emphasis", ["**Hello**"]],
+    ["css declaration", ["color: red;"]],
+    ["escape sequence", ["Hello\\nworld"]],
+    ["line longer than 120 code points", ["你".repeat(121)]],
+    ["total longer than 240 code points", [
+      "你".repeat(120),
+      "好".repeat(120),
+      "啊",
+    ]],
+  ])("rejects invalid welcome: %s", (_name, lines) => {
+    expect(() => parseThemeDocument({
+      ...parseThemeDocument(validTheme),
+      home: { welcome: { localized: { "zh-CN": { lines } } } },
+    })).toThrow();
+  });
+
+  it("resolves display typography, welcome tokens, and composition geometry once", () => {
+    const base = parseThemeDocument(validTheme);
+    const parsed = parseThemeDocument({
+      ...base,
+      assets: {
+        ...base.assets,
+        decorations: { "hero-signature": "assets/hero-signature.webp" },
+        fonts: { display: "fonts/display.woff2" },
+      },
+      typography: {
+        ...base.typography,
+        displayFamily: "Noto Serif SC",
+        displayFontAssetKey: "display",
+        displaySize: 42,
+        displayWeight: 500,
+        displayLineHeight: 1.45,
+        displayLetterSpacing: 0.04,
+      },
+      home: {
+        welcome: {
+          localized: {
+            "zh-CN": { lines: ["在「{projectName}」中，", "一起创造吧"] },
+          },
+        },
+      },
+      composition: {
+        layers: [{
+          id: "hero-signature",
+          asset: { kind: "decoration", assetKey: "hero-signature" },
+          surface: "home-hero",
+          anchor: "top-left",
+          positionX: 0.1,
+          positionY: 0.08,
+          width: 0.22,
+          opacity: 1,
+          rotation: -3,
+          required: true,
+        }],
+      },
+    });
+
+    expect(createThemeVisualModel(parsed)).toMatchObject({
+      displayTypography: {
+        family: "Noto Serif SC",
+        fontAssetKey: "display",
+        size: 42,
+        weight: 500,
+        lineHeight: 1.45,
+        letterSpacingEm: 0.04,
+      },
+      welcome: {
+        localized: {
+          "zh-CN": [
+            [
+              { kind: "text", value: "在「" },
+              { kind: "projectName" },
+              { kind: "text", value: "」中，" },
+            ],
+            [{ kind: "text", value: "一起创造吧" }],
+          ],
+        },
+      },
+      composition: {
+        layers: [{
+          id: "hero-signature",
+          positionXPercent: 10,
+          positionYPercent: 8,
+          widthPercent: 22,
+          rotationDeg: -3,
+        }],
+      },
+    });
+  });
+
+  it.each([
+    ["decoration", { kind: "decoration", assetKey: "missing" }],
+    ["portrait", { kind: "portrait" }],
+  ] as const)("rejects an undeclared %s composition asset", (_name, asset) => {
+    expect(() => parseThemeDocument({
+      ...parseThemeDocument(validTheme),
+      composition: {
+        layers: [{
+          id: "missing-layer",
+          asset,
+          surface: "home-hero",
+          anchor: "center",
+          positionX: 0.5,
+          positionY: 0.5,
+          width: 0.2,
+          opacity: 1,
+          rotation: 0,
+          required: true,
+        }],
+      },
+    })).toThrow(/composition layer asset/i);
+  });
+
+  it.each([
+    [
+      "future version",
+      { ...validTheme, schemaVersion: 99 },
+      "THEME_SCHEMA_VERSION_UNSUPPORTED",
+    ],
+    [
+      "welcome",
+      {
+        ...parseThemeDocument(validTheme),
+        home: { welcome: { localized: { "zh-CN": { lines: ["{userName}"] } } } },
+      },
+      "THEME_WELCOME_INVALID",
+    ],
+    [
+      "display font",
+      {
+        ...parseThemeDocument(validTheme),
+        typography: {
+          ...parseThemeDocument(validTheme).typography,
+          displayFontAssetKey: "missing",
+        },
+      },
+      "THEME_DISPLAY_FONT_MISSING",
+    ],
+    [
+      "composition",
+      {
+        ...parseThemeDocument(validTheme),
+        composition: {
+          layers: [{
+            id: "missing-layer",
+            asset: { kind: "portrait" },
+            surface: "main",
+            anchor: "center",
+            positionX: 0.5,
+            positionY: 0.5,
+            width: 0.2,
+            opacity: 1,
+            rotation: 0,
+            required: true,
+          }],
+        },
+      },
+      "THEME_COMPOSITION_INVALID",
+    ],
+  ] as const)("returns a stable code for invalid %s input", (_name, input, code) => {
+    let failure: unknown;
+    try {
+      parseThemeDocument(input);
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toMatchObject({ code });
+  });
+
   it("accepts a complete public theme", () => {
     expect(parseThemeDocument(validTheme)).toEqual({
       ...validTheme,
+      schemaVersion: 4,
       appearance: "auto",
+      composition: { layers: [] },
       background: {
         ...validTheme.background,
         safeArea: "auto",
@@ -83,6 +312,14 @@ describe("ThemeDocumentSchema", () => {
         elevatedOpacity: 0.92,
         terminalOpacity: 0.82,
         blur: 0,
+      },
+      typography: {
+        ...validTheme.typography,
+        displayFamily: validTheme.typography.uiFamily,
+        displaySize: 28,
+        displayWeight: validTheme.typography.uiWeight,
+        displayLineHeight: validTheme.typography.lineHeight,
+        displayLetterSpacing: 0,
       },
     });
   });
@@ -180,7 +417,7 @@ describe("ThemeDocumentSchema", () => {
       },
     };
     expect(parseThemeDocument(legacy)).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       colors: {
         textSecondary: legacy.colors.text,
         link: legacy.colors.accent,
@@ -191,13 +428,13 @@ describe("ThemeDocumentSchema", () => {
     });
   });
 
-  it("migrates v2 themes to v3 without adding interface imagery", () => {
+  it("migrates v2 themes to v4 without adding interface imagery", () => {
     const parsed = parseThemeDocument({
       ...validTheme,
       schemaVersion: 2,
     });
 
-    expect(parsed.schemaVersion).toBe(3);
+    expect(parsed.schemaVersion).toBe(4);
     expect(parsed.assets.profileAvatar).toBeUndefined();
     expect(parsed.assets.suggestionIcons).toBeUndefined();
   });
@@ -285,7 +522,7 @@ describe("ThemeDocumentSchema", () => {
       assets: {},
       rights: { licenseId: "LicenseRef-User-Supplied", localOnly: true },
     };
-    expect(ThemeDocumentSchema.parse(recipe).kind).toBe("recipe");
+    expect(parseThemeDocument(recipe).kind).toBe("recipe");
   });
 
   it("enforces the safe module grid and declared decoration assets", () => {

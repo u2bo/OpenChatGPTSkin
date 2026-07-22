@@ -3,12 +3,29 @@ import type {
   ThemeColors,
   ThemeDraftDocument,
   ThemeLayout,
+  ThemeLocale,
   ThemeLayoutModule,
 } from "./theme.js";
+import {
+  resolveCompositionLayer,
+  type ResolvedCompositionLayer,
+} from "./composition.js";
+import {
+  compileWelcomeLines,
+  type CompiledWelcomeLine,
+} from "./welcome.js";
 
 type ThemeVisualSource = Pick<
   ThemeDraftDocument,
-  "appearance" | "assets" | "colors" | "typography" | "background" | "surfaces" | "layout"
+  | "appearance"
+  | "assets"
+  | "colors"
+  | "typography"
+  | "background"
+  | "surfaces"
+  | "layout"
+  | "home"
+  | "composition"
 >;
 
 type ResolvedAppearance = "light" | "dark";
@@ -144,6 +161,23 @@ export interface ThemeVisualModel {
     readonly codeWeight: number;
     readonly lineHeight: number;
   };
+  readonly displayTypography: {
+    readonly family: string;
+    readonly fontAssetKey?: string;
+    readonly size: number;
+    readonly weight: number;
+    readonly lineHeight: number;
+    readonly letterSpacingEm: number;
+  };
+  readonly welcome?: {
+    readonly localized: Readonly<Partial<Record<
+      ThemeLocale,
+      readonly CompiledWelcomeLine[]
+    >>>;
+  };
+  readonly composition: {
+    readonly layers: readonly ResolvedCompositionLayer[];
+  };
   readonly background: {
     readonly positionXPercent: number;
     readonly positionYPercent: number;
@@ -174,6 +208,12 @@ export function createThemeVisualModel(theme: ThemeVisualSource): ThemeVisualMod
   const modules = Object.fromEntries(
     theme.layout.modules.map((module) => [module.id, { ...module }]),
   ) as Record<ThemeLayoutModule["id"], ThemeLayoutModule>;
+  const localized: Partial<Record<ThemeLocale, readonly CompiledWelcomeLine[]>> = {};
+  for (const locale of ["zh-CN", "en"] as const) {
+    const value = theme.home?.welcome.localized[locale];
+    if (value) localized[locale] = compileWelcomeLines(value.lines);
+  }
+  const hasWelcome = Object.keys(localized).length > 0;
   return {
     appearance: {
       mode: theme.appearance,
@@ -188,6 +228,23 @@ export function createThemeVisualModel(theme: ThemeVisualSource): ThemeVisualMod
       uiWeight: theme.typography.uiWeight,
       codeWeight: theme.typography.codeWeight,
       lineHeight: theme.typography.lineHeight,
+    },
+    displayTypography: {
+      family: theme.typography.displayFamily,
+      ...(theme.typography.displayFontAssetKey
+        ? { fontAssetKey: theme.typography.displayFontAssetKey }
+        : {}),
+      size: theme.typography.displaySize,
+      weight: theme.typography.displayWeight,
+      lineHeight: theme.typography.displayLineHeight,
+      letterSpacingEm: theme.typography.displayLetterSpacing,
+    },
+    ...(hasWelcome ? { welcome: { localized } } : {}),
+    composition: {
+      layers: theme.composition.layers.map((layer) => {
+        const resolved = resolveCompositionLayer(layer);
+        return { ...resolved, asset: { ...resolved.asset } };
+      }),
     },
     background: {
       positionXPercent: theme.background.positionX * 100,

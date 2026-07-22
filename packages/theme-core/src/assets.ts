@@ -1,6 +1,7 @@
 import {
   isSafeThemePath,
   parseThemeDocument,
+  ThemeSchemaError,
   themeAssetPaths,
 } from "@open-chatgpt-skin/theme-schema";
 import { ThemeValidationError } from "./errors.js";
@@ -39,12 +40,15 @@ export function validateThemeBundle(value: unknown, files: ThemeFileTable): Vali
     theme = parseThemeDocument(value);
   } catch (error) {
     throw new ThemeValidationError(
-      "THEME_SCHEMA_INVALID",
+      error instanceof ThemeSchemaError ? error.code : "THEME_SCHEMA_INVALID",
       error instanceof Error ? error.message : String(error),
     );
   }
 
   const declared = new Set(themeAssetPaths(theme));
+  const displayFontPath = theme.typography.displayFontAssetKey
+    ? theme.assets.fonts?.[theme.typography.displayFontAssetKey]
+    : undefined;
   if (theme.kind === "recipe" && files.size > 0) {
     throw new ThemeValidationError(
       "RECIPE_ASSET_FORBIDDEN",
@@ -60,7 +64,10 @@ export function validateThemeBundle(value: unknown, files: ThemeFileTable): Vali
 
   for (const file of declared) {
     if (!files.has(file)) {
-      throw new ThemeValidationError("ASSET_MISSING", `missing declared asset: ${file}`);
+      throw new ThemeValidationError(
+        file === displayFontPath ? "THEME_DISPLAY_FONT_MISSING" : "ASSET_MISSING",
+        `missing declared asset: ${file}`,
+      );
     }
   }
 
@@ -102,7 +109,9 @@ export function validateThemeBundle(value: unknown, files: ThemeFileTable): Vali
       }
       if (!isWoff2(bytes)) {
         throw new ThemeValidationError(
-          "ASSET_SIGNATURE_INVALID",
+          name === displayFontPath
+            ? "THEME_DISPLAY_FONT_MISSING"
+            : "ASSET_SIGNATURE_INVALID",
           `${name} has invalid WOFF2 signature`,
         );
       }

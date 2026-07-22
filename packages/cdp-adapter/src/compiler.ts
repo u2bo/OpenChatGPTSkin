@@ -5,10 +5,15 @@ import {
   createThemeVisualModel,
   NATIVE_GEOMETRY_MODULE_IDS,
   type ThemeLayoutModule,
+  type ThemeInterfaceImageVisual,
 } from "@open-chatgpt-skin/theme-schema";
 import { RuntimeThemeError } from "./errors.js";
 import { surfaceSelector } from "./surface-contract.js";
-import type { CompiledDecoration, CompiledTheme } from "./types.js";
+import type {
+  CompiledDecoration,
+  CompiledInterfaceImage,
+  CompiledTheme,
+} from "./types.js";
 
 export const RUNTIME_MAX_COMPILED_THEME_BYTES = 2 * 1024 * 1024;
 
@@ -33,7 +38,10 @@ function dataUrl(path: string, bytes: Uint8Array): string {
   return `data:${mime(path)};base64,${Buffer.from(bytes).toString("base64")}`;
 }
 
-function compileDecorations(bundle: ValidatedThemeBundle): CompiledDecoration[] {
+function compileDecorations(
+  bundle: ValidatedThemeBundle,
+  imageDataUrl: (path: string) => string,
+): CompiledDecoration[] {
   const theme = bundle.theme;
   const decorations = theme.decorations
     .filter((item) => item.enabled)
@@ -42,9 +50,7 @@ function compileDecorations(bundle: ValidatedThemeBundle): CompiledDecoration[] 
       if (item.assetKey) {
         const path = theme.assets.decorations?.[item.assetKey];
         if (!path) throw new RuntimeThemeError("ASSET_MISSING", item.assetKey);
-        const bytes = bundle.files.get(path);
-        if (!bytes) throw new RuntimeThemeError("ASSET_MISSING", path);
-        compiledDataUrl = dataUrl(path, bytes);
+        compiledDataUrl = imageDataUrl(path);
       }
       return {
         kind: item.type,
@@ -58,15 +64,13 @@ function compileDecorations(bundle: ValidatedThemeBundle): CompiledDecoration[] 
     .filter((item) => item.count > 0);
   const portraitPath = theme.assets.portrait;
   if (portraitPath) {
-    const bytes = bundle.files.get(portraitPath);
-    if (!bytes) throw new RuntimeThemeError("ASSET_MISSING", portraitPath);
     decorations.unshift({
       kind: "image",
       count: 1,
       opacity: 0.92,
       scale: 1.4,
       placement: "hero",
-      dataUrl: dataUrl(portraitPath, bytes),
+      dataUrl: imageDataUrl(portraitPath),
     });
   }
   return decorations;
@@ -114,6 +118,16 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
 
   const theme = bundle.theme;
   const visual = createThemeVisualModel(theme);
+  const imageDataUrls = new Map<string, string>();
+  const imageDataUrl = (path: string): string => {
+    const cached = imageDataUrls.get(path);
+    if (cached) return cached;
+    const bytes = bundle.files.get(path);
+    if (!bytes) throw new RuntimeThemeError("ASSET_MISSING", path);
+    const compiled = dataUrl(path, bytes);
+    imageDataUrls.set(path, compiled);
+    return compiled;
+  };
   const safeAreaOverlay = createSafeAreaOverlayCss(
     visual.background.safeArea,
     visual.background.overlayColor,
@@ -259,10 +273,45 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;}`,
     `}`,
   ].join("");
-  const background = bundle.files.get(backgroundPath);
-  if (!background) throw new RuntimeThemeError("ASSET_MISSING", backgroundPath);
-
-  const backgroundDataUrl = dataUrl(backgroundPath, background);
+  const backgroundDataUrl = imageDataUrl(backgroundPath);
+  const customInterfaceDataUrls: string[] = [];
+  const customInterfaceIndexes = new Map<string, number>();
+  const compileInterfaceImage = (
+    image: ThemeInterfaceImageVisual,
+  ): CompiledInterfaceImage | undefined => {
+    if (!image.path) return undefined;
+    if (image.path === backgroundPath) {
+      return {
+        asset: "background",
+        positionXPercent: image.positionXPercent,
+        positionYPercent: image.positionYPercent,
+      };
+    }
+    let asset = customInterfaceIndexes.get(image.path);
+    if (asset === undefined) {
+      asset = customInterfaceDataUrls.length;
+      customInterfaceIndexes.set(image.path, asset);
+      customInterfaceDataUrls.push(imageDataUrl(image.path));
+    }
+    return {
+      asset,
+      positionXPercent: image.positionXPercent,
+      positionYPercent: image.positionYPercent,
+    };
+  };
+  const profileAvatar = compileInterfaceImage(visual.interfaceImagery.profileAvatar);
+  const suggestionIcons = Object.fromEntries(
+    Object.entries(visual.interfaceImagery.suggestionIcons)
+      .map(([slot, image]) => [slot, compileInterfaceImage(image)] as const)
+      .filter((entry): entry is readonly [string, CompiledInterfaceImage] =>
+        entry[1] !== undefined
+      ),
+  );
+  const interfaceImagery = {
+    dataUrls: customInterfaceDataUrls,
+    ...(profileAvatar ? { profileAvatar } : {}),
+    suggestionIcons,
+  };
   const uiFamily = cssString(theme.typography.uiFamily);
   const codeFamily = cssString(theme.typography.codeFamily);
   const themeCss = [
@@ -552,11 +601,13 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `[data-open-chatgpt-skin-surface="suggestions"] > *{`,
     `width:100%!important;min-width:0!important;max-width:none!important;}`,
     `[data-open-chatgpt-skin-surface="card"]{width:100%!important;max-width:none!important;`,
-    `min-width:0!important;height:100%!important;`,
+    `min-width:0!important;height:100%!important;position:relative!important;`,
     `color:var(--ocs-text)!important;`,
     `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;border-radius:12px!important;}`,
     `[data-open-chatgpt-skin-surface="card"] :where(span,strong,p){color:inherit!important;}`,
+    `[data-open-chatgpt-skin-interface-host]{position:relative!important;}`,
+    `[data-open-chatgpt-skin-native-icon]{opacity:0!important;}`,
     `[data-open-chatgpt-skin-surface="hero"]{`,
     `min-height:max(180px,calc(min(var(--ocs-hero-height),45vh) - var(--ocs-home-overlap-relief)))!important;}`,
     `[data-open-chatgpt-skin-surface="hero"] *{color:inherit!important;}`,
@@ -569,11 +620,12 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     if (!bytes) throw new RuntimeThemeError("ASSET_MISSING", path);
     return `@font-face{font-family:${cssString(`ocs-${key}`)};src:url(${cssString(dataUrl(path, bytes))}) format("woff2");}`;
   }).join("");
-  const decorations = compileDecorations(bundle);
+  const decorations = compileDecorations(bundle, imageDataUrl);
   const totalBytes = Buffer.byteLength(backgroundDataUrl) +
     Buffer.byteLength(themeCss) +
     Buffer.byteLength(fontCss) +
-    Buffer.byteLength(JSON.stringify(decorations));
+    Buffer.byteLength(JSON.stringify(decorations)) +
+    Buffer.byteLength(JSON.stringify(interfaceImagery));
 
   if (totalBytes > RUNTIME_MAX_COMPILED_THEME_BYTES) {
     throw new RuntimeThemeError("THEME_RUNTIME_TOO_LARGE", "compiled theme exceeds 2 MB");
@@ -587,6 +639,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     fontCss,
     layout: visual.layout,
     decorations,
+    interfaceImagery,
     totalBytes,
   };
 }

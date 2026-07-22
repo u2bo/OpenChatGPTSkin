@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "themeId": "glacier-aurora",
-  "themeVersion": "1.2.2",
+  "themeVersion": "1.3.0",
   "files": {
     "theme.json": {
-      "bytes": 3345,
-      "sha256": "594e4ba535194ac01fbb9d004fc8be003e6c4ccaf9fc5df439091ccb61e09232"
+      "bytes": 3585,
+      "sha256": "cf63ca22263683e8813c3534b061d8666452063cc2481756d88a98c6cd76dd3c"
     },
     "assets/background.webp": {
       "bytes": 258216,

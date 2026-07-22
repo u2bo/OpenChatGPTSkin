@@ -1,4 +1,8 @@
-import { isSafeThemePath, parseThemeDocument } from "@open-chatgpt-skin/theme-schema";
+import {
+  isSafeThemePath,
+  parseThemeDocument,
+  themeAssetPaths,
+} from "@open-chatgpt-skin/theme-schema";
 import { ThemeValidationError } from "./errors.js";
 import type { ThemeFileTable, ValidatedThemeBundle } from "./types.js";
 
@@ -29,15 +33,6 @@ function isWoff2(bytes: Uint8Array): boolean {
   return startsWith(bytes, [0x77, 0x4f, 0x46, 0x32]);
 }
 
-function referencedFiles(theme: ReturnType<typeof parseThemeDocument>): Set<string> {
-  return new Set([
-    theme.assets.background,
-    theme.assets.portrait,
-    ...Object.values(theme.assets.decorations ?? {}),
-    ...Object.values(theme.assets.fonts ?? {}),
-  ].filter((value): value is string => Boolean(value)));
-}
-
 export function validateThemeBundle(value: unknown, files: ThemeFileTable): ValidatedThemeBundle {
   let theme: ReturnType<typeof parseThemeDocument>;
   try {
@@ -49,7 +44,7 @@ export function validateThemeBundle(value: unknown, files: ThemeFileTable): Vali
     );
   }
 
-  const declared = referencedFiles(theme);
+  const declared = new Set(themeAssetPaths(theme));
   if (theme.kind === "recipe" && files.size > 0) {
     throw new ThemeValidationError(
       "RECIPE_ASSET_FORBIDDEN",

@@ -58,6 +58,13 @@ const httpsUrl = z.string().url().max(500).refine(
 
 export const ThemeLocaleSchema = z.enum(["zh-CN", "en"]);
 
+export const SuggestionIconSlotSchema = z.enum([
+  "card1",
+  "card2",
+  "card3",
+  "card4",
+]);
+
 export const ThemeMetadataSchema = z.object({
   homepage: httpsUrl.optional(),
   localized: z.record(ThemeLocaleSchema, z.object({
@@ -184,8 +191,25 @@ export const ThemeLayoutSchema = z.object({
   }
 });
 
+const ThemeAssetsV2Schema = z.object({
+  background: imagePath.optional(),
+  portrait: imagePath.optional(),
+  decorations: z.record(assetKey, imagePath).optional(),
+  fonts: z.record(assetKey, fontPath).optional(),
+}).strict();
+
+const ThemeAssetsSchema = ThemeAssetsV2Schema.extend({
+  profileAvatar: imagePath.optional(),
+  suggestionIcons: z.object({
+    card1: imagePath.optional(),
+    card2: imagePath.optional(),
+    card3: imagePath.optional(),
+    card4: imagePath.optional(),
+  }).strict().optional(),
+}).strict();
+
 const ThemeDocumentFieldsSchema = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   kind: z.enum(["theme", "recipe"]),
   appearance: z.enum(["auto", "light", "dark"]).default("auto"),
   id: ThemeIdSchema,
@@ -194,12 +218,7 @@ const ThemeDocumentFieldsSchema = z.object({
   version: ThemeVersionSchema,
   author: z.string().trim().min(1).max(80),
   metadata: ThemeMetadataSchema.optional(),
-  assets: z.object({
-    background: imagePath.optional(),
-    portrait: imagePath.optional(),
-    decorations: z.record(assetKey, imagePath).optional(),
-    fonts: z.record(assetKey, fontPath).optional(),
-  }).strict(),
+  assets: ThemeAssetsSchema,
   colors: ThemeColorsSchema,
   typography: z.object({
     uiFamily: z.string().trim().min(1).max(120),
@@ -305,27 +324,15 @@ export const ThemeDocumentSchema = ThemeDocumentFieldsSchema.superRefine(
   (theme, context) => validateThemeRelationships(theme, context, true),
 );
 
-const LegacyThemeDocumentSchema = ThemeDocumentFieldsSchema.extend({
+const ThemeDocumentV2Schema = ThemeDocumentFieldsSchema.extend({
+  schemaVersion: z.literal(2),
+  assets: ThemeAssetsV2Schema,
+}).strict();
+
+const LegacyThemeDocumentSchema = ThemeDocumentV2Schema.extend({
   schemaVersion: z.literal(1),
   colors: ThemeColorsV1Schema,
-}).strict().superRefine(
-  (theme, context) => validateThemeRelationships(
-    {
-      ...theme,
-      schemaVersion: 2,
-      colors: {
-        ...theme.colors,
-        textSecondary: theme.colors.text,
-        link: theme.colors.accent,
-        inputText: theme.colors.text,
-        placeholder: theme.colors.muted,
-        codeText: theme.colors.text,
-      },
-    },
-    context,
-    true,
-  ),
-);
+}).strict();
 
 export type ThemeDocument = z.infer<typeof ThemeDocumentSchema>;
 export type ThemeDraftDocument = z.infer<typeof ThemeDraftDocumentSchema>;
@@ -334,17 +341,40 @@ export type ThemeLayout = z.infer<typeof ThemeLayoutSchema>;
 export type ThemeSurfaces = ThemeDocumentFields["surfaces"];
 export type ThemeMetadata = z.infer<typeof ThemeMetadataSchema>;
 export type ThemeLocale = z.infer<typeof ThemeLocaleSchema>;
+export type SuggestionIconSlot = z.infer<typeof SuggestionIconSlotSchema>;
 
-export function parseThemeDocument(value: unknown): ThemeDocument {
+export function themeAssetPaths(
+  theme: Pick<ThemeDraftDocument, "assets">,
+): readonly string[] {
+  return [...new Set([
+    theme.assets.background,
+    theme.assets.portrait,
+    theme.assets.profileAvatar,
+    ...Object.values(theme.assets.suggestionIcons ?? {}),
+    ...Object.values(theme.assets.decorations ?? {}),
+    ...Object.values(theme.assets.fonts ?? {}),
+  ].filter((value): value is string => Boolean(value)))];
+}
+
+function migrateThemeDocument(value: unknown): unknown {
+  if (typeof value === "object" && value !== null &&
+    "schemaVersion" in value && value.schemaVersion === 3) {
+    return value;
+  }
+
   if (typeof value === "object" && value !== null &&
     "schemaVersion" in value && value.schemaVersion === 2) {
-    return ThemeDocumentSchema.parse(value);
+    const previous = ThemeDocumentV2Schema.parse(value);
+    return {
+      ...previous,
+      schemaVersion: 3,
+    };
   }
 
   const legacy = LegacyThemeDocumentSchema.parse(value);
-  return ThemeDocumentSchema.parse({
+  return {
     ...legacy,
-    schemaVersion: 2,
+    schemaVersion: 3,
     colors: {
       ...legacy.colors,
       textSecondary: legacy.colors.text,
@@ -353,5 +383,13 @@ export function parseThemeDocument(value: unknown): ThemeDocument {
       placeholder: legacy.colors.muted,
       codeText: legacy.colors.text,
     },
-  });
+  };
+}
+
+export function parseThemeDraftDocument(value: unknown): ThemeDraftDocument {
+  return ThemeDraftDocumentSchema.parse(migrateThemeDocument(value));
+}
+
+export function parseThemeDocument(value: unknown): ThemeDocument {
+  return ThemeDocumentSchema.parse(migrateThemeDocument(value));
 }

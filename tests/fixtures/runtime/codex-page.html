@@ -1,7 +1,15 @@
 <!doctype html>
 <html>
   <body>
-    <nav role="navigation" data-rect="0,0,280,760"><button>Tasks</button></nav>
+    <nav role="navigation" data-rect="0,0,280,760">
+      <button data-rect="12,12,120,32">Tasks</button>
+      <button id="native-account-button" aria-label="Account menu" data-rect="12,708,250,40">
+        <span id="native-account-avatar" data-rect="20,716,24,24">
+          <svg data-rect="20,716,24,24" aria-hidden="true"></svg>
+        </span>
+        Demo user
+      </button>
+    </nav>
     <main role="main" data-rect="280,0,1000,760">
       <header id="native-topbar" data-rect="280,0,1000,64">
         <button data-rect="300,16,32,32">Back</button>
@@ -17,10 +25,10 @@
           <h1 data-rect="500,180,560,48">What should we build?</h1>
         </section>
         <section id="native-suggestions" data-rect="380,300,800,150">
-          <button data-rect="380,300,188,150">Explore code</button>
-          <button data-rect="584,300,188,150">Build a feature</button>
-          <button data-rect="788,300,188,150">Review code</button>
-          <button data-rect="992,300,188,150">Fix a bug</button>
+          <button data-rect="380,300,188,150"><span data-rect="394,314,20,20"><svg data-rect="394,314,20,20"></svg></span>Explore code</button>
+          <button data-rect="584,300,188,150"><span data-rect="598,314,20,20"><svg data-rect="598,314,20,20"></svg></span>Build a feature</button>
+          <button data-rect="788,300,188,150"><span data-rect="802,314,20,20"><svg data-rect="802,314,20,20"></svg></span>Review code</button>
+          <button data-rect="992,300,188,150"><span data-rect="1006,314,20,20"><svg data-rect="1006,314,20,20"></svg></span>Fix a bug</button>
         </section>
         <section id="native-composer-stack" data-rect="430,470,700,230">
           <div id="native-project-picker-stack" class="z-0 relative -mb-2" data-rect="430,530,700,43">

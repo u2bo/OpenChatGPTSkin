@@ -4,7 +4,7 @@
     {
       "id": "future-idol-cyan",
       "name": "未来歌姬",
-      "version": "1.2.2",
+      "version": "1.3.0",
       "kind": "theme",
       "path": "builtin/future-idol-cyan",
       "ready": true,
@@ -15,7 +15,7 @@
     {
       "id": "glacier-aurora",
       "name": "冰川极光",
-      "version": "1.2.2",
+      "version": "1.3.0",
       "kind": "theme",
       "path": "builtin/glacier-aurora",
       "ready": true,
@@ -26,7 +26,7 @@
     {
       "id": "mountain-mist",
       "name": "山岚云海",
-      "version": "1.2.2",
+      "version": "1.3.0",
       "kind": "theme",
       "path": "builtin/mountain-mist",
       "ready": true,
@@ -37,7 +37,7 @@
     {
       "id": "rose-carpet-star",
       "name": "玫瑰星光",
-      "version": "1.2.2",
+      "version": "1.3.0",
       "kind": "theme",
       "path": "builtin/rose-carpet-star",
       "ready": true,

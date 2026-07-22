@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { parseHTML } from "linkedom";
 import {
   startThemeStudioDevHost,
   startThemeStudioProductionHost,
@@ -73,6 +74,10 @@ describe("Theme Studio development host", () => {
       `connect-src 'self' ${host.origin.replace(/^http:/, "ws:")}`,
     );
     const nonce = contentSecurityPolicy!.match(/'nonce-([^']+)'/)![1]!;
+    const { document } = parseHTML(html);
+    const nonceMetadata = document.querySelectorAll('meta[property="csp-nonce"]');
+    expect(nonceMetadata).toHaveLength(1);
+    expect(nonceMetadata[0]?.getAttribute("nonce")).toBe(nonce);
     expect(html).toContain(`nonce="${nonce}"`);
     expect(html).toContain("property=\"csp-nonce\"");
     expect(response.headers.get("referrer-policy")).toBe("no-referrer");

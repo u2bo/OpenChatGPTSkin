@@ -13,6 +13,7 @@ import {
   type StudioDraft,
   type StudioThemeLibrary,
   type StudioThemeListItem,
+  type StudioUploadAssetInput,
 } from "@open-chatgpt-skin/theme-studio-core";
 import type { ThemeDraftDocument } from "@open-chatgpt-skin/theme-schema";
 import { Inspector } from "./editor/Inspector.js";
@@ -310,7 +311,7 @@ export function ThemeStudioApp({
   }, [bridge, runOperation]);
 
   const uploadAsset = useCallback((
-    slot: "background" | "portrait" | "decoration" | "ui-font" | "code-font",
+    slot: StudioUploadAssetInput["slot"],
     file: File,
     assetKey?: string,
   ) => {

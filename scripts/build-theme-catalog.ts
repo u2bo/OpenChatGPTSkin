@@ -58,7 +58,7 @@ for (const preset of BUILTIN_PRESETS) {
   }
 
   const theme = parseThemeDocument({
-    schemaVersion: 2,
+    schemaVersion: 3,
     kind: "theme",
     appearance: preset.appearance,
     id: preset.id,
@@ -75,7 +75,16 @@ for (const preset of BUILTIN_PRESETS) {
         },
       },
     },
-    assets: { background: "assets/background.webp" },
+    assets: {
+      background: "assets/background.webp",
+      profileAvatar: "assets/background.webp",
+      suggestionIcons: {
+        card1: "assets/background.webp",
+        card2: "assets/background.webp",
+        card3: "assets/background.webp",
+        card4: "assets/background.webp",
+      },
+    },
     colors: preset.colors,
     typography: {
       uiFamily: "Microsoft YaHei UI",
@@ -87,7 +96,7 @@ for (const preset of BUILTIN_PRESETS) {
       codeWeight: 400,
       lineHeight: 1.5,
     },
-    background: { ...preset.background, scale: 1, blur: 0 },
+    background: { ...preset.background, scale: 1.05, blur: 0 },
     surfaces: preset.surfaces,
     decorations: preset.decorations,
     layout: {

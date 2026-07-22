@@ -1,4 +1,4 @@
-# OpenChatGPTSkin `.ocskin` 归档格式 v1 / Theme Schema v2
+# OpenChatGPTSkin `.ocskin` 归档格式 v1 / Theme Schema v3
 
 An OpenChatGPTSkin theme is a structured `.ocskin` ZIP archive. It contains data and media only; JavaScript, HTML, CSS, executables, absolute paths, path traversal, duplicate entries, symbolic-link extraction, and unknown top-level entries are not supported.
 
@@ -12,6 +12,8 @@ theme.ocskin
 ├── assets/
 │   ├── background.webp
 │   ├── portrait.webp            # optional
+│   ├── profile-avatar.webp       # optional account avatar
+│   ├── suggestion-card1.webp     # optional; card2-card4 use the same rule
 │   └── decorations/             # optional PNG/JPEG/WebP files
 └── fonts/
     └── optional-font.woff2      # optional
@@ -27,7 +29,7 @@ The document is strict: unknown properties fail validation.
 
 | Field | Rule |
 |---|---|
-| `schemaVersion` | exactly `2` for newly saved themes; v1 is deterministically migrated when read |
+| `schemaVersion` | exactly `3` for newly saved themes; v1 and v2 are deterministically migrated when read |
 | `kind` | `theme` or `recipe` |
 | `id` | 3–80 lowercase letters, digits, and single hyphen-separated segments; Windows-reserved names are rejected |
 | `name` | 1–80 characters |
@@ -42,7 +44,9 @@ The root `name` and `description` remain the canonical fallback. Localized metad
 
 ### Assets
 
-`assets.background` is required for `kind: "theme"`. `assets.portrait`, named `assets.decorations`, and named `assets.fonts` are optional. A `kind: "recipe"` document must have `assets: {}` and `rights.localOnly: true`.
+`assets.background` is required for `kind: "theme"`. `assets.portrait`, `assets.profileAvatar`, the four optional `assets.suggestionIcons.card1` through `card4`, named `assets.decorations`, and named `assets.fonts` are optional. Multiple slots may reference the same local image path, so a theme can reuse `assets.background` without duplicating the binary file. A `kind: "recipe"` document must have `assets: {}` and `rights.localOnly: true`.
+
+When an interface-image slot references `assets.background`, Theme Studio and Runtime use the same fixed `cover` crop positions: `profileAvatar 50% 35%`, `card1 20% 25%`, `card2 80% 25%`, `card3 20% 75%`, and `card4 80% 75%`. Independently uploaded avatar and suggestion images use centered `50% 50%` crops. Omitting or clearing a slot keeps the native ChatGPT icon or avatar.
 
 ### Colors
 

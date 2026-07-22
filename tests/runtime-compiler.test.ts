@@ -33,6 +33,43 @@ describe("compileTheme", () => {
     expect(compiled.totalBytes).toBeLessThanOrEqual(RUNTIME_MAX_COMPILED_THEME_BYTES);
   });
 
+  it("deduplicates shared background and custom interface imagery", async () => {
+    const bundle = await loadThemeDirectory(resolve("themes/builtin/mountain-mist"));
+    const backgroundPath = bundle.theme.assets.background!;
+    const customPath = "assets/custom-interface.webp";
+    const background = bundle.files.get(backgroundPath)!;
+    const compiled = compileTheme({
+      ...bundle,
+      theme: {
+        ...bundle.theme,
+        assets: {
+          ...bundle.theme.assets,
+          profileAvatar: backgroundPath,
+          suggestionIcons: {
+            card1: backgroundPath,
+            card2: customPath,
+            card3: customPath,
+            card4: backgroundPath,
+          },
+        },
+      },
+      files: new Map([...bundle.files, [customPath, background]]),
+    });
+
+    expect(compiled.interfaceImagery.dataUrls).toHaveLength(1);
+    expect(compiled.interfaceImagery.profileAvatar).toEqual({
+      asset: "background",
+      positionXPercent: 50,
+      positionYPercent: 35,
+    });
+    expect(compiled.interfaceImagery.suggestionIcons).toMatchObject({
+      card1: { asset: "background", positionXPercent: 20, positionYPercent: 25 },
+      card2: { asset: 0, positionXPercent: 50, positionYPercent: 50 },
+      card3: { asset: 0, positionXPercent: 50, positionYPercent: 50 },
+      card4: { asset: "background", positionXPercent: 80, positionYPercent: 75 },
+    });
+  });
+
   it("compiles mountain-mist into fixed CSS and bounded data resources", async () => {
     const bundle = await loadThemeDirectory(
       resolve("themes/builtin/mountain-mist"),
@@ -64,7 +101,9 @@ describe("compileTheme", () => {
     expect(compiled.themeCss).toContain(
       `--ocs-color-scheme:${bundle.theme.appearance}`,
     );
-    expect(compiled.themeCss).toContain(",rgba(0,0,0,");
+    expect(compiled.themeCss).toContain(
+      'body::after{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:rgba(0,0,0,0);}',
+    );
     expect(compiled.themeCss).not.toContain("background:rgba(255,255,255,");
     expect(compiled.themeCss).not.toContain(
       "nav,aside,[role=navigation],main,[role=main]",
@@ -252,7 +291,8 @@ describe("compileTheme", () => {
       Buffer.byteLength(compiled.backgroundDataUrl) +
       Buffer.byteLength(compiled.themeCss) +
       Buffer.byteLength(compiled.fontCss) +
-      Buffer.byteLength(JSON.stringify(compiled.decorations)),
+      Buffer.byteLength(JSON.stringify(compiled.decorations)) +
+      Buffer.byteLength(JSON.stringify(compiled.interfaceImagery)),
     );
   });
 

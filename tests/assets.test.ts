@@ -97,6 +97,34 @@ describe("validateThemeBundle", () => {
     expect(validateThemeBundle(baseTheme, files).totalBytes).toBe(12);
   });
 
+  it("deduplicates shared interface imagery and requires custom image files", () => {
+    const migrated = validateThemeBundle(baseTheme, new Map([
+      ["assets/background.webp", webp()],
+    ])).theme;
+    const withInterfaceImagery = {
+      ...migrated,
+      assets: {
+        ...migrated.assets,
+        profileAvatar: "assets/background.webp",
+        suggestionIcons: {
+          card1: "assets/background.webp",
+          card2: "assets/card2.webp",
+        },
+      },
+    };
+
+    expect(() => validateThemeBundle(withInterfaceImagery, new Map([
+      ["assets/background.webp", webp()],
+    ]))).toThrow(/assets\/card2\.webp/);
+
+    const validated = validateThemeBundle(withInterfaceImagery, new Map([
+      ["assets/background.webp", webp()],
+      ["assets/card2.webp", webp()],
+    ]));
+    expect(validated.files.size).toBe(2);
+    expect(validated.totalBytes).toBe(24);
+  });
+
   it("wraps schema failures in a stable validation error", () => {
     let schemaError: unknown;
     try {

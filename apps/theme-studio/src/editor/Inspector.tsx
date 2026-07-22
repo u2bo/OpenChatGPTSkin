@@ -5,13 +5,30 @@ import type {
   StudioUploadAssetInput,
 } from "@open-chatgpt-skin/theme-studio-core";
 import {
+  createThemeVisualModel,
   NATIVE_GEOMETRY_MODULE_IDS,
+  type SuggestionIconSlot,
   type ThemeDraftDocument,
+  type ThemeInterfaceImageVisual,
 } from "@open-chatgpt-skin/theme-schema";
 import type { StudioTool } from "./types.js";
 import type { StudioLocale } from "../studio/preferences.js";
 
 type AssetSlot = StudioUploadAssetInput["slot"];
+type InterfaceImageTarget = "profileAvatar" | SuggestionIconSlot;
+
+const INTERFACE_IMAGE_FIELDS = [
+  { target: "profileAvatar", slot: "profile-avatar", label: "用户头像", labelEn: "Profile avatar" },
+  { target: "card1", slot: "suggestion-card1", label: "建议卡片 1", labelEn: "Suggestion card 1" },
+  { target: "card2", slot: "suggestion-card2", label: "建议卡片 2", labelEn: "Suggestion card 2" },
+  { target: "card3", slot: "suggestion-card3", label: "建议卡片 3", labelEn: "Suggestion card 3" },
+  { target: "card4", slot: "suggestion-card4", label: "建议卡片 4", labelEn: "Suggestion card 4" },
+] as const satisfies readonly {
+  readonly target: InterfaceImageTarget;
+  readonly slot: AssetSlot;
+  readonly label: string;
+  readonly labelEn: string;
+}[];
 
 const COLOR_FIELDS = [
   ["accent", "主色", "Accent"],
@@ -77,6 +94,15 @@ const INSPECTOR_EN: Record<string, string> = {
   "语义颜色": "Semantic colors",
   "文字颜色会实时计算对比度，低于 4.5:1 时不能保存版本。": "Text contrast is checked live. Versions below 4.5:1 cannot be saved.",
   "背景": "Background",
+  "界面素材": "Interface imagery",
+  "为首页建议卡片和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。": "Set images for home suggestions and the account area. Clear a slot to restore the ChatGPT default.",
+  "上传图片": "Upload image",
+  "替换图片": "Replace image",
+  "清除": "Clear",
+  "使用主题背景": "Use theme background",
+  "官方默认": "ChatGPT default",
+  "复用主题背景": "Uses theme background",
+  "独立图片": "Custom image",
   "更换自有 / 已授权背景图片": "Replace owned / licensed background",
   "上传自有 / 已授权背景图片（必需）": "Upload owned / licensed background (required)",
   "上传人物 / 前景图片": "Upload portrait / foreground",
@@ -242,6 +268,41 @@ function removeUploadedFont(theme: ThemeDraftDocument, kind: "ui" | "code"): voi
   }
 }
 
+function interfaceImagePath(
+  theme: ThemeDraftDocument,
+  target: InterfaceImageTarget,
+): string | undefined {
+  return target === "profileAvatar"
+    ? theme.assets.profileAvatar
+    : theme.assets.suggestionIcons?.[target];
+}
+
+function setInterfaceImagePath(
+  theme: ThemeDraftDocument,
+  target: InterfaceImageTarget,
+  path: string | undefined,
+): void {
+  if (target === "profileAvatar") {
+    if (path) theme.assets.profileAvatar = path;
+    else delete theme.assets.profileAvatar;
+    return;
+  }
+
+  if (path) {
+    theme.assets.suggestionIcons = {
+      ...theme.assets.suggestionIcons,
+      [target]: path,
+    };
+    return;
+  }
+
+  if (!theme.assets.suggestionIcons) return;
+  delete theme.assets.suggestionIcons[target];
+  if (Object.keys(theme.assets.suggestionIcons).length === 0) {
+    delete theme.assets.suggestionIcons;
+  }
+}
+
 function updateEnglishMetadata(
   theme: ThemeDraftDocument,
   field: "name" | "description",
@@ -288,6 +349,68 @@ function FilePicker({
         }}
       />
     </label>
+  );
+}
+
+function InterfaceImageCard({
+  title,
+  slot,
+  value,
+  visual,
+  url,
+  backgroundPath,
+  busy,
+  locale,
+  onUpload,
+  onClear,
+  onUseBackground,
+}: {
+  readonly title: string;
+  readonly slot: AssetSlot;
+  readonly value: string | undefined;
+  readonly visual: ThemeInterfaceImageVisual;
+  readonly url: string | undefined;
+  readonly backgroundPath: string | undefined;
+  readonly busy: boolean;
+  readonly locale: StudioLocale;
+  readonly onUpload: (slot: AssetSlot, file: File) => void;
+  readonly onClear: () => void;
+  readonly onUseBackground: () => void;
+}) {
+  const status = visual.source === "background"
+    ? tr(locale, "复用主题背景")
+    : visual.source === "custom"
+      ? tr(locale, "独立图片")
+      : tr(locale, "官方默认");
+  return (
+    <article className="interface-image-card">
+      <header><strong>{title}</strong><span>{status}</span></header>
+      <div className="interface-image-thumbnail" data-avatar={slot === "profile-avatar"}>
+        {url ? (
+          <img
+            src={url}
+            alt={title}
+            style={{ objectPosition: `${visual.positionXPercent}% ${visual.positionYPercent}%` }}
+          />
+        ) : <span>{tr(locale, "官方默认")}</span>}
+      </div>
+      <div className="interface-image-actions">
+        <FilePicker
+          label={tr(locale, value ? "替换图片" : "上传图片")}
+          accept="image/png,image/jpeg,image/webp"
+          disabled={busy}
+          onPick={(file) => onUpload(slot, file)}
+        />
+        <button type="button" disabled={busy || !value} onClick={onClear}>{tr(locale, "清除")}</button>
+        <button
+          type="button"
+          disabled={busy || !backgroundPath || value === backgroundPath}
+          onClick={onUseBackground}
+        >
+          {tr(locale, "使用主题背景")}
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -433,6 +556,45 @@ export function Inspector({
           <RangeField label={tr(locale, "菜单 / 弹层遮罩强度")} value={theme.surfaces.elevatedOpacity} min={0} max={1} step={0.02} disabled={busy} onChange={(value) => commit((candidate) => { candidate.surfaces.elevatedOpacity = value; })} />
           <RangeField label={tr(locale, "终端面板遮罩强度")} value={theme.surfaces.terminalOpacity} min={0} max={1} step={0.02} disabled={busy} onChange={(value) => commit((candidate) => { candidate.surfaces.terminalOpacity = value; })} />
           <RangeField label={tr(locale, "面板毛玻璃")} value={theme.surfaces.blur} min={0} max={30} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.surfaces.blur = value; })} />
+        </div>
+      </>
+    );
+  }
+
+  if (tool === "imagery") {
+    const visual = createThemeVisualModel(theme).interfaceImagery;
+    return (
+      <>
+        <h2>{tr(locale, "界面素材")}</h2>
+        <p className="inspector-lead">{tr(locale, "为首页建议卡片和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。")}</p>
+        <div className="interface-image-list">
+          {INTERFACE_IMAGE_FIELDS.map((field) => {
+            const value = interfaceImagePath(theme, field.target);
+            const imageVisual = field.target === "profileAvatar"
+              ? visual.profileAvatar
+              : visual.suggestionIcons[field.target];
+            const url = value ? draft.assetUrls[value] : undefined;
+            return (
+              <InterfaceImageCard
+                key={field.target}
+                title={locale === "en" ? field.labelEn : field.label}
+                slot={field.slot}
+                value={value}
+                visual={imageVisual}
+                url={url}
+                backgroundPath={theme.assets.background}
+                busy={busy}
+                locale={locale}
+                onUpload={onUpload}
+                onClear={() => commit((candidate) => {
+                  setInterfaceImagePath(candidate, field.target, undefined);
+                })}
+                onUseBackground={() => commit((candidate) => {
+                  setInterfaceImagePath(candidate, field.target, candidate.assets.background);
+                })}
+              />
+            );
+          })}
         </div>
       </>
     );

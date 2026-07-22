@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "themeId": "future-idol-cyan",
-  "themeVersion": "1.2.2",
+  "themeVersion": "1.3.0",
   "files": {
     "theme.json": {
-      "bytes": 3435,
-      "sha256": "e95b2dbb9ec46854544d9988c68f0da66e8c35aedf97a3d89901256e51a7e045"
+      "bytes": 3673,
+      "sha256": "4e7b7213ca260a2d142e115316a08d0bd5bd6ab176c86f40dbbd32118e92c31c"
     },
     "assets/background.webp": {
       "bytes": 304512,

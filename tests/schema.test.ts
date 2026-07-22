@@ -8,7 +8,7 @@ import {
 } from "@open-chatgpt-skin/theme-schema";
 
 const validTheme = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   kind: "theme",
   id: "mountain-mist",
   name: "山岚云海",
@@ -180,7 +180,7 @@ describe("ThemeDocumentSchema", () => {
       },
     };
     expect(parseThemeDocument(legacy)).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       colors: {
         textSecondary: legacy.colors.text,
         link: legacy.colors.accent,
@@ -191,11 +191,83 @@ describe("ThemeDocumentSchema", () => {
     });
   });
 
+  it("migrates v2 themes to v3 without adding interface imagery", () => {
+    const parsed = parseThemeDocument({
+      ...validTheme,
+      schemaVersion: 2,
+    });
+
+    expect(parsed.schemaVersion).toBe(3);
+    expect(parsed.assets.profileAvatar).toBeUndefined();
+    expect(parsed.assets.suggestionIcons).toBeUndefined();
+  });
+
+  it("resolves interface imagery from the shared background and custom assets", () => {
+    const parsed = parseThemeDocument({
+      ...validTheme,
+      assets: {
+        background: "assets/background.webp",
+        profileAvatar: "assets/background.webp",
+        suggestionIcons: {
+          card1: "assets/background.webp",
+          card2: "assets/card2.webp",
+        },
+      },
+    });
+
+    expect(createThemeVisualModel(parsed).interfaceImagery).toEqual({
+      profileAvatar: {
+        path: "assets/background.webp",
+        source: "background",
+        positionXPercent: 50,
+        positionYPercent: 35,
+      },
+      suggestionIcons: {
+        card1: {
+          path: "assets/background.webp",
+          source: "background",
+          positionXPercent: 20,
+          positionYPercent: 25,
+        },
+        card2: {
+          path: "assets/card2.webp",
+          source: "custom",
+          positionXPercent: 50,
+          positionYPercent: 50,
+        },
+        card3: {
+          source: "default",
+          positionXPercent: 50,
+          positionYPercent: 50,
+        },
+        card4: {
+          source: "default",
+          positionXPercent: 50,
+          positionYPercent: 50,
+        },
+      },
+    });
+  });
+
   it("rejects arbitrary properties and unsafe scalar values", () => {
     expect(() => parseThemeDocument({ ...validTheme, script: "alert(1)" })).toThrow();
     expect(() => parseThemeDocument({
       ...validTheme,
       assets: { background: "assets/run.js" },
+    })).toThrow();
+    expect(() => parseThemeDocument({
+      ...validTheme,
+      assets: {
+        background: "assets/background.webp",
+        profileAvatar: "https://example.com/avatar.png",
+      },
+    })).toThrow();
+    expect(() => parseThemeDocument({
+      ...validTheme,
+      assets: {
+        background: "assets/background.webp",
+        suggestionIcons: { card1: "../secret.png" },
+      },
     })).toThrow();
     expect(() => parseThemeDocument({
       ...validTheme,

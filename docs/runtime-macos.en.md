@@ -27,7 +27,7 @@ It also documents the macOS app log directory as `~/Library/Logs/com.openai.code
 
 ## Install the unsigned preview
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg`. Intel x64 still requires a matching official Codex build and real-device evidence.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0_macos_x64.dmg`. Intel x64 still requires a matching official Codex build and real-device evidence.
 2. Run `shasum -a 256 <filename>` and compare it with `checksums.txt` from the GitHub Release.
 3. Open the DMG and drag `OpenChatGPTSkin.app` to Applications.
 4. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt.

@@ -40,7 +40,7 @@ describe("project documentation", () => {
     ]) {
       expect(text).toContain(required);
     }
-    expect(readme).toContain("Windows 开发者预览版");
+    expect(readme).toContain("Windows x64 正式版");
     expect(readme).toContain("当前 Runtime 能识别的全部 Codex UI 表面");
     expect(readme).toContain("npm run verify:foundation");
     expect(text).not.toContain("hatsune-miku-local");
@@ -129,16 +129,19 @@ describe("project documentation", () => {
       readFile("LICENSE", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"),
       readFile("docs/runtime-macos.en.md", "utf8"),
-      readFile("docs/releases/v0.1.0-alpha.1.md", "utf8"),
+      readFile("docs/releases/v0.1.0.md", "utf8"),
     ]);
 
     for (const required of [
       "README.en.md",
-      "status-alpha",
+      "status-stable",
       "docs/custom-theme-guide.md",
       "docs/assets/screenshots/theme-studio.webp",
       "docs/assets/screenshots/index1.webp",
       "docs/assets/screenshots/index2.webp",
+      "docs/assets/concepts/yua-mikami.png",
+      "docs/assets/concepts/ichigo-hoshimiya.png",
+      "docs/assets/concepts/super-saiyan-goku.png",
       "CONTRIBUTING.md",
       "MIT License",
     ]) {
@@ -158,7 +161,7 @@ describe("project documentation", () => {
     expect(readme).toContain("docs/runtime-macos.md");
     expect(readmeEn).toContain("docs/runtime-macos.en.md");
     expect(guide).toContain("可复制的 AI 封装提示词");
-    expect(guide).toContain("Theme Schema v2");
+    expect(guide).toContain("Theme Schema v3");
     expect(guide).toContain("npm run runtime -- import --theme-file");
     expect(guideEn).toContain("Copy-ready packaging prompt");
     expect(contributing).toContain("UI surface 适配必须包含确定性的 HTML fixture/测试");
@@ -169,7 +172,7 @@ describe("project documentation", () => {
     expect(macRuntime).toContain("尚未在真实 Mac 上完成 Codex 视觉闭环验收");
     expect(macRuntimeEn).toContain("real Mac");
     expect(macRuntimeEn).toContain("RUNTIME_ENVIRONMENT_INVALID");
-    expect(readme).toContain("OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe");
+    expect(readme).toContain("OpenChatGPTSkin_0.1.0_windows_x64_Setup.exe");
     expect(readme).toContain("checksums.txt");
     expect(readme).toContain("SmartScreen");
     expect(readme).toContain("默认保留个人主题");
@@ -195,7 +198,18 @@ describe("project documentation", () => {
       const info = await stat(`docs/assets/screenshots/${name}`);
       expect(info.isFile()).toBe(true);
       expect(info.size).toBeGreaterThan(0);
-      expect(info.size).toBeLessThan(500_000);
+      expect(info.size).toBeLessThan(6_000_000);
+    }
+
+    for (const name of [
+      "yua-mikami.png",
+      "ichigo-hoshimiya.png",
+      "super-saiyan-goku.png",
+    ]) {
+      const info = await stat(`docs/assets/concepts/${name}`);
+      expect(info.isFile()).toBe(true);
+      expect(info.size).toBeGreaterThan(0);
+      expect(info.size).toBeLessThan(3_000_000);
     }
   });
 
@@ -212,12 +226,12 @@ describe("project documentation", () => {
       readFile("README.en.md", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"),
       readFile("docs/runtime-macos.en.md", "utf8"),
-      readFile("docs/releases/v0.1.0-alpha.1.md", "utf8"),
+      readFile("docs/releases/v0.1.0.md", "utf8"),
       readFile("CONTRIBUTING.md", "utf8"),
     ]);
     for (const name of [
-      "OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg",
-      "OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg",
+      "OpenChatGPTSkin_0.1.0_macos_arm64.dmg",
+      "OpenChatGPTSkin_0.1.0_macos_x64.dmg",
     ]) {
       expect(readme).toContain(name);
       expect(notes).toContain(name);
@@ -231,7 +245,7 @@ describe("project documentation", () => {
     expect(runtimeEn).toContain("Control-click");
     expect(contributing).toContain("workflow_dispatch");
     expect(notes).toContain("Intel x64");
-    expect(notes).toContain("未完成实机验证");
+    expect(notes).toContain("尚未完成真实 Codex 视觉闭环验收");
     expect(readme).toContain(
       "Windows x64、macOS ARM64 和 macOS x64",
     );

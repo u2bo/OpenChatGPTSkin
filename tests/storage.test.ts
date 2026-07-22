@@ -112,6 +112,36 @@ describe("ThemeStore", () => {
       .rejects.toMatchObject({ code: "ROLLBACK_UNAVAILABLE" });
   });
 
+  it("reads shared and custom interface imagery from stored themes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "open-chatgpt-skin-store-"));
+    const store = new ThemeStore(root);
+    const migrated = validateThemeBundle(
+      makeTheme("imagery-demo", "1.0.0"),
+      new Map([["assets/background.png", png]]),
+    ).theme;
+    const bundle = validateThemeBundle({
+      ...migrated,
+      assets: {
+        ...migrated.assets,
+        profileAvatar: "assets/background.png",
+        suggestionIcons: {
+          card1: "assets/background.png",
+          card2: "assets/card2.png",
+        },
+      },
+    }, new Map([
+      ["assets/background.png", png],
+      ["assets/card2.png", alternatePng],
+    ]));
+
+    const ref = await store.install(bundle);
+    const stored = await store.readTheme(ref);
+
+    expect(stored.theme.assets.profileAvatar).toBe("assets/background.png");
+    expect(stored.theme.assets.suggestionIcons?.card2).toBe("assets/card2.png");
+    expect(stored.files.size).toBe(2);
+  });
+
   it("removes only unreferenced immutable versions", async () => {
     const root = await mkdtemp(join(tmpdir(), "open-chatgpt-skin-store-"));
     const store = new ThemeStore(root);

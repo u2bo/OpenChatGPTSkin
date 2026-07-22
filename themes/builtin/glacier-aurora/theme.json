@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "kind": "theme",
   "appearance": "dark",
   "id": "glacier-aurora",
   "name": "冰川极光",
   "description": "深蓝冰川与极光交汇的专注暗色主题。",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "author": "OpenChatGPTSkin",
   "metadata": {
     "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
@@ -17,7 +17,14 @@
     }
   },
   "assets": {
-    "background": "assets/background.webp"
+    "background": "assets/background.webp",
+    "profileAvatar": "assets/background.webp",
+    "suggestionIcons": {
+      "card1": "assets/background.webp",
+      "card2": "assets/background.webp",
+      "card3": "assets/background.webp",
+      "card4": "assets/background.webp"
+    }
   },
   "colors": {
     "accent": "#54dfd0",
@@ -49,16 +56,16 @@
   "background": {
     "positionX": 0.68,
     "positionY": 0.5,
-    "scale": 1,
+    "scale": 1.05,
     "blur": 0,
-    "brightness": 0.9,
-    "overlay": 0.08,
-    "safeArea": "left",
+    "brightness": 1,
+    "overlay": 0,
+    "safeArea": "none",
     "taskMode": "full",
-    "taskOpacity": 0.58
+    "taskOpacity": 0.18
   },
   "surfaces": {
-    "baseOpacity": 0.42,
+    "baseOpacity": 0.26,
     "elevatedOpacity": 0.78,
     "terminalOpacity": 0.84,
     "blur": 0

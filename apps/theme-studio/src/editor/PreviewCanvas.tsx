@@ -31,7 +31,9 @@ import {
   createTaskSurfaceBackgroundCss,
   createThemeVisualModel,
   DEFAULT_LAYOUT_MODULES,
+  type SuggestionIconSlot,
   type ThemeDraftDocument,
+  type ThemeInterfaceImageVisual,
 } from "@open-chatgpt-skin/theme-schema";
 
 type PreviewStyle = CSSProperties & Record<`--preview-${string}`, string>;
@@ -44,7 +46,18 @@ interface MutableFontFaceSet extends FontFaceSet {
   delete(font: FontFace): boolean;
 }
 
+interface PreviewInterfaceImage {
+  readonly url: string;
+  readonly objectPosition: string;
+}
+
 const DEFAULT_MODULES = DEFAULT_LAYOUT_MODULES;
+const SUGGESTION_SLOTS: readonly SuggestionIconSlot[] = [
+  "card1",
+  "card2",
+  "card3",
+  "card4",
+];
 
 const PROJECTS = [
   ["星图编辑器", "检查搜索与筛选逻辑"],
@@ -75,6 +88,19 @@ const SUGGESTION_LABELS_EN = [
   "Review code and suggest changes",
   "Fix a bug or failing test",
 ] as const;
+
+function previewInterfaceImage(
+  visual: ThemeInterfaceImageVisual | undefined,
+  assetUrls: StudioDraft["assetUrls"] | undefined,
+): PreviewInterfaceImage | undefined {
+  if (!visual?.path) return undefined;
+  const url = assetUrls?.[visual.path];
+  if (!url) return undefined;
+  return {
+    url,
+    objectPosition: `${visual.positionXPercent}% ${visual.positionYPercent}%`,
+  };
+}
 
 function moduleById(modules: readonly LayoutModule[], id: ModuleId): LayoutModule {
   return modules.find((module) => module.id === id) ?? DEFAULT_MODULES
@@ -122,11 +148,13 @@ function CodexSidebar({
   taskBackgroundVisible,
   contentLayerVisible,
   locale,
+  profileImage,
 }: {
   readonly density: "compact" | "comfortable";
   readonly taskBackgroundVisible: boolean;
   readonly contentLayerVisible: boolean;
   readonly locale: StudioLocale;
+  readonly profileImage: PreviewInterfaceImage | undefined;
 }) {
   const projects = locale === "en" ? PROJECTS_EN : PROJECTS;
   return (
@@ -153,7 +181,14 @@ function CodexSidebar({
         ))}
       </div>
       <footer className="codex-profile">
-        <UserCircle weight="fill" />
+        {profileImage ? (
+          <img
+            className="codex-profile-avatar"
+            src={profileImage.url}
+            alt={locale === "en" ? "Demo user avatar" : "示例用户头像"}
+            style={{ objectPosition: profileImage.objectPosition }}
+          />
+        ) : <UserCircle weight="fill" />}
         <strong>{locale === "en" ? "Demo user" : "示例用户"}</strong>
         <Question weight="regular" />
       </footer>
@@ -193,7 +228,17 @@ function Hero({ module, locale }: { readonly module: LayoutModule; readonly loca
   );
 }
 
-function Suggestions({ module, columns, locale }: { readonly module: LayoutModule; readonly columns: number; readonly locale: StudioLocale }) {
+function Suggestions({
+  module,
+  columns,
+  locale,
+  images,
+}: {
+  readonly module: LayoutModule;
+  readonly columns: number;
+  readonly locale: StudioLocale;
+  readonly images: Readonly<Record<SuggestionIconSlot, PreviewInterfaceImage | undefined>>;
+}) {
   return (
     <section
       className="codex-suggestions preview-module"
@@ -202,12 +247,24 @@ function Suggestions({ module, columns, locale }: { readonly module: LayoutModul
       data-align={module.align}
       style={{ "--suggestion-columns": String(columns) } as CSSProperties}
     >
-      {SUGGESTIONS.map(({ label, icon: Icon, color }, index) => (
-        <button type="button" tabIndex={-1} key={label}>
-          <Icon weight="regular" style={{ color }} />
-          <strong>{locale === "en" ? SUGGESTION_LABELS_EN[index] : label}</strong>
-        </button>
-      ))}
+      {SUGGESTIONS.map(({ label, icon: Icon, color }, index) => {
+        const image = images[SUGGESTION_SLOTS[index]!];
+        return (
+          <button type="button" tabIndex={-1} key={label}>
+            {image ? (
+              <img
+                className="codex-suggestion-image"
+                src={image.url}
+                alt={locale === "en"
+                  ? `Suggestion card ${index + 1} image`
+                  : `建议卡片 ${index + 1} 图片`}
+                style={{ objectPosition: image.objectPosition }}
+              />
+            ) : <Icon weight="regular" style={{ color }} />}
+            <strong>{locale === "en" ? SUGGESTION_LABELS_EN[index] : label}</strong>
+          </button>
+        );
+      })}
     </section>
   );
 }
@@ -318,6 +375,16 @@ export function PreviewCanvas({
   const portraitUrl = theme?.assets.portrait
     ? draft?.assetUrls[theme.assets.portrait]
     : undefined;
+  const profileImage = previewInterfaceImage(
+    visual?.interfaceImagery.profileAvatar,
+    draft?.assetUrls,
+  );
+  const suggestionImages: Readonly<Record<SuggestionIconSlot, PreviewInterfaceImage | undefined>> = {
+    card1: previewInterfaceImage(visual?.interfaceImagery.suggestionIcons.card1, draft?.assetUrls),
+    card2: previewInterfaceImage(visual?.interfaceImagery.suggestionIcons.card2, draft?.assetUrls),
+    card3: previewInterfaceImage(visual?.interfaceImagery.suggestionIcons.card3, draft?.assetUrls),
+    card4: previewInterfaceImage(visual?.interfaceImagery.suggestionIcons.card4, draft?.assetUrls),
+  };
   const style: PreviewStyle = {
     "--preview-accent": visual?.colors.accent ?? "#9b9b9b",
     "--preview-secondary": visual?.colors.secondary ?? "#707070",
@@ -415,6 +482,7 @@ export function PreviewCanvas({
               taskBackgroundVisible={taskBackground.visible}
               contentLayerVisible={contentLayer.visible}
               locale={locale}
+              profileImage={profileImage}
             />
           ) : null}
           <main className="codex-main-surface" data-preview-mode={mode}>
@@ -424,7 +492,12 @@ export function PreviewCanvas({
                 {hero.visible ? <div className="codex-module-slot" style={moduleStyle(hero)}><Hero module={hero} locale={locale} /></div> : null}
                 {suggestions.visible ? (
                   <div className="codex-module-slot" style={moduleStyle(suggestions)}>
-                    <Suggestions module={suggestions} columns={theme?.layout.cardColumns ?? 4} locale={locale} />
+                    <Suggestions
+                      module={suggestions}
+                      columns={theme?.layout.cardColumns ?? 4}
+                      locale={locale}
+                      images={suggestionImages}
+                    />
                   </div>
                 ) : null}
                 <div className="codex-bottom-stack">

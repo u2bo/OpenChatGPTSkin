@@ -1,4 +1,5 @@
 import type {
+  SuggestionIconSlot,
   ThemeColors,
   ThemeDraftDocument,
   ThemeLayout,
@@ -7,12 +8,27 @@ import type {
 
 type ThemeVisualSource = Pick<
   ThemeDraftDocument,
-  "appearance" | "colors" | "typography" | "background" | "surfaces" | "layout"
+  "appearance" | "assets" | "colors" | "typography" | "background" | "surfaces" | "layout"
 >;
 
 type ResolvedAppearance = "light" | "dark";
 type ResolvedSafeArea = "left" | "center" | "right" | "none";
 type ResolvedTaskMode = "full" | "ambient" | "banner" | "off";
+
+export const THEME_INTERFACE_IMAGERY_CROPS = {
+  profileAvatar: { positionXPercent: 50, positionYPercent: 35 },
+  card1: { positionXPercent: 20, positionYPercent: 25 },
+  card2: { positionXPercent: 80, positionYPercent: 25 },
+  card3: { positionXPercent: 20, positionYPercent: 75 },
+  card4: { positionXPercent: 80, positionYPercent: 75 },
+} as const;
+
+export interface ThemeInterfaceImageVisual {
+  readonly path?: string;
+  readonly source: "default" | "background" | "custom";
+  readonly positionXPercent: number;
+  readonly positionYPercent: number;
+}
 
 function colorChannels(value: string): readonly [number, number, number] {
   if (/^#[0-9a-f]{6}$/i.test(value)) {
@@ -51,6 +67,33 @@ function resolveTaskMode(theme: ThemeVisualSource): ResolvedTaskMode {
 
 function toPercent(value: number): number {
   return Math.round(value * 10_000) / 100;
+}
+
+function resolveInterfaceImage(
+  path: string | undefined,
+  backgroundPath: string | undefined,
+  slot: SuggestionIconSlot | "profileAvatar",
+): ThemeInterfaceImageVisual {
+  if (!path) {
+    return {
+      source: "default",
+      positionXPercent: 50,
+      positionYPercent: 50,
+    };
+  }
+  if (path === backgroundPath) {
+    return {
+      path,
+      source: "background",
+      ...THEME_INTERFACE_IMAGERY_CROPS[slot],
+    };
+  }
+  return {
+    path,
+    source: "custom",
+    positionXPercent: 50,
+    positionYPercent: 50,
+  };
 }
 
 export function createSafeAreaOverlayCss(
@@ -119,6 +162,10 @@ export interface ThemeVisualModel {
     readonly terminalOpacityPercent: number;
     readonly blurPx: number;
   };
+  readonly interfaceImagery: {
+    readonly profileAvatar: ThemeInterfaceImageVisual;
+    readonly suggestionIcons: Readonly<Record<SuggestionIconSlot, ThemeInterfaceImageVisual>>;
+  };
   readonly layout: ThemeLayout;
   readonly modules: Readonly<Record<ThemeLayoutModule["id"], ThemeLayoutModule>>;
 }
@@ -159,6 +206,35 @@ export function createThemeVisualModel(theme: ThemeVisualSource): ThemeVisualMod
       elevatedOpacityPercent: toPercent(theme.surfaces.elevatedOpacity),
       terminalOpacityPercent: toPercent(theme.surfaces.terminalOpacity),
       blurPx: theme.surfaces.blur,
+    },
+    interfaceImagery: {
+      profileAvatar: resolveInterfaceImage(
+        theme.assets.profileAvatar,
+        theme.assets.background,
+        "profileAvatar",
+      ),
+      suggestionIcons: {
+        card1: resolveInterfaceImage(
+          theme.assets.suggestionIcons?.card1,
+          theme.assets.background,
+          "card1",
+        ),
+        card2: resolveInterfaceImage(
+          theme.assets.suggestionIcons?.card2,
+          theme.assets.background,
+          "card2",
+        ),
+        card3: resolveInterfaceImage(
+          theme.assets.suggestionIcons?.card3,
+          theme.assets.background,
+          "card3",
+        ),
+        card4: resolveInterfaceImage(
+          theme.assets.suggestionIcons?.card4,
+          theme.assets.background,
+          "card4",
+        ),
+      },
     },
     layout: {
       ...theme.layout,

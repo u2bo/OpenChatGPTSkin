@@ -2,7 +2,10 @@ import { readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
-import { parseThemeDocument } from "@open-chatgpt-skin/theme-schema";
+import {
+  parseThemeDocument,
+  themeAssetPaths,
+} from "@open-chatgpt-skin/theme-schema";
 import {
   createOcskinFiles,
   loadThemeCatalog,
@@ -36,14 +39,8 @@ describe("built-in catalog", () => {
       );
       expect(validateStudioDraft(theme).filter((issue) => issue.severity === "error"))
         .toEqual([]);
-      const paths = [
-        theme.assets.background,
-        theme.assets.portrait,
-        ...Object.values(theme.assets.decorations ?? {}),
-        ...Object.values(theme.assets.fonts ?? {}),
-      ].filter((value): value is string => Boolean(value));
       const files = new Map<string, Uint8Array>();
-      for (const name of paths) {
+      for (const name of themeAssetPaths(theme)) {
         files.set(name, await readFile(join(directory, ...name.split("/"))));
       }
       files.set("preview.webp", await readFile(join(directory, "preview.webp")));
@@ -68,9 +65,31 @@ describe("built-in catalog", () => {
       expect(sourceMetadata.width).toBeGreaterThanOrEqual(1600);
       expect(sourceMetadata.height).toBeGreaterThanOrEqual(900);
       expect(sourceMetadata.width! / sourceMetadata.height!).toBeCloseTo(16 / 9, 2);
-      expect(theme.surfaces.baseOpacity, entry.id).toBeLessThanOrEqual(0.46);
-      expect(theme.surfaces.blur, entry.id).toBeLessThanOrEqual(4);
-      expect(theme.background.taskOpacity, entry.id).toBeLessThanOrEqual(0.64);
+      expect(theme).toMatchObject({
+        schemaVersion: 3,
+        version: "1.3.0",
+        assets: {
+          profileAvatar: "assets/background.webp",
+          suggestionIcons: {
+            card1: "assets/background.webp",
+            card2: "assets/background.webp",
+            card3: "assets/background.webp",
+            card4: "assets/background.webp",
+          },
+        },
+        background: {
+          scale: 1.05,
+          blur: 0,
+          brightness: 1,
+          overlay: 0,
+          safeArea: "none",
+          taskMode: "full",
+          taskOpacity: 0.18,
+        },
+        surfaces: { blur: 0 },
+      });
+      expect(theme.surfaces.baseOpacity, entry.id)
+        .toBe(theme.appearance === "dark" ? 0.26 : 0.2);
     }
 
     for (const entry of catalog.recipes) {

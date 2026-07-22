@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -283,6 +283,128 @@ describe("ThemeStudioWorkspace", () => {
     });
     expect(applied.runtime).toMatchObject({ status: "active", appliedTheme: saved.ref });
     expect(applyRuntimeTheme).toHaveBeenCalledWith(saved.ref);
+  });
+
+  it("normalizes interface imagery, shares the background, and keeps failed uploads atomic", async () => {
+    const { workspace, paths } = await createWorkspace();
+    const source = (await workspace.listThemes()).themes
+      .find((theme) => theme.ref.id === "mountain-mist")!;
+    const draft = await workspace.createDraft({
+      source: { source: source.source, ref: source.ref },
+      themeId: "interface-imagery-demo",
+      name: "界面素材测试",
+    });
+    const sourceImage = await sharp({
+      create: {
+        width: 900,
+        height: 500,
+        channels: 4,
+        background: { r: 42, g: 119, b: 151, alpha: 1 },
+      },
+    }).png().toBuffer();
+
+    const avatar = await workspace.uploadAsset({
+      draftId: draft.draftId,
+      expectedRevision: draft.revision,
+      slot: "profile-avatar",
+      fileName: "avatar.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    });
+    const avatarPath = avatar.theme.assets.profileAvatar!;
+    expect(avatarPath).toMatch(/^assets\/profile-avatar-[0-9a-f]{12}\.webp$/);
+    expect(await sharp((await workspace.readDraftAsset(
+      avatar.draftId,
+      avatarPath,
+    )).bytes).metadata()).toMatchObject({ width: 256, height: 256 });
+
+    const suggestion = await workspace.uploadAsset({
+      draftId: avatar.draftId,
+      expectedRevision: avatar.revision,
+      slot: "suggestion-card1",
+      fileName: "card.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    });
+    const suggestionPath = suggestion.theme.assets.suggestionIcons?.card1!;
+    expect(suggestionPath).toMatch(/^assets\/suggestion-card1-[0-9a-f]{12}\.webp$/);
+    expect(await sharp((await workspace.readDraftAsset(
+      suggestion.draftId,
+      suggestionPath,
+    )).bytes).metadata()).toMatchObject({ width: 192, height: 192 });
+
+    const sharedTheme = structuredClone(suggestion.theme);
+    const backgroundPath = sharedTheme.assets.background!;
+    sharedTheme.assets.profileAvatar = backgroundPath;
+    sharedTheme.assets.suggestionIcons = {
+      card1: backgroundPath,
+      card2: backgroundPath,
+      card3: backgroundPath,
+      card4: backgroundPath,
+    };
+    const shared = await workspace.updateDraft({
+      draftId: suggestion.draftId,
+      expectedRevision: suggestion.revision,
+      theme: sharedTheme,
+    });
+    expect(shared.assetUrls[backgroundPath]).toMatch(/^\/api\/draft-asset/);
+    expect(Object.keys(shared.assetUrls).filter((path) => path === backgroundPath)).toHaveLength(1);
+
+    await expect(workspace.uploadAsset({
+      draftId: shared.draftId,
+      expectedRevision: shared.revision,
+      slot: "suggestion-card2",
+      fileName: "broken.txt",
+      mimeType: "text/plain",
+      bytes: new TextEncoder().encode("not an image"),
+    })).rejects.toMatchObject({ code: "STUDIO_ASSET_INVALID" });
+    await expect(workspace.openDraft(shared.draftId)).resolves.toMatchObject({
+      revision: shared.revision,
+      theme: { assets: { suggestionIcons: sharedTheme.assets.suggestionIcons } },
+    });
+
+    const orphanPath = join(
+      paths.themeStudioDraftDirectory,
+      shared.draftId,
+      "assets",
+      "orphan.webp",
+    );
+    await writeFile(orphanPath, sourceImage);
+    const renamedTheme = structuredClone(shared.theme);
+    renamedTheme.name = "界面素材测试（已更新）";
+    await workspace.updateDraft({
+      draftId: shared.draftId,
+      expectedRevision: shared.revision,
+      theme: renamedTheme,
+    });
+    await expect(readFile(orphanPath)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("migrates persisted v2 draft history to v3 when it is reopened", async () => {
+    const { workspace, paths } = await createWorkspace();
+    const source = (await workspace.listThemes()).themes
+      .find((theme) => theme.ref.id === "mountain-mist")!;
+    const draft = await workspace.createDraft({
+      source: { source: source.source, ref: source.ref },
+      themeId: "legacy-draft",
+      name: "旧草稿",
+    });
+    const recordPath = join(paths.themeStudioDraftDirectory, draft.draftId, "draft.json");
+    const record = JSON.parse(await readFile(recordPath, "utf8"));
+    record.theme.schemaVersion = 2;
+    delete record.theme.assets.profileAvatar;
+    delete record.theme.assets.suggestionIcons;
+    record.past = [{ ...record.theme }];
+    await writeFile(recordPath, `${JSON.stringify(record, null, 2)}\n`, "utf8");
+
+    const migrated = await workspace.openDraft(draft.draftId);
+
+    expect(migrated.theme.schemaVersion).toBe(3);
+    expect(migrated.undoAvailable).toBe(true);
+    await expect(workspace.undo({
+      draftId: migrated.draftId,
+      expectedRevision: migrated.revision,
+    })).resolves.toMatchObject({ theme: { schemaVersion: 3 } });
   });
 
   it("never creates a personal version from the apply command", async () => {

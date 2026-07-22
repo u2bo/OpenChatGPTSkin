@@ -999,6 +999,14 @@ label:has(input[type="file"]:not(:disabled)) {
   height: 14px;
 }
 
+.codex-profile-avatar {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
 .codex-profile strong {
   flex: 1;
   font-size: 9px;
@@ -1148,6 +1156,13 @@ label:has(input[type="file"]:not(:disabled)) {
 .codex-suggestions button svg {
   width: 15px;
   height: 15px;
+}
+
+.codex-suggestion-image {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  object-fit: cover;
 }
 
 .codex-suggestions button strong {
@@ -1464,6 +1479,86 @@ label:has(input[type="file"]:not(:disabled)) {
   color: var(--studio-muted);
   font-size: 10px;
   line-height: 1.45;
+}
+
+.interface-image-list {
+  display: grid;
+  gap: 10px;
+}
+
+.interface-image-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--app-border, #dbe3e2);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--app-panel-solid, #fff);
+}
+
+.interface-image-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+}
+
+.interface-image-card > header span {
+  color: var(--studio-muted);
+  font-size: 9px;
+}
+
+.interface-image-thumbnail {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  border: 1px solid var(--app-border, #dbe3e2);
+  border-radius: 8px;
+  color: var(--studio-muted);
+  background: var(--app-panel-soft, #f4f8f7);
+  font-size: 9px;
+}
+
+.interface-image-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.interface-image-thumbnail[data-avatar="true"] img {
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+}
+
+.interface-image-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.interface-image-actions .file-picker,
+.interface-image-actions button {
+  min-height: 30px;
+  margin: 0;
+  border: 1px solid var(--app-border, #cbd7d5);
+  border-radius: 7px;
+  padding: 0 7px;
+  color: inherit;
+  background: var(--app-panel-soft, #f4f9f8);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.interface-image-actions button:last-child {
+  grid-column: 1 / -1;
+}
+
+.interface-image-actions button:disabled {
+  color: var(--studio-muted);
+  opacity: 0.58;
 }
 
 .color-fields,

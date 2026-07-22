@@ -5,6 +5,7 @@ import {
   readdir,
   rename,
   rm,
+  rmdir,
   writeFile,
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -22,8 +23,11 @@ import {
 } from "@open-chatgpt-skin/theme-core";
 import {
   isSafeThemePath,
+  parseThemeDraftDocument,
   parseThemeDocument,
+  themeAssetPaths,
   ThemeDraftDocumentSchema,
+  type SuggestionIconSlot,
   type ThemeDraftDocument,
 } from "@open-chatgpt-skin/theme-schema";
 import {
@@ -63,6 +67,7 @@ const SOURCE_IMAGE_LIMIT_BYTES = 50 * 1024 * 1024;
 const PROCESSED_IMAGE_LIMIT_BYTES = 16 * 1024 * 1024;
 const SOURCE_FONT_LIMIT_BYTES = 5 * 1024 * 1024;
 const THEME_ARCHIVE_MIME = "application/vnd.open-chatgpt-skin+zip" as const;
+const IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 function studioThemeError(
   code: "STUDIO_IMPORT_INVALID" | "STUDIO_EXPORT_INVALID" | "STUDIO_SAVE_FAILED",
@@ -96,6 +101,16 @@ const DraftRecordSchema = z.object({
 
 type DraftRecord = z.infer<typeof DraftRecordSchema>;
 
+const PersistedDraftRecordSchema = DraftRecordSchema.omit({
+  theme: true,
+  past: true,
+  future: true,
+}).extend({
+  theme: z.unknown(),
+  past: z.array(z.unknown()).max(HISTORY_LIMIT),
+  future: z.array(z.unknown()).max(HISTORY_LIMIT),
+}).strict();
+
 export interface ThemeStudioWorkspaceDependencies {
   readonly paths: RuntimePaths;
   readonly runtimeStatus: () => Promise<StudioRuntimeStatus>;
@@ -110,13 +125,32 @@ export interface StudioBinaryAsset {
   readonly mimeType: string;
 }
 
-function referencedPaths(theme: ThemeDraftDocument): readonly string[] {
-  return [
-    theme.assets.background,
-    theme.assets.portrait,
-    ...Object.values(theme.assets.decorations ?? {}),
-    ...Object.values(theme.assets.fonts ?? {}),
-  ].filter((value): value is string => Boolean(value));
+function suggestionIconSlot(
+  slot: StudioUploadAssetInput["slot"],
+): SuggestionIconSlot | undefined {
+  if (slot === "suggestion-card1") return "card1";
+  if (slot === "suggestion-card2") return "card2";
+  if (slot === "suggestion-card3") return "card3";
+  if (slot === "suggestion-card4") return "card4";
+  return undefined;
+}
+
+function parseDraftRecord(value: unknown): DraftRecord {
+  const persisted = PersistedDraftRecordSchema.parse(value);
+  return DraftRecordSchema.parse({
+    ...persisted,
+    theme: parseThemeDraftDocument(persisted.theme),
+    past: persisted.past.map(parseThemeDraftDocument),
+    future: persisted.future.map(parseThemeDraftDocument),
+  });
+}
+
+function recordAssetPaths(record: DraftRecord): ReadonlySet<string> {
+  return new Set([
+    record.theme,
+    ...record.past,
+    ...record.future,
+  ].flatMap((theme) => themeAssetPaths(theme)));
 }
 
 function sourceExtension(fileName: string): string {
@@ -300,7 +334,7 @@ export class ThemeStudioWorkspace {
     const sourceSavedRef = input.source.source === "personal" ? input.source.ref : null;
     return ThemeDraftDocumentSchema.parse({
       ...bundle.theme,
-      schemaVersion: 2,
+      schemaVersion: 3,
       kind: "theme",
       id: input.themeId ?? defaultId,
       name: input.name ?? `${bundle.theme.name} 自定义`,
@@ -428,6 +462,14 @@ export class ThemeStudioWorkspace {
 
       if (input.slot === "background") theme.assets.background = path;
       if (input.slot === "portrait") theme.assets.portrait = path;
+      if (input.slot === "profile-avatar") theme.assets.profileAvatar = path;
+      const suggestionSlot = suggestionIconSlot(input.slot);
+      if (suggestionSlot) {
+        theme.assets.suggestionIcons = {
+          ...theme.assets.suggestionIcons,
+          [suggestionSlot]: path,
+        };
+      }
       if (input.slot === "decoration") {
         const key = this.requiredAssetKey(input);
         theme.assets.decorations = { ...theme.assets.decorations, [key]: path };
@@ -571,7 +613,7 @@ export class ThemeStudioWorkspace {
 
   async readDraftAsset(draftId: string, path: string): Promise<StudioBinaryAsset> {
     const record = await this.readRecord(draftId);
-    if (!referencedPaths(record.theme).includes(path) || !isSafeThemePath(path)) {
+    if (!themeAssetPaths(record.theme).includes(path) || !isSafeThemePath(path)) {
       throw new StudioError("STUDIO_ASSET_INVALID", "Draft asset is not declared");
     }
     return {
@@ -637,7 +679,7 @@ export class ThemeStudioWorkspace {
     for (const ref of refs.filter((candidate) => candidate.id === record.theme.id).reverse()) {
       const theme = parseThemeDocument({ ...record.theme, version: ref.version });
       const existing = await this.store.readTheme(ref);
-      if (isDeepStrictEqual(existing.theme, theme) && referencedPaths(theme).every((path) =>
+      if (isDeepStrictEqual(existing.theme, theme) && themeAssetPaths(theme).every((path) =>
         bytesEqual(files.get(path), existing.files.get(path)))) {
         return DraftRecordSchema.parse({
           ...record,
@@ -651,7 +693,7 @@ export class ThemeStudioWorkspace {
     }
 
     const version = nextPatchVersion(refs, record.theme.id);
-    const theme = parseThemeDocument({ ...record.theme, schemaVersion: 2, kind: "theme", version });
+    const theme = parseThemeDocument({ ...record.theme, schemaVersion: 3, kind: "theme", version });
     const backgroundPath = theme.assets.background;
     if (!backgroundPath) throw new StudioError("STUDIO_DRAFT_INVALID", "Background image is required");
     const background = files.get(backgroundPath);
@@ -693,18 +735,41 @@ export class ThemeStudioWorkspace {
       const digest = createHash("sha256").update(input.bytes).digest("hex").slice(0, 12);
       return { path: `fonts/${key}-${digest}.woff2`, bytes: input.bytes };
     }
+    if (!IMAGE_MIME_TYPES.has(input.mimeType) ||
+      ![".png", ".jpg", ".jpeg", ".webp"].includes(sourceExtension(input.fileName))) {
+      throw new StudioError(
+        "STUDIO_ASSET_INVALID",
+        `Asset slot ${input.slot} requires a PNG, JPEG, or WebP image`,
+      );
+    }
     if (input.bytes.length > SOURCE_IMAGE_LIMIT_BYTES) {
       throw new StudioError("STUDIO_ASSET_INVALID", "Source image exceeds 50 MB");
     }
     let output: Buffer;
     try {
+      const suggestionSlot = suggestionIconSlot(input.slot);
+      const interfaceImage = input.slot === "profile-avatar" || suggestionSlot !== undefined;
+      const width = input.slot === "background"
+        ? 2400
+        : input.slot === "profile-avatar"
+          ? 256
+          : suggestionSlot
+            ? 192
+            : 1400;
+      const height = input.slot === "background"
+        ? 1350
+        : input.slot === "profile-avatar"
+          ? 256
+          : suggestionSlot
+            ? 192
+            : 1400;
       output = await sharp(input.bytes, { limitInputPixels: 80_000_000 })
         .rotate()
         .resize({
-          width: input.slot === "background" ? 2400 : 1400,
-          height: input.slot === "background" ? 1350 : 1400,
-          fit: "inside",
-          withoutEnlargement: true,
+          width,
+          height,
+          fit: interfaceImage ? "cover" : "inside",
+          withoutEnlargement: !interfaceImage,
         })
         .webp({ quality: 80, effort: 4 })
         .toBuffer();
@@ -722,7 +787,11 @@ export class ThemeStudioWorkspace {
       ? `assets/background-${digest}.webp`
       : input.slot === "portrait"
         ? `assets/portrait-${digest}.webp`
-        : `assets/decoration-${this.requiredAssetKey(input)}-${digest}.webp`;
+        : input.slot === "profile-avatar"
+          ? `assets/profile-avatar-${digest}.webp`
+          : suggestionIconSlot(input.slot)
+            ? `assets/${input.slot}-${digest}.webp`
+            : `assets/decoration-${this.requiredAssetKey(input)}-${digest}.webp`;
     return { path, bytes: output };
   }
 
@@ -760,7 +829,7 @@ export class ThemeStudioWorkspace {
     theme: ThemeDraftDocument,
   ): Promise<Map<string, Uint8Array>> {
     const files = new Map<string, Uint8Array>();
-    for (const path of referencedPaths(theme)) {
+    for (const path of themeAssetPaths(theme)) {
       files.set(path, await readFile(this.assetPath(draftId, path)));
     }
     return files;
@@ -857,7 +926,7 @@ export class ThemeStudioWorkspace {
   }
 
   private view(record: DraftRecord): StudioDraft {
-    const assetUrls = Object.fromEntries(referencedPaths(record.theme).map((path) => [
+    const assetUrls = Object.fromEntries(themeAssetPaths(record.theme).map((path) => [
       path,
       `/api/draft-asset?draftId=${encodeURIComponent(record.draftId)}&path=${encodeURIComponent(path)}`,
     ]));
@@ -887,6 +956,7 @@ export class ThemeStudioWorkspace {
     try {
       const next = await operation(await this.readRecord(draftId));
       await this.writeRecord(next);
+      await this.cleanupDraftAssets(next);
       return this.view(next);
     } finally {
       release();
@@ -935,7 +1005,7 @@ export class ThemeStudioWorkspace {
 
   private async readRecord(draftId: string): Promise<DraftRecord> {
     try {
-      return DraftRecordSchema.parse(JSON.parse(await readFile(this.recordPath(draftId), "utf8")));
+      return parseDraftRecord(JSON.parse(await readFile(this.recordPath(draftId), "utf8")));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         throw new StudioError("STUDIO_DRAFT_NOT_FOUND", "Theme draft does not exist");
@@ -954,6 +1024,45 @@ export class ThemeStudioWorkspace {
     const temporary = `${target}.${process.pid}-${this.newId()}.tmp`;
     await writeFile(temporary, `${JSON.stringify(DraftRecordSchema.parse(record), null, 2)}\n`, "utf8");
     await rename(temporary, target);
+  }
+
+  private async cleanupDraftAssets(record: DraftRecord): Promise<void> {
+    const referenced = recordAssetPaths(record);
+    await Promise.all([
+      this.cleanupDraftAssetDirectory(record.draftId, "assets", referenced),
+      this.cleanupDraftAssetDirectory(record.draftId, "fonts", referenced),
+    ]);
+  }
+
+  private async cleanupDraftAssetDirectory(
+    draftId: string,
+    relativeDirectory: string,
+    referenced: ReadonlySet<string>,
+  ): Promise<void> {
+    const directory = join(this.draftDirectory(draftId), ...relativeDirectory.split("/"));
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw error;
+    }
+
+    for (const entry of entries) {
+      const relativePath = `${relativeDirectory}/${entry.name}`;
+      if (entry.isDirectory()) {
+        await this.cleanupDraftAssetDirectory(draftId, relativePath, referenced);
+      } else if (entry.isFile() && !referenced.has(relativePath)) {
+        await rm(join(directory, entry.name));
+      }
+    }
+
+    try {
+      await rmdir(directory);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT" && code !== "ENOTEMPTY") throw error;
+    }
   }
 
   private previewUrl(source: "builtin" | "personal", id: string, version: string): string {

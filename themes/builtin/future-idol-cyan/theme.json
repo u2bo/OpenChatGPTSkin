@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "kind": "theme",
   "appearance": "light",
   "id": "future-idol-cyan",
   "name": "未来歌姬",
   "description": "青蓝霓虹与未来舞台交织的清爽创作空间。",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "author": "OpenChatGPTSkin",
   "metadata": {
     "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
@@ -17,7 +17,14 @@
     }
   },
   "assets": {
-    "background": "assets/background.webp"
+    "background": "assets/background.webp",
+    "profileAvatar": "assets/background.webp",
+    "suggestionIcons": {
+      "card1": "assets/background.webp",
+      "card2": "assets/background.webp",
+      "card3": "assets/background.webp",
+      "card4": "assets/background.webp"
+    }
   },
   "colors": {
     "accent": "#087f9c",
@@ -49,16 +56,16 @@
   "background": {
     "positionX": 0.68,
     "positionY": 0.48,
-    "scale": 1,
+    "scale": 1.05,
     "blur": 0,
-    "brightness": 0.94,
-    "overlay": 0.04,
-    "safeArea": "left",
+    "brightness": 1,
+    "overlay": 0,
+    "safeArea": "none",
     "taskMode": "full",
-    "taskOpacity": 0.52
+    "taskOpacity": 0.18
   },
   "surfaces": {
-    "baseOpacity": 0.34,
+    "baseOpacity": 0.2,
     "elevatedOpacity": 0.72,
     "terminalOpacity": 0.82,
     "blur": 0

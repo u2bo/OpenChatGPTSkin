@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import {
   parseThemeDocument,
+  themeAssetPaths,
   ThemeIdSchema,
   ThemeVersionSchema,
 } from "@open-chatgpt-skin/theme-schema";
@@ -231,14 +232,8 @@ export class ThemeStore {
       );
     }
 
-    const paths = [
-      theme.assets.background,
-      theme.assets.portrait,
-      ...Object.values(theme.assets.decorations ?? {}),
-      ...Object.values(theme.assets.fonts ?? {}),
-    ].filter((item): item is string => Boolean(item));
     const files = new Map<string, Uint8Array>();
-    for (const name of paths) {
+    for (const name of themeAssetPaths(theme)) {
       files.set(name, await readFile(join(base, ...name.split("/"))));
     }
     try {

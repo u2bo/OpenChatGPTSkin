@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "themeId": "mountain-mist",
-  "themeVersion": "1.2.2",
+  "themeVersion": "1.3.0",
   "files": {
     "theme.json": {
-      "bytes": 3357,
-      "sha256": "57d60274f8e054c7ba21975e7ed7141aea6df614075194d9e1486815a91a2b07"
+      "bytes": 3595,
+      "sha256": "8e4b943a7e54e2c3eddb145b5340a01c94fc91bdfbba9397181bf48f83591e0e"
     },
     "assets/background.webp": {
       "bytes": 168214,

@@ -1,3 +1,8 @@
+import type {
+  SuggestionIconSlot,
+  ThemeLayout,
+} from "@open-chatgpt-skin/theme-schema";
+
 export interface CompiledDecoration {
   readonly kind:
     | "particles"
@@ -14,6 +19,21 @@ export interface CompiledDecoration {
   readonly dataUrl?: string;
 }
 
+export interface CompiledInterfaceImage {
+  readonly asset: "background" | number;
+  readonly positionXPercent: number;
+  readonly positionYPercent: number;
+}
+
+export interface CompiledInterfaceImagery {
+  readonly dataUrls: readonly string[];
+  readonly profileAvatar?: CompiledInterfaceImage;
+  readonly suggestionIcons: Readonly<Partial<Record<
+    SuggestionIconSlot,
+    CompiledInterfaceImage
+  >>>;
+}
+
 export interface CompiledTheme {
   readonly themeId: string;
   readonly themeVersion: string;
@@ -22,6 +42,7 @@ export interface CompiledTheme {
   readonly fontCss: string;
   readonly layout: ThemeLayout;
   readonly decorations: readonly CompiledDecoration[];
+  readonly interfaceImagery: CompiledInterfaceImagery;
   readonly totalBytes: number;
 }
 
@@ -82,4 +103,3 @@ export interface RuntimeThemeAdapter {
   verifyOfficialAppearance(): Promise<OfficialAppearanceVerification>;
   remove(): Promise<void>;
 }
-import type { ThemeLayout } from "@open-chatgpt-skin/theme-schema";

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "themeId": "rose-carpet-star",
-  "themeVersion": "1.2.2",
+  "themeVersion": "1.3.0",
   "files": {
     "theme.json": {
-      "bytes": 3432,
-      "sha256": "b7a3b2f51c177bf6975c6d01e1c3ba8f001821cf04da76700246a7ac9c4f6786"
+      "bytes": 3670,
+      "sha256": "e232344675a8e9be80c0c9c9553ad83c62dc7c1a3ad8c60ec02d4a8367909947"
     },
     "assets/background.webp": {
       "bytes": 221512,

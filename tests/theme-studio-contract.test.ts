@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   STUDIO_PROTOCOL_VERSION,
   StudioBootstrapSchema,
+  StudioAssetSlotSchema,
   StudioError,
   StudioEventSchema,
 } from "@open-chatgpt-skin/theme-studio-core";
@@ -58,5 +59,18 @@ describe("Theme Studio Bridge contracts", () => {
     expect(new StudioError("STUDIO_SESSION_INVALID", "invalid")).toMatchObject({
       code: "STUDIO_SESSION_INVALID",
     });
+  });
+
+  it("accepts every controlled interface imagery upload slot", () => {
+    for (const slot of [
+      "profile-avatar",
+      "suggestion-card1",
+      "suggestion-card2",
+      "suggestion-card3",
+      "suggestion-card4",
+    ]) {
+      expect(StudioAssetSlotSchema.parse(slot)).toBe(slot);
+    }
+    expect(() => StudioAssetSlotSchema.parse("suggestion-card5")).toThrow();
   });
 });

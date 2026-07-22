@@ -33,7 +33,7 @@ OpenAI 官方故障排查手册保留了以下 Codex App 兼容路径：
 
 ## 安装未签名预览版
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg`。Intel x64 仍需官方 Codex 对应架构和真实设备验证。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.1.0_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.1.0_macos_x64.dmg`。Intel x64 仍需官方 Codex 对应架构和真实设备验证。
 2. 使用 `shasum -a 256 <文件名>` 核对 GitHub Release 中的 `checksums.txt`。
 3. 打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 4. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。

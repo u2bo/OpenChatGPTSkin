@@ -122,12 +122,25 @@ export const StudioDeleteThemeInputSchema = z.object({
   version: ThemeVersionSchema.optional(),
 }).strict();
 
+export const StudioInterfaceImageSlotSchema = z.enum([
+  "profile-avatar",
+  "suggestion-card1",
+  "suggestion-card2",
+  "suggestion-card3",
+  "suggestion-card4",
+]);
+
 export const StudioAssetSlotSchema = z.enum([
   "background",
   "portrait",
   "decoration",
   "ui-font",
   "code-font",
+  "profile-avatar",
+  "suggestion-card1",
+  "suggestion-card2",
+  "suggestion-card3",
+  "suggestion-card4",
 ]);
 
 export const StudioUploadAssetInputSchema = StudioDraftCommandInputSchema.extend({
@@ -188,6 +201,7 @@ export type StudioUpdateDraftInput = z.infer<typeof StudioUpdateDraftInputSchema
 export type StudioDraftCommandInput = z.infer<typeof StudioDraftCommandInputSchema>;
 export type StudioDeleteThemeInput = z.infer<typeof StudioDeleteThemeInputSchema>;
 export type StudioUploadAssetInput = z.infer<typeof StudioUploadAssetInputSchema>;
+export type StudioInterfaceImageSlot = z.infer<typeof StudioInterfaceImageSlotSchema>;
 export type StudioImportThemeInput = z.infer<typeof StudioImportThemeInputSchema>;
 export type StudioExportedTheme = z.infer<typeof StudioExportedThemeSchema>;
 export type StudioSaveResult = z.infer<typeof StudioSaveResultSchema>;

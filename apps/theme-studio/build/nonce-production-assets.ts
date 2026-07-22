@@ -15,14 +15,32 @@ function tagEnd(html: string, start: number): number {
   throw new Error("Theme Studio production HTML contains an unclosed tag");
 }
 
+function declareCspNonce(html: string, nonce: string): string {
+  const existingMetadata = /<meta\b[^>]*\bproperty\s*=\s*(["'])csp-nonce\1[^>]*>/i;
+  if (existingMetadata.test(html)) {
+    throw new Error("Theme Studio production HTML already declares a CSP nonce");
+  }
+
+  const head = /<head(?:\s[^>]*)?>/i.exec(html);
+  if (!head) {
+    throw new Error("Theme Studio production HTML is missing its <head> tag");
+  }
+
+  const insertionPoint = head.index + head[0].length;
+  const metadata = `<meta property="csp-nonce" nonce="${nonce}">`;
+  return html.slice(0, insertionPoint) + metadata + html.slice(insertionPoint);
+}
+
 /**
- * Adds CSP nonces only to real HTML asset tags. Script and style bodies are raw
- * text in HTML, so scanning inside them can corrupt JavaScript string literals.
+ * Declares the production CSP nonce and adds it only to real HTML asset tags.
+ * Script and style bodies are raw text in HTML, so scanning inside them can
+ * corrupt JavaScript string literals.
  */
 export function injectNonceIntoInlineAssets(
   html: string,
   nonce: string,
 ): string {
+  html = declareCspNonce(html, nonce);
   const openingTag = /<(script|style)(?=[\s/>])/gi;
   let cursor = 0;
   let output = "";

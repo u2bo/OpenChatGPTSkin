@@ -7,7 +7,7 @@ import { loadThemeDirectory } from "@open-chatgpt-skin/theme-core";
 describe("loadThemeDirectory", () => {
   it("loads the validated mountain-mist bundle", async () => {
     const bundle = await loadThemeDirectory(resolve("themes/builtin/mountain-mist"));
-    expect(bundle.theme).toMatchObject({ id: "mountain-mist", version: "1.2.2" });
+    expect(bundle.theme).toMatchObject({ id: "mountain-mist", version: "1.3.0" });
     expect(bundle.files.has("assets/background.webp")).toBe(true);
   });
 

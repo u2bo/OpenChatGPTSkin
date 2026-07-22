@@ -15,6 +15,14 @@ function previewDraft(): StudioDraft {
     resolve("themes/builtin/future-idol-cyan/theme.json"),
     "utf8",
   )));
+  const backgroundPath = theme.assets.background!;
+  theme.assets.profileAvatar = backgroundPath;
+  theme.assets.suggestionIcons = {
+    card1: backgroundPath,
+    card2: backgroundPath,
+    card3: backgroundPath,
+    card4: backgroundPath,
+  };
   return {
     draftId: "00000000-0000-4000-8000-000000000099",
     theme,
@@ -26,7 +34,7 @@ function previewDraft(): StudioDraft {
     redoAvailable: false,
     issues: [],
     assetUrls: {
-      [theme.assets.background!]: "/api/draft-asset?background=authorized",
+      [backgroundPath]: "/api/draft-asset?background=authorized",
     },
   };
 }
@@ -46,6 +54,35 @@ describe("Theme Studio Codex preview", () => {
 
     expect(screen.getByRole("img", { name: "主题背景" }))
       .toHaveAttribute("src", "/api/draft-asset?background=authorized");
+  });
+
+  it("uses the shared crop model for suggestion images and the demo avatar", () => {
+    render(<PreviewCanvas draft={previewDraft()} />);
+
+    expect(screen.getByRole("img", { name: "示例用户头像" }))
+      .toHaveStyle({ objectPosition: "50% 35%" });
+    for (const [index, position] of [
+      [1, "20% 25%"],
+      [2, "80% 25%"],
+      [3, "20% 75%"],
+      [4, "80% 75%"],
+    ] as const) {
+      expect(screen.getByRole("img", { name: `建议卡片 ${index} 图片` }))
+        .toHaveStyle({ objectPosition: position });
+    }
+  });
+
+  it("restores the existing SVG visuals when interface imagery is cleared", () => {
+    const draft = previewDraft();
+    delete draft.theme.assets.profileAvatar;
+    delete draft.theme.assets.suggestionIcons;
+    render(<PreviewCanvas draft={draft} />);
+
+    expect(screen.queryByRole("img", { name: "示例用户头像" })).not.toBeInTheDocument();
+    expect(screen.getByText("示例用户").closest("footer")?.querySelector("svg"))
+      .not.toBeNull();
+    expect(screen.getByText("探索并理解代码").closest("button")?.querySelector("svg"))
+      .not.toBeNull();
   });
 
   it("previews the task workbench with the same configurable surface model", () => {

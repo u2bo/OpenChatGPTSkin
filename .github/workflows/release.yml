@@ -220,6 +220,6 @@ jobs:
             prerelease=(--prerelease)
           fi
           gh release create "$GITHUB_REF_NAME" artifacts/* \
-            --title "OpenChatGPTSkin $GITHUB_REF_NAME" \
+            --title "$version" \
             --notes-file "$notes" \
             "${prerelease[@]}"

@@ -358,6 +358,8 @@ describe("macOS release integration", () => {
       expect(workflow).toContain(directory);
     }
     expect(workflow).toContain('test ! -e "$destination"');
+    expect(workflow).toContain('--title "$version"');
+    expect(workflow).not.toContain('--title "OpenChatGPTSkin');
   });
 
   it("pins Inno Setup deterministically and streams compiler diagnostics", async () => {

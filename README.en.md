@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-alpha-f59e0b)
+![Status](https://img.shields.io/badge/status-stable-2ea44f)
 ![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20Preview-0078d4)
 ![Node.js](https://img.shields.io/badge/Node.js-22%20bundled-339933)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
@@ -30,12 +30,32 @@
   <img src="docs/assets/screenshots/theme-studio.webp" alt="OpenChatGPTSkin Theme Studio editor workspace">
 </details>
 
+## Theme concepts
+
+The three complete concept images below show how far OpenChatGPTSkin can be customized across portrait, anime, and high-energy sci-fi directions. Each image keeps its original aspect ratio without cropping.
+
+> [!NOTE]
+> These images are visual capability concepts only. They are not built-in themes, are not included in release packages, and do not imply an official relationship with any depicted person, work, or rights holder. Confirm all likeness, character, trademark, and asset rights before public use or redistribution.
+
+### Yua Mikami pink-mist concept
+
+<img src="docs/assets/concepts/yua-mikami.png" width="100%" alt="Complete Yua Mikami pink-mist OpenChatGPTSkin concept">
+
+### Ichigo Hoshimiya stage concept
+
+<img src="docs/assets/concepts/ichigo-hoshimiya.png" width="100%" alt="Complete Ichigo Hoshimiya stage OpenChatGPTSkin concept">
+
+### Super Saiyan engine concept
+
+<img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="Complete Super Saiyan Goku OpenChatGPTSkin concept">
+
 > [!IMPORTANT]
-> `v0.1.0-alpha.1` provides both a **Windows developer preview** and an **unsigned macOS developer preview**. Windows includes an x64 portable ZIP and per-user Setup; macOS includes separate Apple Silicon ARM64 and Intel x64 DMGs/portable archives. Every artifact bundles Node.js and requires neither Git nor development dependencies. macOS has not completed the real-Codex visual loop, Developer ID signing, or notarization. Use the standard Control-click → **Open** flow below and do not disable Gatekeeper. Save your work and **fully quit the regular Codex app** before applying or restoring a theme. OpenChatGPTSkin manages only the Codex instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
+> `v0.1.0` is the first stable release, providing a **stable Windows x64 build** and an **unsigned macOS preview**. Windows includes an x64 portable ZIP and per-user Setup; macOS includes separate Apple Silicon ARM64 and Intel x64 DMGs/portable archives. Every artifact bundles Node.js and requires neither Git nor development dependencies. macOS has not completed the real-Codex visual loop, Developer ID signing, or notarization. Use the standard Control-click → **Open** flow below and do not disable Gatekeeper. Save your work and **fully quit the regular Codex app** before applying or restoring a theme. OpenChatGPTSkin manages only the Codex instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
 - [Overview](#overview)
+- [Theme concepts](#theme-concepts)
 - [Features](#features)
 - [Full UI coverage](#full-ui-coverage)
 - [Built-in themes](#built-in-themes)
@@ -61,12 +81,12 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 
 | Capability | Status |
 |---|---|
-| Theme Schema v2 and `.ocskin` validate/pack/unpack | Complete |
+| Theme Schema v3 and `.ocskin` validate/pack/unpack | Complete |
 | Four original built-in themes | Complete |
-| Windows Runtime launch/switch/pause/restore | Alpha |
-| Windows x64 portable ZIP and per-user Setup | Alpha |
+| Windows Runtime launch/switch/pause/restore | Stable |
+| Windows x64 portable ZIP and per-user Setup | Stable |
 | macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; real-Mac acceptance pending |
-| Theme Studio editing/preview/version/import/export/apply | Alpha |
+| Theme Studio editing/preview/version/import/export/apply | Stable |
 | Codex plugin-market installation | Not available yet |
 | Automatic updates, SEA single-file executable, theme marketplace | Planned |
 
@@ -144,7 +164,7 @@ A dark navy, glacial cyan, and aurora-violet theme for low-light environments an
 
 ### Windows Setup (recommended)
 
-1. Download `OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases).
+1. Download `OpenChatGPTSkin_0.1.0_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases).
 2. Verify SHA-256, then run Setup. It installs for the current user under `%LOCALAPPDATA%\Programs\OpenChatGPTSkin` and does not request administrator privileges.
 3. Start OpenChatGPTSkin from the Start menu. The production Theme Studio opens in your default browser only after its local health check succeeds.
 
@@ -152,16 +172,16 @@ The installer is unsigned, so Windows SmartScreen may warn. Download only from t
 
 ### Windows portable ZIP
 
-Download `OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.cmd`. The portable build does not register an installation and needs no global Node.js or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
+Download `OpenChatGPTSkin_0.1.0_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.cmd`. The portable build does not register an installation and needs no global Node.js or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
 
 ### macOS DMG (unsigned developer preview)
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg`. Intel x64 compatibility depends on an official Codex build for that architecture and has not completed real-device validation.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0_macos_x64.dmg`. Intel x64 compatibility depends on an official Codex build for that architecture and has not completed real-device validation.
 2. Verify SHA-256 as shown below, open the DMG, and drag `OpenChatGPTSkin.app` to Applications.
 3. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt. Do not disable Gatekeeper or use `xattr` to remove quarantine metadata.
 4. Theme Studio opens in the default browser after its health check succeeds. Replacing or deleting the `.app` keeps personal themes, drafts, and Runtime state under `~/Library/Application Support/OpenChatGPTSkin`.
 
-Developers can also download `OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.tar.gz`. Most users should choose the DMG.
+Developers can also download `OpenChatGPTSkin_0.1.0_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.1.0_macos_x64.tar.gz`. Most users should choose the DMG.
 
 Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. GitHub-hosted Windows, ARM64 macOS, and Intel macOS runners build Windows x64, macOS ARM64, and macOS x64 test artifacts. Download `windows-release`, `macos-arm64-release`, `macos-x64-release`, and their diagnostics from the completed run. A manual run never creates a tag or GitHub Release.
 
@@ -170,17 +190,17 @@ Maintainers can open **Actions → Build and Release → Run workflow** and manu
 Run from the download directory:
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.1.0-alpha.1_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.1.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.1.0_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.1.0_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS Terminal:
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.1.0-alpha.1_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.1.0_macos_arm64.dmg
 # On Intel:
-shasum -a 256 OpenChatGPTSkin_0.1.0-alpha.1_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.1.0_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -341,7 +361,7 @@ Then quit Codex normally through its menu or system tray to complete cleanup.
 
 ```text
 apps/theme-studio/            Theme Studio React frontend
-packages/theme-schema/        Theme Schema v2 and visual model
+packages/theme-schema/        Theme Schema v3 and visual model
 packages/theme-core/          Validation, catalog, archive, storage
 packages/cdp-adapter/         Codex UI surface recognition and compilation
 packages/theme-studio-core/   Theme Studio contracts and validation
@@ -366,7 +386,8 @@ UI adaptation changes must include deterministic page fixtures/tests. Theme cont
 
 ## Documentation
 
-- [v0.1.0-alpha.1 Release Notes](docs/releases/v0.1.0-alpha.1.md)
+- [v0.1.0 Release Notes](docs/releases/v0.1.0.md)
+- [v0.1.0-alpha.1 Historical Release Notes](docs/releases/v0.1.0-alpha.1.md)
 - [Custom Theme Guide](docs/custom-theme-guide.en.md)
 - [Theme Studio Developer Guide](docs/theme-studio.md)
 - [Theme Format and Safety Rules](docs/theme-format.md)

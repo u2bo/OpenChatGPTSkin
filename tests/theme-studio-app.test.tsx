@@ -304,6 +304,31 @@ describe("Theme Studio application shell", () => {
     expect(within(inspector).getByLabelText(/终端面板遮罩强度/)).toBeVisible();
   });
 
+  it("exposes five localized interface imagery resource cards", async () => {
+    const studioBridge = bridge();
+    const imageryDraft = draft(
+      "00000000-0000-4000-8000-000000000018",
+      "imagery-theme",
+      "界面素材主题",
+    );
+    delete imageryDraft.theme.assets.profileAvatar;
+    delete imageryDraft.theme.assets.suggestionIcons;
+    vi.mocked(studioBridge.openLatestDraft).mockResolvedValueOnce(imageryDraft);
+
+    render(<ThemeStudioApp bootstrap={bootstrap} bridge={studioBridge} />);
+    await screen.findByText("界面素材主题");
+    fireEvent.click(screen.getByRole("tab", { name: "编辑工具" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "主题编辑工具" }))
+      .getByRole("button", { name: /界面素材/ }));
+
+    const inspector = screen.getByRole("region", { name: "属性检查器" });
+    expect(within(inspector).getByRole("heading", { name: "界面素材" })).toBeVisible();
+    expect(within(inspector).getByText("用户头像", { selector: "strong" })).toBeVisible();
+    expect(within(inspector).getByText("建议卡片 4", { selector: "strong" })).toBeVisible();
+    expect(within(inspector).getAllByText("官方默认")).toHaveLength(10);
+    expect(within(inspector).getAllByText("使用主题背景")).toHaveLength(5);
+  });
+
   it("does not expose geometry controls for the native project picker", async () => {
     const studioBridge = bridge();
     vi.mocked(studioBridge.openLatestDraft).mockResolvedValueOnce(draft(

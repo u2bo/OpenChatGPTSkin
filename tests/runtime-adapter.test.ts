@@ -116,6 +116,20 @@ function compiledTheme() {
     backgroundDataUrl: "data:image/webp;base64,AA==",
     themeCss: ":root{--ocs-accent:#4f8f78}body{background-image:var(--ocs-background-image)}",
     fontCss: "",
+    interfaceImagery: {
+      dataUrls: [],
+      profileAvatar: {
+        asset: "background" as const,
+        positionXPercent: 50,
+        positionYPercent: 35,
+      },
+      suggestionIcons: {
+        card1: { asset: "background" as const, positionXPercent: 20, positionYPercent: 25 },
+        card2: { asset: "background" as const, positionXPercent: 80, positionYPercent: 25 },
+        card3: { asset: "background" as const, positionXPercent: 20, positionYPercent: 75 },
+        card4: { asset: "background" as const, positionXPercent: 80, positionYPercent: 75 },
+      },
+    },
     layout: {
       heroHeight: 380,
       cardColumns: 4,
@@ -179,6 +193,21 @@ describe("CurrentCodexAdapter", () => {
     expect(await client.evaluate<number>(
       'document.querySelectorAll(\'[data-open-chatgpt-skin-surface="card"]\').length',
     )).toBe(4);
+    expect(await client.evaluate<number>(
+      'document.querySelectorAll("[data-open-chatgpt-skin-interface-image]").length',
+    )).toBe(5);
+    expect(await client.evaluate<number>(
+      'document.querySelectorAll("[data-open-chatgpt-skin-native-icon]").length',
+    )).toBe(5);
+    expect(await client.evaluate<number>(
+      'document.querySelectorAll(\'[data-open-chatgpt-skin-surface^="suggestion-icon-"]\').length',
+    )).toBe(4);
+    expect(await client.evaluate<string | null>(
+      'document.querySelector(\'[data-open-chatgpt-skin-surface="profile-avatar"]\')?.style.pointerEvents ?? null',
+    )).toBe("none");
+    expect(await client.evaluate<string | null>(
+      'document.querySelector("#native-account-button")?.textContent ?? null',
+    )).toContain("Demo user");
     await adapter.remove();
     expect(await client.evaluate<number>(
       `document.querySelectorAll(
@@ -191,6 +220,9 @@ describe("CurrentCodexAdapter", () => {
     expect(await client.evaluate<boolean>(
       'Boolean(document.querySelector("#native-marker"))',
     )).toBe(true);
+    expect(await client.evaluate<number>(
+      'document.querySelectorAll("[data-open-chatgpt-skin-interface-image],[data-open-chatgpt-skin-native-icon],[data-open-chatgpt-skin-interface-host]").length',
+    )).toBe(0);
   });
 
   it("re-marks Codex surfaces after React replaces the rendered subtree", async () => {
@@ -210,6 +242,18 @@ describe("CurrentCodexAdapter", () => {
       oldMain.replaceWith(replacement);
       const oldNavigation = document.querySelector("nav");
       const replacementNavigation = oldNavigation.cloneNode(true);
+      for (const node of replacementNavigation.querySelectorAll("[data-open-chatgpt-skin-surface]")) {
+        node.removeAttribute("data-open-chatgpt-skin-surface");
+      }
+      for (const node of replacementNavigation.querySelectorAll("[data-open-chatgpt-skin-interface-image]")) {
+        node.remove();
+      }
+      for (const node of replacementNavigation.querySelectorAll("[data-open-chatgpt-skin-native-icon]")) {
+        node.removeAttribute("data-open-chatgpt-skin-native-icon");
+      }
+      for (const node of replacementNavigation.querySelectorAll("[data-open-chatgpt-skin-interface-host]")) {
+        node.removeAttribute("data-open-chatgpt-skin-interface-host");
+      }
       replacementNavigation.removeAttribute("data-open-chatgpt-skin-surface");
       oldNavigation.replaceWith(replacementNavigation);
       for (const node of document.querySelectorAll("[data-rect]")) {
@@ -242,6 +286,9 @@ describe("CurrentCodexAdapter", () => {
     expect(await client.evaluate<number>(
       'document.querySelectorAll(\'[data-open-chatgpt-skin-surface="card"]\').length',
     )).toBe(4);
+    expect(await client.evaluate<number>(
+      'document.querySelectorAll("[data-open-chatgpt-skin-interface-image]").length',
+    )).toBe(5);
     expect(await client.evaluate<string | null>(
       'document.querySelector("#native-composer")?.getAttribute("data-open-chatgpt-skin-surface") ?? null',
     )).toBe("composer-input");

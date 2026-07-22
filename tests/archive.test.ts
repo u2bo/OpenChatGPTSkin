@@ -73,6 +73,32 @@ describe("ocskin archive", () => {
     expect((await unpackTheme(packTheme(bundle))).theme).toEqual(bundle.theme);
   });
 
+  it("round-trips shared and custom interface imagery without duplicating files", async () => {
+    const migrated = validateThemeBundle(theme, new Map([
+      ["assets/background.png", png],
+    ])).theme;
+    const bundle = validateThemeBundle({
+      ...migrated,
+      assets: {
+        ...migrated.assets,
+        profileAvatar: "assets/background.png",
+        suggestionIcons: {
+          card1: "assets/background.png",
+          card2: "assets/card2.png",
+        },
+      },
+    }, new Map([
+      ["assets/background.png", png],
+      ["assets/card2.png", Uint8Array.from([...png, 0x01])],
+    ]));
+
+    const unpacked = await unpackTheme(packTheme(bundle));
+
+    expect(unpacked.theme.assets.profileAvatar).toBe("assets/background.png");
+    expect(unpacked.theme.assets.suggestionIcons?.card2).toBe("assets/card2.png");
+    expect(unpacked.files.size).toBe(2);
+  });
+
   it("rejects unsafe, executable, and case-colliding entries before extraction", async () => {
     const traversal = zipSync({
       "../escape.js": strToU8("alert(1)"),

@@ -4,6 +4,7 @@ import { readFile, readdir, mkdtemp, rm } from "node:fs/promises";
 import { request, type IncomingHttpHeaders } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, sep } from "node:path";
+import { Script } from "node:vm";
 import { parseHTML } from "linkedom";
 import {
   readReleaseManifest,
@@ -392,6 +393,15 @@ export async function acceptReleasePayload(
       inlineAssets.length === 0 ||
       inlineAssets.some((element) => element.getAttribute("nonce") !== scriptNonce)) {
       throw new Error("Production UI inline assets are not nonce-bound");
+    }
+    for (const script of document.querySelectorAll("script")) {
+      try {
+        new Script(script.textContent, { filename: "theme-studio-inline.js" });
+      } catch (error) {
+        throw new Error(
+          `Production UI inline script is not syntactically valid: ${String(error)}`,
+        );
+      }
     }
     if (String(page.headers["referrer-policy"] ?? "") !== "no-referrer" ||
       String(page.headers["x-frame-options"] ?? "") !== "DENY") {

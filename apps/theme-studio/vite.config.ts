@@ -4,18 +4,10 @@ import { defineConfig, type Plugin } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { STUDIO_CSP_NONCE_PLACEHOLDER } from
   "../../packages/theme-studio-core/src/security.js";
+import { injectNonceIntoInlineAssets } from
+  "./build/nonce-production-assets.js";
 
 function nonceProductionAssets(): Plugin {
-  const addNonce = (html: string) => html
-    .replace(
-      /<script(?![^>]*\bnonce=)/g,
-      `<script nonce="${STUDIO_CSP_NONCE_PLACEHOLDER}"`,
-    )
-    .replace(
-      /<style(?![^>]*\bnonce=)/g,
-      `<style nonce="${STUDIO_CSP_NONCE_PLACEHOLDER}"`,
-    );
-
   return {
     name: "open-chatgpt-skin-production-nonce",
     enforce: "post",
@@ -24,7 +16,10 @@ function nonceProductionAssets(): Plugin {
         if (output.type !== "asset" || !output.fileName.endsWith(".html")) {
           continue;
         }
-        output.source = addNonce(String(output.source));
+        output.source = injectNonceIntoInlineAssets(
+          String(output.source),
+          STUDIO_CSP_NONCE_PLACEHOLDER,
+        );
       }
     },
   };

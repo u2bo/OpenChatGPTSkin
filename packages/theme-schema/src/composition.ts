@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const assetKey = z.string().max(40).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export const THEME_MAX_COMPOSITION_LAYERS = 24 as const;
 
 export const ThemeCompositionSurfaceSchema = z.enum([
   "viewport",
@@ -43,7 +44,7 @@ export const ThemeCompositionLayerSchema = z.object({
 }).strict();
 
 export const ThemeCompositionSchema = z.object({
-  layers: z.array(ThemeCompositionLayerSchema).max(24),
+  layers: z.array(ThemeCompositionLayerSchema).max(THEME_MAX_COMPOSITION_LAYERS),
 }).strict().superRefine((composition, context) => {
   const ids = composition.layers.map((layer) => layer.id);
   if (new Set(ids).size !== ids.length) {

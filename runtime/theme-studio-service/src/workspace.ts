@@ -25,6 +25,8 @@ import {
   isSafeThemePath,
   parseThemeDraftDocument,
   parseThemeDocument,
+  THEME_MAX_COMPOSITION_LAYERS,
+  THEME_SCHEMA_VERSION,
   themeAssetPaths,
   ThemeDraftDocumentSchema,
   type SuggestionIconSlot,
@@ -334,7 +336,7 @@ export class ThemeStudioWorkspace {
     const sourceSavedRef = input.source.source === "personal" ? input.source.ref : null;
     return ThemeDraftDocumentSchema.parse({
       ...bundle.theme,
-      schemaVersion: 3,
+      schemaVersion: THEME_SCHEMA_VERSION,
       kind: "theme",
       id: input.themeId ?? defaultId,
       name: input.name ?? `${bundle.theme.name} 自定义`,
@@ -457,6 +459,17 @@ export class ThemeStudioWorkspace {
     return this.mutate(input.draftId, async (record) => {
       this.assertRevision(record, input.expectedRevision);
       const theme = cloneTheme(record.theme);
+      if (input.slot === "composition-layer") {
+        const key = this.requiredAssetKey(input);
+        const existing = theme.composition.layers.some((layer) => layer.id === key);
+        if (!existing &&
+          theme.composition.layers.length >= THEME_MAX_COMPOSITION_LAYERS) {
+          throw new StudioError(
+            "STUDIO_ASSET_INVALID",
+            `A theme can contain at most ${THEME_MAX_COMPOSITION_LAYERS} composition layers`,
+          );
+        }
+      }
       const { path, bytes } = await this.normalizeAsset(input);
       await this.writeAsset(record.draftId, path, bytes);
 
@@ -486,15 +499,41 @@ export class ThemeStudioWorkspace {
         if (existing < 0) theme.decorations = [...theme.decorations, decoration].slice(0, 16);
         else theme.decorations[existing] = decoration;
       }
-      if (input.slot === "ui-font" || input.slot === "code-font") {
+      if (input.slot === "composition-layer") {
+        const key = this.requiredAssetKey(input);
+        theme.assets.decorations = { ...theme.assets.decorations, [key]: path };
+        const nextLayer = {
+          id: key,
+          asset: { kind: "decoration" as const, assetKey: key },
+          surface: "home-hero" as const,
+          anchor: "top-left" as const,
+          positionX: 0.1,
+          positionY: 0.1,
+          width: 0.2,
+          opacity: 1,
+          rotation: 0,
+          required: false,
+        };
+        const layerIndex = theme.composition.layers.findIndex((layer) => layer.id === key);
+        if (layerIndex < 0) {
+          theme.composition.layers = [...theme.composition.layers, nextLayer];
+        } else {
+          theme.composition.layers[layerIndex] = nextLayer;
+        }
+      }
+      if (input.slot === "ui-font" || input.slot === "code-font" ||
+        input.slot === "display-font") {
         const key = this.requiredAssetKey(input);
         theme.assets.fonts = { ...theme.assets.fonts, [key]: path };
         if (input.slot === "ui-font") {
           theme.typography.uiFontAssetKey = key;
           theme.typography.uiFamily = `ocs-${key}`;
-        } else {
+        } else if (input.slot === "code-font") {
           theme.typography.codeFontAssetKey = key;
           theme.typography.codeFamily = `ocs-${key}`;
+        } else {
+          theme.typography.displayFontAssetKey = key;
+          theme.typography.displayFamily = `ocs-${key}`;
         }
       }
       return withHistory(record, ThemeDraftDocumentSchema.parse(theme), this.now());
@@ -693,7 +732,12 @@ export class ThemeStudioWorkspace {
     }
 
     const version = nextPatchVersion(refs, record.theme.id);
-    const theme = parseThemeDocument({ ...record.theme, schemaVersion: 3, kind: "theme", version });
+    const theme = parseThemeDocument({
+      ...record.theme,
+      schemaVersion: THEME_SCHEMA_VERSION,
+      kind: "theme",
+      version,
+    });
     const backgroundPath = theme.assets.background;
     if (!backgroundPath) throw new StudioError("STUDIO_DRAFT_INVALID", "Background image is required");
     const background = files.get(backgroundPath);
@@ -726,7 +770,8 @@ export class ThemeStudioWorkspace {
     readonly path: string;
     readonly bytes: Uint8Array;
   }> {
-    if (input.slot === "ui-font" || input.slot === "code-font") {
+    if (input.slot === "ui-font" || input.slot === "code-font" ||
+      input.slot === "display-font") {
       if (input.bytes.length > SOURCE_FONT_LIMIT_BYTES || sourceExtension(input.fileName) !== ".woff2" ||
         Buffer.from(input.bytes.subarray(0, 4)).toString("ascii") !== "wOF2") {
         throw new StudioError("STUDIO_ASSET_INVALID", "Font must be a valid WOFF2 file up to 5 MB");
@@ -799,6 +844,7 @@ export class ThemeStudioWorkspace {
     if (input.assetKey) return input.assetKey;
     if (input.slot === "ui-font") return "ui-font";
     if (input.slot === "code-font") return "code-font";
+    if (input.slot === "display-font") return "display-font";
     throw new StudioError("STUDIO_ASSET_INVALID", "Asset key is required");
   }
 

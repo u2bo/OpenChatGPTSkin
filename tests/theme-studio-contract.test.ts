@@ -73,4 +73,11 @@ describe("Theme Studio Bridge contracts", () => {
     }
     expect(() => StudioAssetSlotSchema.parse("suggestion-card5")).toThrow();
   });
+
+  it("exposes display-font and composition-layer upload slots", () => {
+    expect(StudioAssetSlotSchema.options).toEqual(expect.arrayContaining([
+      "display-font",
+      "composition-layer",
+    ]));
+  });
 });

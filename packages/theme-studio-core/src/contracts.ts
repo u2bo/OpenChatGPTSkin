@@ -136,6 +136,8 @@ export const StudioAssetSlotSchema = z.enum([
   "decoration",
   "ui-font",
   "code-font",
+  "display-font",
+  "composition-layer",
   "profile-avatar",
   "suggestion-card1",
   "suggestion-card2",

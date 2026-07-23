@@ -1,4 +1,4 @@
-# OpenChatGPTSkin `.ocskin` 归档格式 v1 / Theme Schema v3
+# OpenChatGPTSkin `.ocskin` 归档格式 v1 / Theme Schema v4
 
 An OpenChatGPTSkin theme is a structured `.ocskin` ZIP archive. It contains data and media only; JavaScript, HTML, CSS, executables, absolute paths, path traversal, duplicate entries, symbolic-link extraction, and unknown top-level entries are not supported.
 
@@ -29,7 +29,7 @@ The document is strict: unknown properties fail validation.
 
 | Field | Rule |
 |---|---|
-| `schemaVersion` | exactly `3` for newly saved themes; v1 and v2 are deterministically migrated when read |
+| `schemaVersion` | exactly `4` for newly saved themes; v1, v2, and v3 are deterministically migrated when read |
 | `kind` | `theme` or `recipe` |
 | `id` | 3–80 lowercase letters, digits, and single hyphen-separated segments; Windows-reserved names are rejected |
 | `name` | 1–80 characters |
@@ -66,8 +66,20 @@ All color values are six-digit hex or `rgb(...)` / `rgba(...)` strings. Required
 | `codeSize` | `11`–`22` |
 | `uiWeight`, `codeWeight` | `400`, `500`, `600`, or `700` |
 | `lineHeight` | `1.2`–`1.8` |
+| `displayFamily` | 1–120 characters; defaults to `uiFamily` during migration |
+| `displayFontAssetKey` | optional key declared in `assets.fonts` |
+| `displaySize` | `20`–`72` |
+| `displayWeight` | `400`, `500`, `600`, or `700` |
+| `displayLineHeight` | `1.1`–`1.8` |
+| `displayLetterSpacing` | `-0.05`–`0.2` em |
 
 Only system fonts and package WOFF2 fonts are supported. Font licensing remains the theme author's responsibility.
+
+### Home welcome
+
+`home.welcome.localized` may define `zh-CN` and/or `en`. Each locale contains one to three plain-text `lines`; each line is 1–120 Unicode code points and the locale total is at most 240. The only supported token is `{projectName}`. Unknown tokens, HTML, Markdown, CSS, or scripts fail validation.
+
+Runtime resolves the real current project name. If the locale is absent or the project cannot be resolved uniquely, it preserves the native Codex welcome instead of displaying another language or an unresolved token.
 
 ### Background
 
@@ -82,6 +94,12 @@ Only system fonts and package WOFF2 fonts are supported. Font licensing remains 
 ### Decorations
 
 At most 16 decorations are allowed. A decoration has a `type` of `particles`, `ribbon`, `butterflies`, `polaroid`, `badge`, `sparkles`, or `image`, an `enabled` flag, and `intensity` from `0` to `1`. Optional controls are `placement` (`background`, `corners`, `hero`, or `cards`), `opacity` from `0` to `1`, and `scale` from `0.25` to `3`. An `image` decoration must name an `assetKey` that exists in `assets.decorations`. Runtime decoration layers must remain non-interactive.
+
+### Exact composition layers
+
+Theme Schema v4 additionally supports at most 24 `composition.layers`. Each layer has a unique safe `id`, references either `assets.portrait` or a named `assets.decorations` entry, targets `viewport`, `main`, `home-hero`, or `suggestions`, and declares an anchor, normalized `positionX` / `positionY`, normalized `width`, `opacity`, `rotation`, and `required` flag.
+
+These layers are visual only: Runtime forces them to be non-clickable, non-focusable, `aria-hidden`, and outside native interaction geometry. A missing required layer aborts staging and leaves the previous theme active. Public character-theme decoration sources must contain a real Alpha channel; a baked checkerboard fails the standard builder.
 
 ### Safe module layout
 
@@ -123,6 +141,7 @@ The manifest records `schemaVersion`, `themeId`, `themeVersion`, and the exact s
 | WOFF2 font | 5 MB each | `wOF2` magic bytes |
 | compressed `.ocskin` archive | 32 MB | checked before decompression |
 | expanded package including JSON | 32 MB | streaming cumulative limit |
+| compiled Runtime theme | 8 MB | exact serialized byte count before CDP application |
 
 PNG, JPEG, WebP, and WOFF2 signatures are checked; changing an executable's extension does not make it a valid asset. Archive entries are streamed into memory under the expanded-size ceiling and are never extracted by trusting ZIP paths or link metadata.
 
@@ -134,6 +153,7 @@ Public themes are ready immediately after a clean checkout:
 - `rose-carpet-star`
 - `mountain-mist`
 - `glacier-aurora`
+- `yua-mikami-starlight`
 
 Asset-free recipes require a user-authorized local image and are never public-ready:
 
@@ -161,7 +181,7 @@ CLI exit codes:
 
 ## Stable validation error codes
 
-Asset and rights errors include `THEME_SCHEMA_INVALID`, `RIGHTS_ATTRIBUTION_REQUIRED`, `RECIPE_ASSET_FORBIDDEN`, `ASSET_MISSING`, `ASSET_UNSUPPORTED`, `ASSET_UNDECLARED`, `ASSET_PATH_COLLISION`, `ASSET_SIGNATURE_INVALID`, `IMAGE_TOO_LARGE`, `FONT_TOO_LARGE`, `PREVIEW_TOO_LARGE`, and `PACKAGE_TOO_LARGE`.
+Asset and rights errors include `THEME_SCHEMA_INVALID`, `THEME_DISPLAY_FONT_MISSING`, `THEME_DISPLAY_FONT_INVALID`, `THEME_COMPOSITION_INVALID`, `RIGHTS_ATTRIBUTION_REQUIRED`, `RECIPE_ASSET_FORBIDDEN`, `ASSET_MISSING`, `ASSET_UNSUPPORTED`, `ASSET_UNDECLARED`, `ASSET_PATH_COLLISION`, `ASSET_SIGNATURE_INVALID`, `IMAGE_TOO_LARGE`, `FONT_TOO_LARGE`, `PREVIEW_TOO_LARGE`, and `PACKAGE_TOO_LARGE`.
 
 Storage errors include `THEME_REF_INVALID`, `THEME_VERSION_CONFLICT`, `THEME_STATE_INVALID`, `STORED_THEME_INVALID`, `STORED_THEME_IDENTITY_MISMATCH`, and `ROLLBACK_UNAVAILABLE`.
 

@@ -23,6 +23,7 @@ const BUILTIN_THEME_IDS = [
   "rose-carpet-star",
   "mountain-mist",
   "glacier-aurora",
+  "yua-mikami-starlight",
 ] as const;
 
 export type ReleasePlatform = "win32" | "darwin";
@@ -335,7 +336,7 @@ async function copyThemes(
   const actualIds = catalog.builtins.map((theme) => theme.id);
   if (actualIds.length !== BUILTIN_THEME_IDS.length ||
     BUILTIN_THEME_IDS.some((id) => !actualIds.includes(id))) {
-    throw new Error(`Release catalog must contain the four built-in themes`);
+    throw new Error(`Release catalog must contain the five built-in themes`);
   }
   if ((catalog.recipes?.length ?? 0) !== 0) {
     throw new Error("Release catalog must not contain local recipes");

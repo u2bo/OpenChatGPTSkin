@@ -277,6 +277,32 @@ async function buildOutputs(
     cache.set(file, bytes);
     return bytes;
   };
+  const compositionDecorationKeys = new Set(template.theme.composition.layers.flatMap((layer) =>
+    layer.asset.kind === "decoration" ? [layer.asset.assetKey] : []
+  ));
+  for (const assetKey of compositionDecorationKeys) {
+    const outputPath = template.theme.assets.decorations?.[assetKey];
+    if (!outputPath) {
+      throw new CharacterThemeBuildError(
+        "BUILTIN_SOURCE_MISSING",
+        `Composition decoration is not declared: ${assetKey}`,
+      );
+    }
+    const source = template.outputs[outputPath];
+    if (!source || source.kind !== "file") {
+      throw new CharacterThemeBuildError(
+        "BUILTIN_SOURCE_MISSING",
+        `Decoration output requires a transparent file source: ${outputPath}`,
+      );
+    }
+    const metadata = await sharp(await sourceBytes(source.file)).metadata();
+    if (!metadata.hasAlpha) {
+      throw new CharacterThemeBuildError(
+        "BUILTIN_SOURCE_MISSING",
+        `Decoration source must have an alpha channel: ${source.file}`,
+      );
+    }
+  }
   const files = new Map<string, Uint8Array>();
   for (const [outputPath, source] of Object.entries(template.outputs)) {
     const input = await sourceBytes(

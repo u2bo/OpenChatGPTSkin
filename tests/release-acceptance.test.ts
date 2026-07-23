@@ -27,6 +27,7 @@ const themeIds = [
   "rose-carpet-star",
   "mountain-mist",
   "glacier-aurora",
+  "yua-mikami-starlight",
 ] as const;
 const buildCommit = "0123456789abcdef0123456789abcdef01234567";
 
@@ -318,7 +319,7 @@ describe("Release Acceptance", () => {
       version: "0.1.0-alpha.1",
       target: { platform: "win32", arch: "x64" },
       uiVerified: true,
-      themesVerified: 4,
+      themesVerified: 5,
       imageProcessingVerified: true,
       gracefulExitVerified: true,
       steps: {

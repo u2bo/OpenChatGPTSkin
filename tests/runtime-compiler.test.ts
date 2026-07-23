@@ -14,6 +14,7 @@ const RUNTIME_THEME_IDS = [
   "rose-carpet-star",
   "mountain-mist",
   "glacier-aurora",
+  "yua-mikami-starlight",
 ] as const;
 
 function cssPercent(value: number): number {
@@ -100,10 +101,11 @@ describe("compileTheme", () => {
     expect(compiled.compositionLayers[0]).toMatchObject({
       id: "hero-signature",
       surface: "home-hero",
-      asset: 0,
       required: true,
     });
-    expect(compiled.assetDataUrls[0]).toMatch(/^data:image\/webp;base64,/);
+    const layerAsset = compiled.compositionLayers[0]?.asset;
+    expect(layerAsset).toBeTypeOf("number");
+    expect(compiled.assetDataUrls[layerAsset!]).toMatch(/^data:image\/webp;base64,/);
     expect(compiled.totalBytes).toBe(Buffer.byteLength(JSON.stringify(compiled)));
   });
 

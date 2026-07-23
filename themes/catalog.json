@@ -44,6 +44,17 @@
       "localOnly": false,
       "licenseId": "LicenseRef-OpenChatGPTSkin-Original",
       "preview": "builtin/rose-carpet-star/preview.webp"
+    },
+    {
+      "id": "yua-mikami-starlight",
+      "name": "三上悠亚·星光粉",
+      "version": "1.0.0",
+      "kind": "theme",
+      "path": "builtin/yua-mikami-starlight",
+      "ready": true,
+      "localOnly": false,
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-Authorized",
+      "preview": "builtin/yua-mikami-starlight/preview.webp"
     }
   ],
   "recipes": []

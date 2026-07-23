@@ -35,7 +35,7 @@
 The three complete concept images below show how far OpenChatGPTSkin can be customized across portrait, anime, and high-energy sci-fi directions. Each image keeps its original aspect ratio without cropping.
 
 > [!NOTE]
-> These images are visual capability concepts only. They are not built-in themes, are not included in release packages, and do not imply an official relationship with any depicted person, work, or rights holder. Confirm all likeness, character, trademark, and asset rights before public use or redistribution.
+> These images demonstrate visual capabilities. “Yua Mikami Starlight” is now implemented as a mixed-license authorized theme; the other images remain concepts. The concept images themselves are not shipped in release packages and do not imply an official relationship with any depicted person, work, or rights holder. Follow each theme's separate asset license before public use or redistribution.
 
 ### Yua Mikami pink-mist concept
 
@@ -81,8 +81,8 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 
 | Capability | Status |
 |---|---|
-| Theme Schema v3 and `.ocskin` validate/pack/unpack | Complete |
-| Four original built-in themes | Complete |
+| Theme Schema v4 and `.ocskin` validation/migration/pack/unpack | Complete |
+| Five ready-to-use built-in themes | Complete |
 | Windows Runtime launch/switch/pause/restore | Stable |
 | Windows x64 portable ZIP and per-user Setup | Stable |
 | macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; real-Mac acceptance pending |
@@ -134,7 +134,9 @@ OpenChatGPTSkin is not a home-page wallpaper overlay. The Runtime uses a shared 
 
 ## Built-in themes
 
-Each built-in theme includes an original AI-generated background, a complete theme document, preview, provenance record, and SHA-256 hashes. All four are ready after a clean checkout.
+Each built-in theme includes a complete theme document, preview, provenance record, and SHA-256 hashes. All five are ready after a clean checkout. The first four use project-original AI backgrounds; Yua Mikami Starlight uses separately authorized portrait and generated assets that are not covered by the project MIT License.
+
+> The current Git source includes the fifth theme. Published `v0.1.0` binaries still contain the original four-theme set; the fifth theme will enter installers in the next release.
 
 ### Future Idol `future-idol-cyan`
 
@@ -159,6 +161,14 @@ A light natural theme built around sunrise, clouds, and forest-green mountains, 
 A dark navy, glacial cyan, and aurora-violet theme for low-light environments and users who prefer high contrast.
 
 ![Glacier Aurora theme](docs/assets/screenshots/glacier-aurora.webp)
+
+### Yua Mikami Starlight `yua-mikami-starlight`
+
+A dark immersive theme built from soft-pink neon, starlight, and an authorized portrait background. It uses Theme Schema v4 localized dynamic welcome text, real project-name interpolation, four independent suggestion icons, a profile avatar, and four non-interactive visual layers. Its display typography uses lightweight `Arial` plus normal system glyph fallback instead of bundling an oversized font.
+
+![Yua Mikami Starlight theme concept](docs/assets/concepts/yua-mikami.png)
+
+Portrait and decoration assets carry separate authorization identifiers and source hashes. Read the generated theme `LICENSE.md`; do not treat these assets as MIT-licensed.
 
 ## Installation
 
@@ -219,7 +229,7 @@ npm ci
 npm run verify:foundation
 ```
 
-`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all four built-in themes. Source-mode commands run from the repository root.
+`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all five built-in themes. Source-mode commands run from the repository root.
 
 When upgrading from the pre-rename development build, the first CLI or Theme Studio start atomically adopts the previous personal themes, drafts, and Runtime state only when the new-brand data directory does not exist. If both directories exist, the new directory wins and neither side is merged or overwritten.
 
@@ -317,7 +327,7 @@ npm run runtime:acceptance -- --finalize
 
 Acceptance evidence must remain sanitized and must not contain PIDs, ports, paths, command lines, project names, chat content, or screenshots.
 
-macOS packages receive automated acceptance on native CI runners; the real-Codex visual and Runtime loop still uses a manual checklist. On a real Mac, verify `codesign`, `spctl`, Unix-socket permissions, all four built-in themes, restore, and a regular Codex restart as described in [macOS Runtime and Acceptance](docs/runtime-macos.en.md).
+macOS packages receive automated acceptance on native CI runners; the real-Codex visual and Runtime loop still uses a manual checklist. On a real Mac, verify `codesign`, `spctl`, Unix-socket permissions, all five built-in themes, restore, and a regular Codex restart as described in [macOS Runtime and Acceptance](docs/runtime-macos.en.md).
 
 ## FAQ
 
@@ -361,7 +371,7 @@ Then quit Codex normally through its menu or system tray to complete cleanup.
 
 ```text
 apps/theme-studio/            Theme Studio React frontend
-packages/theme-schema/        Theme Schema v3 and visual model
+packages/theme-schema/        Theme Schema v4, migrations, and visual model
 packages/theme-core/          Validation, catalog, archive, storage
 packages/cdp-adapter/         Codex UI surface recognition and compilation
 packages/theme-studio-core/   Theme Studio contracts and validation

@@ -161,7 +161,7 @@ describe("project documentation", () => {
     expect(readme).toContain("docs/runtime-macos.md");
     expect(readmeEn).toContain("docs/runtime-macos.en.md");
     expect(guide).toContain("可复制的 AI 封装提示词");
-    expect(guide).toContain("Theme Schema v3");
+    expect(guide).toContain("Theme Schema v4");
     expect(guide).toContain("npm run runtime -- import --theme-file");
     expect(guideEn).toContain("Copy-ready packaging prompt");
     expect(contributing).toContain("UI surface 适配必须包含确定性的 HTML fixture/测试");

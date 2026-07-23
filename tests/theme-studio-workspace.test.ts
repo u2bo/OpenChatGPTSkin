@@ -234,7 +234,7 @@ describe("ThemeStudioWorkspace", () => {
   it("creates, updates, validates, undoes, and redoes a typed draft", async () => {
     const { workspace, applyRuntimeTheme } = await createWorkspace();
     const library = await workspace.listThemes();
-    expect(library.themes.filter((theme) => theme.source === "builtin")).toHaveLength(4);
+    expect(library.themes.filter((theme) => theme.source === "builtin")).toHaveLength(5);
     expect(library.themes.filter((theme) => theme.source === "recipe")).toHaveLength(0);
 
     const source = library.themes.find((theme) => theme.ref.id === "mountain-mist")!;

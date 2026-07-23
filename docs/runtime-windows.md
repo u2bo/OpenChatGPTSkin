@@ -4,7 +4,7 @@
 
 ## Windows 发布包
 
-`v0.1.0` 提供 Windows x64 便携 ZIP 与用户级 Setup。两种形式都复用同一 Release staging、内置固定 Node.js 22 Runtime 和平台匹配的 `sharp`，并在 CI 中通过同一个 Release Acceptance：校验完整文件 manifest、启动生产 UI、交换一次性 session、读取四个内置主题、处理真实图片、保存并导出 `.ocskin`、正常关闭。Setup 额外验证当前用户静默安装、覆盖安装与默认卸载均保留个人主题和草稿。
+`v0.1.0` 提供 Windows x64 便携 ZIP 与用户级 Setup，当时的发布验收读取四个内置主题。当前源码的后续构建会通过同一 Release staging、固定 Node.js 22 Runtime 和平台匹配的 `sharp` 校验五个内置主题，并继续覆盖完整文件 manifest、生产 UI、一次性 session、真实图片处理、`.ocskin` 保存导出和正常关闭。Setup 额外验证当前用户静默安装、覆盖安装与默认卸载均保留个人主题和草稿。
 
 Setup 默认安装到 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不要求管理员权限；程序数据位于 `%LOCALAPPDATA%\OpenChatGPTSkin`。交互式卸载会询问是否同时删除个人数据，默认选择为“否”，确认删除时会再次明确提示不可恢复。未签名安装包可能触发 SmartScreen，应先用 Release 的 `checksums.txt` 验证 SHA-256。
 

@@ -174,7 +174,7 @@ describe("Theme Studio loopback service", () => {
       themes: { ref: { id: string; version: string }; source: string }[];
     };
     const source = themes.themes.find((theme) => theme.ref.id === "mountain-mist")!;
-    expect(themes.themes).toHaveLength(4);
+    expect(themes.themes).toHaveLength(5);
 
     const directlyApplied = await fetch(`${server.origin}/api/themes/apply`, {
       method: "POST",

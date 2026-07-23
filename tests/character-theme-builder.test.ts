@@ -119,6 +119,25 @@ async function createFixture(caseName = "valid") {
     };
     theme.composition = { layers: [layer, { ...layer }] };
   }
+  if (caseName === "opaque decoration source") {
+    theme.assets.decorations = { layer: "assets/layer.webp" };
+    outputs["assets/layer.webp"] = {
+      kind: "file",
+      file: "assets/background.png",
+    };
+    theme.composition = { layers: [{
+      id: "opaque-layer",
+      asset: { kind: "decoration", assetKey: "layer" },
+      surface: "viewport",
+      anchor: "top-left",
+      positionX: 0,
+      positionY: 0,
+      width: 0.2,
+      opacity: 1,
+      rotation: 0,
+      required: true,
+    }] };
+  }
   await writeFile(join(sourceRoot, "template.json"), JSON.stringify({
     theme,
     outputs,
@@ -147,6 +166,7 @@ describe("standard character theme builder", () => {
     ["missing public provenance", "BUILTIN_PROVENANCE_INVALID"],
     ["undeclared output asset", "ASSET_UNDECLARED"],
     ["duplicate layer id", "THEME_COMPOSITION_INVALID"],
+    ["opaque decoration source", "BUILTIN_SOURCE_MISSING"],
   ] as const)("fails atomically for %s", async (caseName, code) => {
     const { sourceRoot, outputRoot } = await createFixture(caseName);
 

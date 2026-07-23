@@ -33,7 +33,7 @@ function clientFor(
       pointerEvents: node.style.pointerEvents,
       backgroundColor: node.style.backgroundColor || "rgba(0, 0, 0, 0)",
       backgroundImage: node.style.backgroundImage || "none",
-      fontSize: node.tagName === "H1" ? "32px" : "14px",
+      fontSize: node.dataset.fontSize ?? (node.tagName === "H1" ? "32px" : "14px"),
     }),
   });
   class TestImage {
@@ -219,6 +219,42 @@ describe("CurrentCodexAdapter", () => {
     await expect(client.evaluate(`(() => ({
       welcome: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.textContent ?? null,
       nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual({
+      welcome: "在「DataMate」中，你想一起打造什么呢？",
+      nativeVisibility: "hidden",
+    });
+  });
+
+  it("supports the current nested home title without semantic heading tags", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace(
+        '<h1 data-rect="500,180,560,48">What should we build?</h1>',
+        '<div class="heading-xl" data-font-size="28px" data-rect="500,180,560,48">' +
+          '<span class="group/title" data-font-size="28px" ' +
+            'data-rect="500,180,560,48">What should we build in ' +
+            '<button data-font-size="28px" data-rect="720,180,120,48">DataMate</button>?</span>' +
+        '</div>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await expect(adapter.preflight(compiledWelcomeTheme())).resolves.toEqual({
+      valid: true,
+      welcomeSupported: true,
+      requiredLayersResolved: true,
+    });
+    await adapter.apply(compiledWelcomeTheme());
+
+    await expect(client.evaluate(`(() => ({
+      welcome: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.textContent ?? null,
+      nativeVisibility: document.querySelector('.heading-xl')?.style.visibility ?? null,
     }))()`)).resolves.toEqual({
       welcome: "在「DataMate」中，你想一起打造什么呢？",
       nativeVisibility: "hidden",
@@ -534,6 +570,34 @@ describe("CurrentCodexAdapter", () => {
       count: 1,
       text: "在「Atlas」中，你想一起打造什么呢？",
     });
+  });
+
+  it("keeps unchanged managed welcome nodes stable during reconciliation", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex", html, { mutationController });
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+    await client.evaluate(`(() => {
+      document.querySelector('[data-open-chatgpt-skin="welcome"] > div')
+        .setAttribute('data-welcome-node-stable', 'true');
+    })()`);
+    mutationController.flush?.();
+
+    await expect(client.evaluate(`(() => ({
+      count: document.querySelectorAll('[data-open-chatgpt-skin="welcome"]').length,
+      stable: document.querySelector(
+        '[data-open-chatgpt-skin="welcome"] > div'
+      )?.getAttribute('data-welcome-node-stable') ?? null,
+    }))()`)).resolves.toEqual({ count: 1, stable: "true" });
   });
 
   it("removes home-only content on task navigation and restores it on return", async () => {

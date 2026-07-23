@@ -107,6 +107,32 @@ const SETTINGS_PAGE_DETECTION_EXPRESSION = `(() => {
     ].join(" ")));
   return settingsPath || settingsNavigation || mainSemantic;
 })()`;
+const HOME_HEADING_RESOLVER_EXPRESSION = `((main, composer, suggestions, visible) => {
+  const marked = Array.from(main.querySelectorAll(
+    '[data-open-chatgpt-skin-surface="home-heading"]'
+  )).filter((node) => visible(node));
+  if (marked.length > 0) return marked.length === 1 ? marked[0] : null;
+
+  const normalizedText = (node) => String(node.textContent || "")
+    .trim().replace(/\\s+/g, " ");
+  const candidates = Array.from(main.querySelectorAll("h1,h2,[role=heading],*"))
+    .filter((node) => {
+      if (!visible(node) || (composer && composer.contains(node)) ||
+        (suggestions && suggestions.contains(node)) ||
+        node.closest(${JSON.stringify(NATIVE_CODEX_SURFACE_SELECTORS.overlay)}) ||
+        node.closest('[data-open-chatgpt-skin="composition-layer"]')) return false;
+      const rect = node.getBoundingClientRect();
+      const fontSize = Number.parseFloat(window.getComputedStyle(node).fontSize);
+      const semantic = node.matches("h1,h2,[role=heading]");
+      return normalizedText(node).length > 0 && (semantic ||
+        (rect.width >= 100 && rect.height >= 24 && fontSize >= 24));
+    });
+  const roots = candidates.filter((candidate) =>
+    !candidates.some((ancestor) => ancestor !== candidate &&
+      ancestor.contains(candidate))
+  );
+  return roots.length === 1 ? roots[0] : null;
+})`;
 
 export const REMOVE_EXPRESSION = `(() => {
   const observerKey = ${JSON.stringify(SURFACE_OBSERVER_KEY)};
@@ -189,6 +215,7 @@ export function preflightExpression(theme: CompiledTheme): string {
   return `(() => {
     const theme = ${payload};
     const nativeSelectors = ${nativeSelectors};
+    const resolveHomeHeading = ${HOME_HEADING_RESOLVER_EXPRESSION};
     const visible = (node) => {
       if (!node) return false;
       const rect = node.getBoundingClientRect();
@@ -248,15 +275,7 @@ export function preflightExpression(theme: CompiledTheme): string {
       ? suggestionMarkers
       : inferredSuggestions;
     const suggestions = suggestionCandidates.length === 1 ? suggestionCandidates[0] : null;
-    const headingMarkers = Array.from(document.querySelectorAll(
-      '[data-open-chatgpt-skin-surface="home-heading"]'
-    )).filter((node) => visible(node) && main.contains(node));
-    const inferredHeadings = Array.from(main.querySelectorAll("h1,h2,[role=heading]"))
-      .filter((node) => visible(node) &&
-        (!composer || !composer.contains(node)) &&
-        (!suggestions || !suggestions.contains(node)));
-    const headingCandidates = headingMarkers.length > 0 ? headingMarkers : inferredHeadings;
-    const heading = headingCandidates.length === 1 ? headingCandidates[0] : null;
+    const heading = resolveHomeHeading(main, composer, suggestions, visible);
     const heroMarkers = Array.from(document.querySelectorAll(
       '[data-open-chatgpt-skin-surface="hero"]'
     )).filter((node) => visible(node) && main.contains(node));
@@ -306,6 +325,7 @@ export function applyExpression(theme: CompiledTheme): string {
   return `(async () => {
     const theme = ${payload};
     const nativeSelectors = ${nativeSelectors};
+    const resolveHomeHeading = ${HOME_HEADING_RESOLVER_EXPRESSION};
     const observerKey = ${JSON.stringify(SURFACE_OBSERVER_KEY)};
     const markerKey = ${JSON.stringify(SURFACE_MARKER_KEY)};
     const shadowSheetsKey = ${JSON.stringify(SHADOW_SHEETS_KEY)};
@@ -444,11 +464,18 @@ export function applyExpression(theme: CompiledTheme): string {
         };
         document.body.append(overlay);
       }
-      while (overlay.firstChild) overlay.removeChild(overlay.firstChild);
-      for (const line of resolvedLines) {
-        const lineNode = document.createElement("div");
-        lineNode.append(document.createTextNode(line));
-        overlay.append(lineNode);
+      const currentLines = Array.from(overlay.children)
+        .map((node) => String(node.textContent || ""));
+      const linesMatch = overlay.childNodes.length === resolvedLines.length &&
+        currentLines.length === resolvedLines.length &&
+        currentLines.every((line, index) => line === resolvedLines[index]);
+      if (!linesMatch) {
+        while (overlay.firstChild) overlay.removeChild(overlay.firstChild);
+        for (const line of resolvedLines) {
+          const lineNode = document.createElement("div");
+          lineNode.append(document.createTextNode(line));
+          overlay.append(lineNode);
+        }
       }
       const rect = heading.getBoundingClientRect();
       Object.assign(overlay.style, {
@@ -1206,17 +1233,9 @@ export function applyExpression(theme: CompiledTheme): string {
         }
       }
 
-      const headingCandidates = taskRoute || settingsRoute ? [] : Array.from(main.querySelectorAll("h1,h2,[role=heading],*"))
-        .filter((node) => {
-          if (!visible(node) || (composer && composer.contains(node)) ||
-            (suggestions && suggestions.contains(node))) return false;
-          const rect = node.getBoundingClientRect();
-          const fontSize = Number.parseFloat(window.getComputedStyle(node).fontSize);
-          return rect.width >= 100 && rect.height >= 24 && fontSize >= 24;
-        })
-        .sort((left, right) => right.getBoundingClientRect().width -
-          left.getBoundingClientRect().width);
-      const heading = headingCandidates.length === 1 ? headingCandidates[0] : null;
+      const heading = taskRoute || settingsRoute
+        ? null
+        : resolveHomeHeading(main, composer, suggestions, visible);
       let hero = heading;
       if (heading) {
         const heroCandidates = [];

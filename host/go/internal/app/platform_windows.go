@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"syscall"
 
@@ -58,4 +59,12 @@ func processAlive(pid int, startedAt string) bool {
 
 func openBrowser(url string) error {
 	return exec.Command("rundll32.exe", "url.dll,FileProtocolHandler", url).Start()
+}
+
+func defaultDataRoot() (string, error) {
+	root := os.Getenv("LOCALAPPDATA")
+	if root == "" {
+		return "", os.ErrNotExist
+	}
+	return filepath.Join(root, "OpenChatGPTSkin"), nil
 }

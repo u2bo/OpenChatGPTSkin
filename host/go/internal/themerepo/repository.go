@@ -58,7 +58,8 @@ type Asset struct {
 }
 
 type Repository struct {
-	root string
+	root         string
+	personalRoot string
 }
 
 type catalog struct {
@@ -104,6 +105,22 @@ func Open(root string) (*Repository, error) {
 	return &Repository{root: absolute}, nil
 }
 
+func OpenWithPersonal(root, personalRoot string) (*Repository, error) {
+	repository, err := Open(root)
+	if err != nil {
+		return nil, err
+	}
+	if personalRoot == "" {
+		return repository, nil
+	}
+	absolute, err := filepath.Abs(personalRoot)
+	if err != nil {
+		return nil, err
+	}
+	repository.personalRoot = absolute
+	return repository, nil
+}
+
 func (repository *Repository) List() (Library, error) {
 	catalog, err := repository.loadCatalog()
 	if err != nil {
@@ -117,10 +134,18 @@ func (repository *Repository) List() (Library, error) {
 		}
 		items = append(items, item)
 	}
+	personal, err := repository.listPersonal()
+	if err != nil {
+		return Library{}, err
+	}
+	items = append(items, personal...)
 	return Library{Themes: items}, nil
 }
 
 func (repository *Repository) Preview(source string, ref Ref) (Asset, error) {
+	if source == "personal" {
+		return repository.readPersonalPreview(ref)
+	}
 	if source != "builtin" {
 		return Asset{}, Error{Code: "THEME_NOT_FOUND", Message: "Theme preview source is unavailable"}
 	}
@@ -272,7 +297,7 @@ func (repository *Repository) readHeader(entry catalogEntry) (themeHeader, error
 	}
 	for name := range document {
 		switch name {
-		case "schemaVersion", "kind", "appearance", "id", "name", "description", "version", "author", "metadata", "assets", "colors", "typography", "background", "surfaces", "decorations", "layout", "rights", "interfaceImages", "welcome", "composition":
+		case "schemaVersion", "kind", "appearance", "id", "name", "description", "version", "author", "metadata", "assets", "colors", "typography", "background", "surfaces", "decorations", "layout", "rights", "interfaceImages", "home", "welcome", "composition":
 		default:
 			return themeHeader{}, Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme document has an unknown field"}
 		}

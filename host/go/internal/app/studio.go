@@ -34,9 +34,14 @@ func startStudio(ctx context.Context, viteOrigin string) (*RunningStudio, error)
 		}
 	}
 	repositoryURL := "https://github.com/u2bo/OpenChatGPTSkin"
+	dataRoot, err := defaultDataRoot()
+	if err != nil {
+		return nil, commandError{code: "STUDIO_START_FAILED", message: "Studio data root could not be located"}
+	}
 	running, err := studio.Start(ctx, studio.Config{
 		IndexHTML:     indexHTML,
 		ThemeRoot:     filepath.Join(installRoot, "themes"),
+		PersonalRoot:  filepath.Join(dataRoot, "theme-store"),
 		StudioVersion: goHostVersion,
 		RepositoryURL: &repositoryURL,
 		ViteOrigin:    viteOrigin,

@@ -47,3 +47,11 @@ func processAlive(pid int, startedAt string) bool {
 func openBrowser(url string) error {
 	return exec.Command("open", url).Start()
 }
+
+func defaultDataRoot() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, "Library", "Application Support", "OpenChatGPTSkin"), nil
+}

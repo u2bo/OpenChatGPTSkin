@@ -50,6 +50,7 @@ func StoppedRuntimeStatus() RuntimeStatus {
 type Config struct {
 	IndexHTML     []byte
 	ThemeRoot     string
+	PersonalRoot  string
 	StudioVersion string
 	RepositoryURL *string
 	RuntimeStatus func() RuntimeStatus
@@ -153,7 +154,7 @@ func Start(ctx context.Context, config Config) (*RunningServer, error) {
 	if config.StudioVersion == "" {
 		return nil, studioError{code: "INTERNAL", message: "Studio version is required", statusCode: http.StatusInternalServerError}
 	}
-	repository, err := themerepo.Open(config.ThemeRoot)
+	repository, err := themerepo.OpenWithPersonal(config.ThemeRoot, config.PersonalRoot)
 	if err != nil {
 		return nil, err
 	}

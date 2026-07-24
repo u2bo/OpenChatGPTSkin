@@ -11,6 +11,15 @@ import (
 
 type Handler func(context.Context, Request) (Result, error)
 
+// CommandError keeps deliberate state-machine rejections distinguishable from
+// unexpected host failures at the authenticated control boundary.
+type CommandError struct {
+	Code    string
+	Message string
+}
+
+func (err CommandError) Error() string { return err.Message }
+
 type cachedResponse struct {
 	command  string
 	response Response
@@ -159,6 +168,10 @@ func (dispatcher *Dispatcher) execute(ctx context.Context, request Request) Resp
 	}
 	result, err := dispatcher.handler(ctx, request)
 	if err != nil {
+		var commandErr CommandError
+		if errors.As(err, &commandErr) {
+			return rejected(request, commandErr.Code, commandErr.Message)
+		}
 		return rejected(request, "INTERNAL", "The Runtime command could not be completed.")
 	}
 	payload, err := json.Marshal(result)

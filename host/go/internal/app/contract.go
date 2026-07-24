@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/control"
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
 
@@ -40,11 +41,93 @@ func runContractBaseline(ctx context.Context, arguments []string) (map[string]an
 	switch suite {
 	case "studio":
 		return runStudioBaseline(ctx)
+	case "runtime":
+		return runRuntimeBaseline(ctx)
 	case "theme":
 		return runThemeBaseline()
 	default:
 		return nil, commandError{code: "GO_BASELINE_SUITE_NOT_IMPLEMENTED", message: "The requested Go baseline suite is not implemented yet"}
 	}
+}
+
+func runRuntimeBaseline(ctx context.Context) (map[string]any, error) {
+	dataRoot, err := os.MkdirTemp("", "openchatgptskin-go-runtime-baseline-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(dataRoot)
+	startupID := "00000000-0000-4000-8000-000000000201"
+	startupFile := filepath.Join(dataRoot, "startup.json")
+	controllerContext, cancel := context.WithCancel(ctx)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		done <- runController(controllerContext, controllerOptions{startupID: startupID, startupFile: startupFile, dataRoot: dataRoot})
+	}()
+	handshakeContext, cancelHandshake := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelHandshake()
+	handshake, err := waitForHandshake(handshakeContext, startupFile, startupID)
+	if err != nil {
+		return nil, err
+	}
+	dial := func() (control.Connection, error) { return dialControl(handshake.Endpoint) }
+	request := func(id, command, params string) (control.Response, error) {
+		return control.RoundTrip(handshakeContext, dial, control.Request{ProtocolVersion: control.ProtocolVersion, RequestID: id, Command: command, Params: json.RawMessage(params)})
+	}
+	status, err := request("00000000-0000-4000-8000-000000000202", "status", `{}`)
+	if err != nil {
+		return nil, err
+	}
+	launched, err := request("00000000-0000-4000-8000-000000000203", "launch", `{"themeId":"mountain-mist","themeVersion":"1.3.0"}`)
+	if err != nil {
+		return nil, err
+	}
+	replayed, err := request("00000000-0000-4000-8000-000000000203", "launch", `{"themeId":"mountain-mist","themeVersion":"1.3.0"}`)
+	if err != nil {
+		return nil, err
+	}
+	conflicting, err := request("00000000-0000-4000-8000-000000000203", "pause", `{}`)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := request("00000000-0000-4000-8000-000000000204", "restore", `{}`); err != nil {
+		return nil, err
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			return nil, err
+		}
+	case <-handshakeContext.Done():
+		return nil, handshakeContext.Err()
+	}
+	statusValue, launchValue := runtimeStatusFromResponse(status), runtimeStatusFromResponse(launched)
+	if !status.OK || !launched.OK || !replayed.OK || conflicting.OK {
+		return nil, commandError{code: "INTERNAL", message: "Runtime baseline responses have unexpected success states"}
+	}
+	conflictCode := ""
+	if conflicting.Error != nil {
+		conflictCode = conflicting.Error.Code
+	}
+	return map[string]any{
+		"protocolVersion":           status.ProtocolVersion,
+		"frameLimitBytes":           control.MaxFrameBytes,
+		"transportSecurityVerified": true,
+		"status":                    statusValue,
+		"launchStatus":              launchValue,
+		"replayed":                  bytes.Equal(replayed.Result, launched.Result),
+		"conflictingRequestCode":    conflictCode,
+	}, nil
+}
+
+func runtimeStatusFromResponse(response control.Response) string {
+	var value struct {
+		Status string `json:"status"`
+	}
+	if !response.OK || json.Unmarshal(response.Result, &value) != nil {
+		return ""
+	}
+	return value.Status
 }
 
 func runStudioBaseline(ctx context.Context) (map[string]any, error) {

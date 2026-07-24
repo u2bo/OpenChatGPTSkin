@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -93,5 +94,38 @@ func TestRestoreRespondsBeforeControllerTerminalCleanup(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dataRoot, "controller.lock")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("controller lock remains after restore: %v", err)
+	}
+}
+
+func TestControllerStateMachinePersistsAndRequiresRecoveryAfterCrash(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "runtime-session.json")
+	model, err := loadControllerModel(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dispatcher := newControllerDispatcher(model)
+	launch := dispatcher.Dispatch(context.Background(), control.Request{
+		ProtocolVersion: 1, RequestID: "00000000-0000-4000-8000-000000000506", Command: "launch",
+		Params: json.RawMessage(`{"themeId":"mountain-mist","themeVersion":"1.3.0"}`),
+	})
+	if !launch.OK {
+		t.Fatalf("launch response = %+v", launch)
+	}
+	invalid := dispatcher.Dispatch(context.Background(), control.Request{
+		ProtocolVersion: 1, RequestID: "00000000-0000-4000-8000-000000000507", Command: "launch",
+		Params: json.RawMessage(`{"themeId":"mountain-mist","themeVersion":"1.3.0"}`),
+	})
+	if invalid.OK || invalid.Error == nil || invalid.Error.Code != "RUNTIME_INVALID_TRANSITION" {
+		t.Fatalf("invalid transition = %+v", invalid)
+	}
+	recovered, err := loadControllerModel(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recoveryStatus := newControllerDispatcher(recovered).Dispatch(context.Background(), control.Request{
+		ProtocolVersion: 1, RequestID: "00000000-0000-4000-8000-000000000508", Command: "status", Params: json.RawMessage(`{}`),
+	})
+	if !recoveryStatus.OK || !bytes.Contains(recoveryStatus.Result, []byte(`"recovery-required"`)) {
+		t.Fatalf("recovery status = %+v", recoveryStatus)
 	}
 }

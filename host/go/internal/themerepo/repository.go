@@ -142,6 +142,20 @@ func (repository *Repository) List() (Library, error) {
 	return Library{Themes: items}, nil
 }
 
+// BuiltinRefs reads only the signed-in-package catalog. Studio startup uses it
+// to establish reserved IDs without touching a possibly stale user store.
+func (repository *Repository) BuiltinRefs() ([]Ref, error) {
+	catalog, err := repository.loadCatalog()
+	if err != nil {
+		return nil, err
+	}
+	refs := make([]Ref, 0, len(catalog.Builtins))
+	for _, entry := range catalog.Builtins {
+		refs = append(refs, Ref{ID: entry.ID, Version: entry.Version})
+	}
+	return refs, nil
+}
+
 func (repository *Repository) Preview(source string, ref Ref) (Asset, error) {
 	if source == "personal" {
 		return repository.readPersonalPreview(ref)

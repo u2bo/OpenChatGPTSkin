@@ -14,14 +14,18 @@ const goHostVersion = "0.3.0-alpha.1"
 type RunningStudio = studio.RunningServer
 
 func StartStudio(ctx context.Context) (*RunningStudio, error) {
-	return startStudio(ctx, "")
+	return startStudio(ctx, "", "")
 }
 
 func StartStudioDev(ctx context.Context, viteOrigin string) (*RunningStudio, error) {
-	return startStudio(ctx, viteOrigin)
+	return startStudio(ctx, viteOrigin, "")
 }
 
-func startStudio(ctx context.Context, viteOrigin string) (*RunningStudio, error) {
+func startStudioWithDataRoot(ctx context.Context, dataRoot string) (*RunningStudio, error) {
+	return startStudio(ctx, "", dataRoot)
+}
+
+func startStudio(ctx context.Context, viteOrigin, configuredDataRoot string) (*RunningStudio, error) {
 	installRoot, err := findInstallRoot(viteOrigin == "")
 	if err != nil {
 		return nil, commandError{code: "STUDIO_START_FAILED", message: "Studio production assets could not be located"}
@@ -34,14 +38,18 @@ func startStudio(ctx context.Context, viteOrigin string) (*RunningStudio, error)
 		}
 	}
 	repositoryURL := "https://github.com/u2bo/OpenChatGPTSkin"
-	dataRoot, err := defaultDataRoot()
-	if err != nil {
-		return nil, commandError{code: "STUDIO_START_FAILED", message: "Studio data root could not be located"}
+	dataRoot := configuredDataRoot
+	if dataRoot == "" {
+		dataRoot, err = defaultDataRoot()
+		if err != nil {
+			return nil, commandError{code: "STUDIO_START_FAILED", message: "Studio data root could not be located"}
+		}
 	}
 	running, err := studio.Start(ctx, studio.Config{
 		IndexHTML:     indexHTML,
 		ThemeRoot:     filepath.Join(installRoot, "themes"),
 		PersonalRoot:  filepath.Join(dataRoot, "theme-store"),
+		DraftRoot:     filepath.Join(dataRoot, "theme-studio-drafts"),
 		StudioVersion: goHostVersion,
 		RepositoryURL: &repositoryURL,
 		ViteOrigin:    viteOrigin,

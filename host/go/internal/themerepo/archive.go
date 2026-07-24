@@ -54,6 +54,22 @@ func ValidateDocument(contents []byte) error {
 	return err
 }
 
+// NormalizeDocument returns the canonical Schema v4 encoding together with
+// its identity. Workspace persistence uses this exact normalisation boundary
+// so Go-written draft records remain consumable by the v0.2 Node rollback host.
+func NormalizeDocument(contents []byte) ([]byte, Ref, error) {
+	normalized, header, err := normalizeDocument(contents)
+	if err != nil {
+		return nil, Ref{}, err
+	}
+	return normalized, Ref{ID: header.ID, Version: header.Version}, nil
+}
+
+// AssetPaths returns the complete declared asset set in stable order.
+func AssetPaths(document []byte) ([]string, error) {
+	return assetPaths(document)
+}
+
 // ErrorCode exposes stable, user-safe theme repository error codes to the
 // host boundary without leaking filesystem or archive implementation details.
 func ErrorCodeFrom(err error) string {

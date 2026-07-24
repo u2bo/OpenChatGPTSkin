@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -47,7 +48,12 @@ func runContractBaseline(ctx context.Context, arguments []string) (map[string]an
 }
 
 func runStudioBaseline(ctx context.Context) (map[string]any, error) {
-	server, err := StartStudio(ctx)
+	dataRoot, err := os.MkdirTemp("", "openchatgptskin-go-studio-baseline-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(dataRoot)
+	server, err := startStudioWithDataRoot(ctx, dataRoot)
 	if err != nil {
 		return nil, err
 	}

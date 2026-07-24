@@ -14,12 +14,14 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/workspace"
 )
 
 const (
@@ -51,6 +53,7 @@ type Config struct {
 	IndexHTML     []byte
 	ThemeRoot     string
 	PersonalRoot  string
+	DraftRoot     string
 	StudioVersion string
 	RepositoryURL *string
 	RuntimeStatus func() RuntimeStatus
@@ -158,6 +161,13 @@ func Start(ctx context.Context, config Config) (*RunningServer, error) {
 	if err != nil {
 		return nil, err
 	}
+	if config.DraftRoot == "" {
+		return nil, studioError{code: "INTERNAL", message: "Theme Studio draft storage is required", statusCode: http.StatusInternalServerError}
+	}
+	workspace, err := workspace.New(repository, config.DraftRoot)
+	if err != nil {
+		return nil, err
+	}
 	session, err := newSession()
 	if err != nil {
 		return nil, err
@@ -188,7 +198,7 @@ func Start(ctx context.Context, config Config) (*RunningServer, error) {
 		runtimeStatus = StoppedRuntimeStatus
 	}
 	state := &handlerState{
-		origin: origin, session: session, repository: repository, indexHTML: indexHTML,
+		origin: origin, session: session, repository: repository, workspace: workspace, indexHTML: indexHTML,
 		studioVersion: config.StudioVersion, repositoryURL: config.RepositoryURL,
 		runtimeStatus: runtimeStatus, maxSSEClients: maxSSEClients, nonce: nonce, viteProxy: viteProxy,
 	}
@@ -232,6 +242,7 @@ type handlerState struct {
 	origin        string
 	session       *session
 	repository    *themerepo.Repository
+	workspace     *workspace.Workspace
 	indexHTML     []byte
 	studioVersion string
 	repositoryURL *string
@@ -307,7 +318,7 @@ func (state *handlerState) dispatch(response http.ResponseWriter, request *http.
 			"protocolVersion": 2,
 			"studioVersion":   state.studioVersion,
 			"repositoryUrl":   state.repositoryURL,
-			"capabilities":    []string{"studio-shell", "theme-library"},
+			"capabilities":    []string{"studio-shell", "theme-library", "draft-editing", "version-save", "theme-import-export", "theme-delete"},
 			"runtime":         state.runtimeStatus(),
 		})
 		return nil
@@ -327,11 +338,158 @@ func (state *handlerState) dispatch(response http.ResponseWriter, request *http.
 		}
 		state.writeBytes(response, http.StatusOK, asset)
 		return nil
+	case request.URL.Path == "/api/drafts" && request.Method == http.MethodPost:
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		var input struct {
+			Source struct {
+				Source string        `json:"source"`
+				Ref    themerepo.Ref `json:"ref"`
+			} `json:"source"`
+			ThemeID            string `json:"themeId"`
+			Name               string `json:"name"`
+			ConflictResolution string `json:"conflictResolution"`
+		}
+		if err := decodeBoundedJSON(request.Body, jsonLimitBytes, &input); err != nil {
+			return err
+		}
+		draft, err := state.workspace.Create(workspace.CreateInput{
+			Source: input.Source.Source, Ref: input.Source.Ref, ThemeID: input.ThemeID,
+			Name: input.Name, ConflictResolution: input.ConflictResolution,
+		})
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusCreated, draft)
+		return nil
+	case request.URL.Path == "/api/drafts/latest" && request.Method == http.MethodGet:
+		draft, err := state.workspace.Latest()
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	case request.URL.Path == "/api/export" && request.Method == http.MethodGet:
+		ref := themerepo.Ref{ID: request.URL.Query().Get("id"), Version: request.URL.Query().Get("version")}
+		archive, err := state.workspace.Export(ref)
+		if err != nil {
+			return err
+		}
+		response.Header().Set("Content-Type", "application/vnd.open-chatgpt-skin+zip")
+		response.Header().Set("Content-Length", strconv.Itoa(len(archive)))
+		response.Header().Set("Content-Disposition", "attachment; filename="+ref.ID+"-"+ref.Version+".ocskin")
+		response.Header().Set("Cache-Control", "no-store")
+		response.WriteHeader(http.StatusOK)
+		_, _ = response.Write(archive)
+		return nil
+	case strings.HasPrefix(request.URL.Path, "/api/themes/") && request.Method == http.MethodDelete:
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		id := strings.TrimPrefix(request.URL.Path, "/api/themes/")
+		if id == "" || strings.Contains(id, "/") {
+			return studioError{code: "STUDIO_REQUEST_INVALID", message: "Theme ID is invalid", statusCode: http.StatusBadRequest}
+		}
+		var version *string
+		if value := request.URL.Query().Get("version"); value != "" {
+			version = &value
+		}
+		if err := state.workspace.DeletePersonal(id, version); err != nil {
+			return err
+		}
+		library, err := state.repository.List()
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, library)
+		return nil
+	case strings.HasPrefix(request.URL.Path, "/api/drafts/"):
+		return state.dispatchDraft(response, request)
 	case request.URL.Path == "/api/events" && request.Method == http.MethodGet:
 		return state.serveEvents(response, request)
 	default:
 		return studioError{code: "STUDIO_REQUEST_INVALID", message: "Studio route is unavailable", statusCode: http.StatusNotFound}
 	}
+}
+
+func (state *handlerState) dispatchDraft(response http.ResponseWriter, request *http.Request) error {
+	relative := strings.TrimPrefix(request.URL.Path, "/api/drafts/")
+	parts := strings.Split(relative, "/")
+	if len(parts) == 0 || parts[0] == "" || len(parts) > 2 || path.Clean(relative) != relative {
+		return studioError{code: "STUDIO_REQUEST_INVALID", message: "Draft route is invalid", statusCode: http.StatusBadRequest}
+	}
+	draftID, action := parts[0], ""
+	if len(parts) == 2 {
+		action = parts[1]
+	}
+	if action == "" && request.Method == http.MethodGet {
+		draft, err := state.workspace.Open(draftID)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	}
+	if err := state.requireOrigin(request); err != nil {
+		return err
+	}
+	if action == "" && request.Method == http.MethodPut {
+		var input struct {
+			ExpectedRevision int             `json:"expectedRevision"`
+			Theme            json.RawMessage `json:"theme"`
+		}
+		if err := decodeBoundedJSON(request.Body, jsonLimitBytes, &input); err != nil {
+			return err
+		}
+		draft, err := state.workspace.Update(draftID, input.ExpectedRevision, input.Theme)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	}
+	if action == "validate" && request.Method == http.MethodPost {
+		draft, err := state.workspace.Validate(draftID)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	}
+	if request.Method != http.MethodPost || action != "undo" && action != "redo" && action != "save" {
+		return studioError{code: "STUDIO_REQUEST_INVALID", message: "Draft route is unavailable", statusCode: http.StatusNotFound}
+	}
+	var input struct {
+		ExpectedRevision int `json:"expectedRevision"`
+	}
+	if err := decodeBoundedJSON(request.Body, jsonLimitBytes, &input); err != nil {
+		return err
+	}
+	switch action {
+	case "undo":
+		draft, err := state.workspace.Undo(draftID, input.ExpectedRevision)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	case "redo":
+		draft, err := state.workspace.Redo(draftID, input.ExpectedRevision)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	case "save":
+		draft, ref, err := state.workspace.Save(draftID, input.ExpectedRevision)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, map[string]any{"draft": draft, "ref": ref})
+		return nil
+	}
+	return studioError{code: "STUDIO_REQUEST_INVALID", message: "Draft route is unavailable", statusCode: http.StatusNotFound}
 }
 
 func (state *handlerState) securityHeaders(response http.ResponseWriter) {
@@ -484,6 +642,16 @@ func (state *handlerState) writeError(response http.ResponseWriter, err error) {
 		status, code, message = http.StatusUnprocessableEntity, repositoryErr.Code, repositoryErr.Message
 		if repositoryErr.Code == "THEME_NOT_FOUND" {
 			status = http.StatusNotFound
+		}
+	}
+	var workspaceErr workspace.Error
+	if errors.As(err, &workspaceErr) {
+		status, code, message = http.StatusUnprocessableEntity, workspaceErr.Code, workspaceErr.Message
+		if workspaceErr.Code == "STUDIO_DRAFT_NOT_FOUND" {
+			status = http.StatusNotFound
+		}
+		if workspaceErr.Code == "STUDIO_DRAFT_CONFLICT" {
+			status = http.StatusConflict
 		}
 	}
 	state.writeJSON(response, status, map[string]any{"error": map[string]string{"code": code, "message": message}})

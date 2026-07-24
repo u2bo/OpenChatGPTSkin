@@ -41,7 +41,7 @@ func studioFixture(t *testing.T) Config {
 	}
 	return Config{
 		IndexHTML: []byte(`<html><head><meta property="csp-nonce" nonce="__OPEN_CHATGPT_SKIN_CSP_NONCE__"></head><body><script nonce="__OPEN_CHATGPT_SKIN_CSP_NONCE__"></script></body></html>`),
-		ThemeRoot: filepath.Join(root, "themes"), StudioVersion: "0.2.0",
+		ThemeRoot: filepath.Join(root, "themes"), PersonalRoot: filepath.Join(root, "theme-store"), DraftRoot: filepath.Join(root, "theme-studio-drafts"), StudioVersion: "0.2.0",
 	}
 }
 
@@ -186,5 +186,71 @@ func TestStudioDevProxyAcceptsOnlyLoopbackAndDoesNotForwardSessionState(t *testi
 	api.Body.Close()
 	if api.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("API was forwarded to Vite: %d", api.StatusCode)
+	}
+}
+
+func TestStudioDraftRoutesPersistAndExportPersonalVersion(t *testing.T) {
+	server, err := Start(context.Background(), studioFixture(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	client := sessionClient(t, server)
+	create, err := http.NewRequest(http.MethodPost, server.Origin+"/api/drafts", strings.NewReader(`{"source":{"source":"builtin","ref":{"id":"mountain-mist","version":"1.3.0"}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	create.Header.Set("Origin", server.Origin)
+	create.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(create)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusCreated {
+		response.Body.Close()
+		t.Fatalf("create status = %d", response.StatusCode)
+	}
+	var created struct {
+		DraftID  string `json:"draftId"`
+		Revision int    `json:"revision"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&created); err != nil {
+		response.Body.Close()
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	save, err := http.NewRequest(http.MethodPost, server.Origin+"/api/drafts/"+created.DraftID+"/save", strings.NewReader(`{"expectedRevision":0}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	save.Header.Set("Origin", server.Origin)
+	save.Header.Set("Content-Type", "application/json")
+	response, err = client.Do(save)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusOK {
+		response.Body.Close()
+		t.Fatalf("save status = %d", response.StatusCode)
+	}
+	var saved struct {
+		Ref themerepo.Ref `json:"ref"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&saved); err != nil {
+		response.Body.Close()
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	if saved.Ref != (themerepo.Ref{ID: "mountain-mist-custom", Version: "1.0.0"}) {
+		t.Fatalf("saved ref = %+v", saved.Ref)
+	}
+	response, err = client.Get(server.Origin + "/api/export?id=" + saved.Ref.ID + "&version=" + saved.Ref.Version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive, _ := io.ReadAll(response.Body)
+	response.Body.Close()
+	if response.StatusCode != http.StatusOK || len(archive) == 0 || response.Header.Get("Content-Type") != "application/vnd.open-chatgpt-skin+zip" {
+		t.Fatalf("export status=%d bytes=%d type=%q", response.StatusCode, len(archive), response.Header.Get("Content-Type"))
 	}
 }

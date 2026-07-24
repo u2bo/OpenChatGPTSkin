@@ -22,6 +22,7 @@
     "go:baseline:verify": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/verify-baseline.ts",
     "contracts:build": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/build.ts",
     "contracts:verify": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/verify.ts",
+    "contracts:baseline": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/baseline-runner.ts",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@types/node": "^22.20.1",
     "@types/ws": "^8.18.1",
+    "fflate": "^0.8.3",
     "linkedom": "^0.18.12",
     "sharp": "^0.34.5",
     "tsx": "^4.23.1",

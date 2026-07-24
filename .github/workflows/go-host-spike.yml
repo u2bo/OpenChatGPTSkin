@@ -1,0 +1,72 @@
+name: Go Host Feasibility Spike
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-spike:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: windows-x64
+            runner: windows-latest
+          - id: macos-arm64
+            runner: macos-15
+          - id: macos-x64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22.18.0"
+          cache: npm
+      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32
+        with:
+          go-version: "1.25.5"
+          cache-dependency-path: host/go/go.sum
+      - run: npm ci
+      - run: npm run go:spike:test
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install innosetup --version 6.7.1 --allow-downgrade --no-progress --yes
+      - run: npm run go:spike:package -- --output "${{ runner.temp }}/go-spike" --native-only
+      - run: npm run go:spike:acceptance -- --output "${{ runner.temp }}/go-spike"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: go-host-spike-${{ matrix.id }}
+          path: ${{ runner.temp }}/go-spike/*
+          if-no-files-found: error
+
+  combine-native-evidence:
+    needs: native-spike
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22.18.0"
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: go-host-spike-windows-x64
+          path: ${{ runner.temp }}/inputs/windows
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: go-host-spike-macos-arm64
+          path: ${{ runner.temp }}/inputs/macos-arm64
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: go-host-spike-macos-x64
+          path: ${{ runner.temp }}/inputs/macos-x64
+      - run: npm run go:spike:merge -- --input "${{ runner.temp }}/inputs/windows" --input "${{ runner.temp }}/inputs/macos-arm64" --input "${{ runner.temp }}/inputs/macos-x64" --output "${{ runner.temp }}/combined"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: go-host-spike-combined
+          path: ${{ runner.temp }}/combined/*
+          if-no-files-found: error

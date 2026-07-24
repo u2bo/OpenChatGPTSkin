@@ -10,7 +10,7 @@ This guide covers two supported customization paths:
 ![Customizing a theme in Theme Studio](assets/screenshots/theme-studio.webp)
 
 > [!IMPORTANT]
-> Windows x64 users can install the GitHub Release Setup or use the portable ZIP; macOS users can install the unsigned DMG for their architecture, and Windows/macOS developers may also run from source. Fully quit the regular Codex app before applying a theme. Themes may contain data and local media only—never arbitrary JavaScript, HTML, CSS, executables, remote asset URLs, or custom DOM selectors. Real-app visual acceptance on macOS must still be completed on a Mac using the [macOS Runtime guide](runtime-macos.en.md); package acceptance is not evidence that the real Codex UI has passed.
+> Windows x64 users can install the GitHub Release Setup or use the portable ZIP; macOS users can install the unsigned DMG for their architecture, and Windows/macOS developers may also run from source. Fully quit the regular ChatGPT Desktop app before applying a theme. Themes may contain data and local media only—never arbitrary JavaScript, HTML, CSS, executables, remote asset URLs, or custom DOM selectors. Real-app visual acceptance on macOS must still be completed on a Mac using the [macOS Runtime guide](runtime-macos.en.md); package acceptance is not evidence that the real ChatGPT UI has passed.
 
 ## Choose a workflow
 
@@ -28,12 +28,15 @@ Both workflows produce the same Theme Schema v4 data and can import/export each 
 | Colors | Accent, secondary, primary/secondary/muted text, link, input, placeholder, code/terminal, panel, border, success/warning/danger/info |
 | Background | Image, portrait, appearance, focal point, scale, blur, brightness, overlay, safe area, task mode and opacity |
 | Surfaces | Base, elevated, and terminal opacity and glass blur |
-| Typography | UI/code family, sizes, scale, weights, line height, local WOFF2 fonts |
+| Typography | UI/code/display families, sizes, scale, weights, line height, display letter spacing, and local WOFF2 fonts |
 | Decorations | Particles, ribbon, butterflies, polaroid, badge, sparkles, local image decorations |
+| Home | One to three localized welcome lines, real `{projectName}` substitution, position, width, alignment, and native-icon visibility |
+| Interface imagery | Account avatar, four suggestion-card icons, up to 12 project icons, and their display sizes |
+| Composition | Up to 24 foreground/decoration layers with a safe surface, anchor, position, width, opacity, and rotation |
 | Layout | Allowed module order, visibility, size, alignment, spacing, sidebar density, composer width, card columns |
 | Metadata | Theme ID, name, description, version, author, and rights |
 
-Protected regions such as the project picker, sidebar, top bar, composer, and content layer must remain visible. The project picker always uses Codex's native size, position, and stacking; only its theme colors change. Theme Studio does not accept arbitrary coordinates, overlays, or CSS.
+Protected regions such as the project picker, sidebar, top bar, composer, and content layer must remain visible. The project picker always uses ChatGPT's native size, position, and stacking; only its theme colors change. Theme Studio does not accept arbitrary CSS or DOM selectors. Schema v4 composition layers may target only the safe `viewport`, `main`, `home-hero`, or `suggestions` surfaces and are always non-interactive.
 
 ## Workflow 1: AI-assisted theme packaging
 
@@ -42,9 +45,11 @@ Protected regions such as the project picker, sidebar, top bar, composer, and co
 Prepare:
 
 - A 16:9 background, ideally at least `1600 × 900`, in PNG/JPEG/WebP and no larger than 16 MB after preparation.
-- Optional portrait, decoration images, and WOFF2 fonts.
+- Optional portrait, transparent decorations, account avatar, four suggestion icons, project icons, and WOFF2 fonts.
 - A name, lowercase hyphenated ID such as `my-forest-theme`, author, and version.
 - Light/dark direction, primary colors, subject focal point, and text safe area.
+- Optional Chinese and English welcome lines; use only `{projectName}` when a real project name is required.
+- An optional composition-layer list describing each asset, safe target surface, and position.
 - Source and license information for every asset.
 
 For private use or uncertain rights, use:
@@ -76,25 +81,40 @@ Theme requirements:
 - Subject position: <left / center / right>
 - Text safe area: <left / center / right / none>
 - Task background mode: <full / ambient / banner / off>
+- Chinese welcome: <1–3 plain-text lines; {projectName} is allowed; leave empty for the native ChatGPT welcome>
+- English welcome: <1–3 plain-text lines; {projectName} is allowed; leave empty for the native ChatGPT welcome>
+- Welcome layout: <anchor, x/y position, width, alignment, hide-native-home-icon flag>
+- Interface imagery: <account avatar, suggestion cards 1–4, project icons 1–12; omit slots to keep native visuals>
+- Display typography: <family or local WOFF2, size, weight, line height, letter spacing>
+- Composition layers: <asset, viewport/main/home-hero/suggestions, anchor, position, width, opacity, rotation>
 - Asset source and license: <source, license, redistribution status>
 - Local-only: <true / false>
 
 Constraints:
-1. Read docs/theme-format.md completely and use themes/builtin/mountain-mist as the structural reference.
+1. Read docs/theme-format.md completely. Use themes/builtin/mountain-mist as the minimal reference and
+   themes/builtin/yua-mikami-starlight/theme.json as the full Theme Schema v4 reference.
 2. Create theme.json, assets/, and an optional preview.webp in a new theme directory.
 3. Use only local PNG/JPEG/WebP/WOFF2 assets I explicitly supplied. Do not download remote assets.
 4. Do not add JavaScript, HTML, CSS, executables, arbitrary DOM selectors, or hidden fallbacks.
 5. Configure the complete Theme Schema v4 semantic color set. Primary, input, and code text
    must pass Theme Studio's contrast gate.
 6. Derive positionX/positionY, safeArea, overlay, brightness, and surface values from the artwork,
-   keeping menus, settings, history, tasks, terminals, and composers readable in real Codex.
+   keeping menus, settings, history, tasks, terminals, and composers readable in real ChatGPT.
 7. Keep protected layout regions visible. Do not change project-picker coordinates or stacking.
-8. Make rights accurate. When uncertain, set licenseId=LicenseRef-User-Supplied and localOnly=true,
+8. Configure home.welcome only when the user supplied content. Each locale has 1–3 plain-text lines;
+   {projectName} is the only placeholder. Missing locale/project context must preserve the native welcome.
+9. Declare independent local paths for the avatar, four suggestion cards, and project icons. Omitted slots
+   keep native visuals; do not invent hidden fallbacks. At most 12 project icons are allowed.
+10. If a display font is supplied, declare its WOFF2 file in assets.fonts and reference a real key from
+    displayFontAssetKey. Use a normal readable font if the requested typography exceeds schema limits.
+11. Composition has at most 24 layers. Each layer must reference assets.portrait or a declared decoration,
+    use a unique ID and safe surface, remain non-interactive, and never block ChatGPT controls.
+12. Make rights accurate. When uncertain, set licenseId=LicenseRef-User-Supplied and localOnly=true,
    and do not claim public redistribution rights.
-9. Run npm run build, then:
+13. Run npm run build, then:
    node packages/theme-core/dist/cli.js validate --dir <theme-directory>
    node packages/theme-core/dist/cli.js pack --dir <theme-directory> --out <theme-id>-1.0.0.ocskin
-10. Report validation output, generated paths, a configuration summary, and unresolved rights risks.
+14. Report validation output, generated paths, a configuration summary, and unresolved rights risks.
 
 Do not swallow validation errors. Preserve the structured error code, fix the root cause, and validate again.
 ```
@@ -104,7 +124,7 @@ Do not swallow validation errors. Preserve the structured error code, fix the ro
 If you do not have artwork yet, use this template with an image model. A good UI background needs a focal region and a low-detail text-safe region.
 
 ```text
-Create an original 16:9, 4K desktop theme background for Codex Desktop UI.
+Create an original 16:9, 4K desktop theme background for ChatGPT Desktop UI.
 Style: <nature / sci-fi / minimal / retro / other>.
 Main subject: <description>, positioned on the <right/left>, detailed but away from window edges.
 Reserve a large low-detail, low-contrast, text-free UI-safe area on the <left/right> for the sidebar,
@@ -124,9 +144,14 @@ my-theme/
 ├── assets/
 │   ├── background.webp          # required for kind: theme
 │   ├── portrait.webp            # optional
+│   ├── profile-avatar.webp      # optional account avatar
+│   ├── suggestion-card1.webp    # optional; repeat for cards 2–4
+│   ├── project-icon1.webp       # optional; up to 12 project icons
 │   └── decorations/             # optional
 └── fonts/
-    └── ui.woff2                  # optional
+    ├── ui.woff2                 # optional
+    ├── code.woff2               # optional
+    └── display.woff2            # optional home-display font
 ```
 
 The pack command generates `manifest.json` from the actual files, byte sizes, and SHA-256 values. Do not maintain it manually.
@@ -150,7 +175,7 @@ npm run runtime -- import --theme-file "D:\Themes\my-theme-1.0.0.ocskin"
 npm run runtime -- launch --theme my-theme
 ```
 
-Fully quit the regular Codex app before `launch`.
+Fully quit the regular ChatGPT Desktop app before `launch`.
 
 ## Workflow 2: Theme Studio UI
 
@@ -194,9 +219,14 @@ In **Background**, upload a local PNG/JPEG/WebP and configure:
 
 Lower overlays expose more artwork but reduce readability. Choose the safe area first, then lower the overlay carefully.
 
-### 5. Typography, decorations, and layout
+In **Interface imagery**, configure the account avatar, four suggestion-card images, and four visual project-icon slots. Each slot can upload/replace, clear, or reuse the theme background; clearing restores the native ChatGPT visual. The avatar is normalized to `256×256 WebP`; suggestion and project images are normalized to `192×192 WebP`. The schema stores up to 12 project icons, while Theme Studio directly exposes the first four slots; project rows reuse them in order. These edits affect only the current draft until **Save version** is selected.
 
-- Typography: UI/code families, sizes, scale, weights, and line height. Embedded fonts must be WOFF2.
+### 5. Welcome, typography, composition, decorations, and layout
+
+- Welcome: configure one to three Chinese and English plain-text lines. `{projectName}` inserts the real project name; an unconfigured locale or missing project context keeps the native ChatGPT welcome.
+- Welcome layout: set its anchor, position, width, alignment, and whether the native home icon is hidden.
+- Typography: configure UI/code/display families, sizes, scale, weights, line height, and display letter spacing. Embedded fonts must be WOFF2.
+- Visual composition: upload up to 24 non-interactive layers and configure safe surface, anchor, position, width, opacity, rotation, and required status.
 - Decorations: up to 16 non-interactive layers.
 - Layout: adjust supported modules, but never replace the native project-picker geometry.
 
@@ -209,7 +239,7 @@ Switch between **Home** and **Task workspace** above the isolated preview. Check
 - composer, cards, menus, and terminal consistency;
 - both home and task-surface transparency.
 
-Preview and Runtime share the same visual model, but a Codex update can still change internal DOM. Record the Codex version and route, then update the adapter rather than adding arbitrary CSS.
+Preview and Runtime share the same visual model, but a ChatGPT update can still change internal DOM. Record the app version and route, then update the adapter rather than adding arbitrary CSS.
 
 ### 7. Save, apply, and export
 
@@ -220,7 +250,7 @@ Theme Studio **does not auto-save versions**:
 3. Only an exact saved `{id, version}` can be applied or exported.
 4. Export `.ocskin` from the theme/version tools when ready to share.
 
-Fully quit the regular Codex app before applying. To restore, use **Restore original skin**, then quit the managed Codex instance normally to finish cleanup.
+Fully quit the regular ChatGPT Desktop app before applying. To restore, use **Restore original skin**, then quit the managed ChatGPT instance normally to finish cleanup.
 
 ## Version and draft rules
 
@@ -248,13 +278,19 @@ See [Theme Format and Safety Rules](theme-format.md) for paths, signatures, sche
 
 - [ ] ID, name, author, and version are correct.
 - [ ] Home, tasks, history, settings, plugins, menus, composer, and terminal are readable.
+- [ ] The four suggestion images and account avatar crop correctly and clearing them restores native visuals.
+- [ ] Project-icon order, crop, and reuse are correct, and clearing restores native icons.
+- [ ] Both welcome locales, `{projectName}` substitution, missing-context fallback, and layout are correct.
+- [ ] A missing display font fails validation or explicitly falls back to a readable normal font.
+- [ ] Every composition layer references a declared asset, uses a safe surface, and does not intercept input.
 - [ ] Primary, input, and code text pass contrast validation.
 - [ ] The project picker uses native size and position.
 - [ ] No remote URLs, scripts, CSS, executables, or arbitrary selectors are included.
 - [ ] Every image and font has documented rights.
 - [ ] Public themes include attribution.
 - [ ] `validate` and `pack` succeed.
-- [ ] The theme works in real Codex and the official appearance can be restored.
+- [ ] Import, preview, apply, and restore are checked against all five built-ins: `future-idol-cyan`, `rose-carpet-star`, `mountain-mist`, `glacier-aurora`, and `yua-mikami-starlight`.
+- [ ] The theme works in real ChatGPT Desktop and the official appearance can be restored.
 - [ ] Screenshots contain no project names, usernames, chat content, paths, or tokens.
 
 ## Troubleshooting
@@ -263,7 +299,7 @@ See [Theme Format and Safety Rules](theme-format.md) for paths, signatures, sche
 
 Inspect the validation panel and fix contrast, missing assets, or schema errors. Saving is available only when the draft has changes and validation passes.
 
-### Apply to Codex is disabled
+### Apply to ChatGPT is disabled
 
 Choose **Save version** first. Temporary editor state cannot be sent directly to the Runtime.
 
@@ -277,7 +313,7 @@ Use a local PNG/JPEG/WebP and review scale, blur, brightness, overlay, task mode
 npm run runtime -- status
 ```
 
-Fully quit the regular Codex app, then retry. Do not force-close a managed Codex process through Task Manager.
+Fully quit the regular ChatGPT Desktop app, then retry. Do not force-close a managed ChatGPT process through Task Manager.
 
 ### Restore the official appearance
 
@@ -285,4 +321,4 @@ Fully quit the regular Codex app, then retry. Do not force-close a managed Codex
 npm run runtime -- restore
 ```
 
-Then quit Codex normally through its menu or system tray to complete cleanup.
+Then quit ChatGPT normally through its menu or system tray to complete cleanup.

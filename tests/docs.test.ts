@@ -163,6 +163,40 @@ describe("project documentation", () => {
     expect(guide).toContain("Theme Schema v4");
     expect(guide).toContain("npm run runtime -- import --theme-file");
     expect(guideEn).toContain("Copy-ready packaging prompt");
+    for (const required of [
+      "{projectName}",
+      "profile-avatar.webp",
+      "suggestion-card1.webp",
+      "project-icon1.webp",
+      "display.woff2",
+      "themes/builtin/yua-mikami-starlight/theme.json",
+      "viewport/main/home-hero/suggestions",
+      "future-idol-cyan",
+      "yua-mikami-starlight",
+    ]) {
+      expect(guide).toContain(required);
+      expect(guideEn).toContain(required);
+    }
+    for (const required of [
+      "界面素材",
+      "动态欢迎语",
+      "项目图标",
+      "展示字体",
+      "组合图层",
+      "应用到 ChatGPT",
+    ]) {
+      expect(guide).toContain(required);
+    }
+    for (const required of [
+      "Interface imagery",
+      "Welcome layout",
+      "project icons",
+      "Display typography",
+      "Composition layers",
+      "Apply to ChatGPT",
+    ]) {
+      expect(guideEn).toContain(required);
+    }
     expect(contributing).toContain("UI surface 适配必须包含确定性的 HTML fixture/测试");
     expect(contributing).toContain("UI surface changes must include deterministic HTML fixtures/tests");
     expect(license).toContain("Asset notice");

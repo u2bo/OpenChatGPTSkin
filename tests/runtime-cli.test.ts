@@ -111,7 +111,7 @@ describe("Runtime CLI arguments", () => {
     ]) expect(() => parseRuntimeArguments(args)).toThrow();
   });
 
-  it("lists only the four ready built-ins without starting a Controller", async () => {
+  it("lists only the five ready built-ins without starting a Controller", async () => {
     const dependencies = fakeCliDependencies();
     const output: string[] = [];
 
@@ -125,6 +125,7 @@ describe("Runtime CLI arguments", () => {
         { id: "rose-carpet-star" },
         { id: "mountain-mist" },
         { id: "glacier-aurora" },
+        { id: "yua-mikami-starlight" },
       ],
     });
     expect(dependencies.startController).not.toHaveBeenCalled();

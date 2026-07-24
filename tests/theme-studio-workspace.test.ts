@@ -500,7 +500,22 @@ describe("ThemeStudioWorkspace", () => {
       suggestionPath,
     )).bytes).metadata()).toMatchObject({ width: 192, height: 192 });
 
-    const sharedTheme = structuredClone(suggestion.theme);
+    const project = await workspace.uploadAsset({
+      draftId: suggestion.draftId,
+      expectedRevision: suggestion.revision,
+      slot: "project-icon1",
+      fileName: "project.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    });
+    const projectPath = project.theme.assets.projectIcons?.[0]!;
+    expect(projectPath).toMatch(/^assets\/project-icon1-[0-9a-f]{12}\.webp$/);
+    expect(await sharp((await workspace.readDraftAsset(
+      project.draftId,
+      projectPath,
+    )).bytes).metadata()).toMatchObject({ width: 192, height: 192 });
+
+    const sharedTheme = structuredClone(project.theme);
     const backgroundPath = sharedTheme.assets.background!;
     sharedTheme.assets.profileAvatar = backgroundPath;
     sharedTheme.assets.suggestionIcons = {
@@ -510,8 +525,8 @@ describe("ThemeStudioWorkspace", () => {
       card4: backgroundPath,
     };
     const shared = await workspace.updateDraft({
-      draftId: suggestion.draftId,
-      expectedRevision: suggestion.revision,
+      draftId: project.draftId,
+      expectedRevision: project.revision,
       theme: sharedTheme,
     });
     expect(shared.assetUrls[backgroundPath]).toMatch(/^\/api\/draft-asset/);
@@ -561,6 +576,8 @@ describe("ThemeStudioWorkspace", () => {
     record.theme.schemaVersion = 2;
     delete record.theme.assets.profileAvatar;
     delete record.theme.assets.suggestionIcons;
+    delete record.theme.assets.projectIcons;
+    delete record.theme.interfaceImages;
     delete record.theme.typography.displayFamily;
     delete record.theme.typography.displayFontAssetKey;
     delete record.theme.typography.displaySize;

@@ -100,7 +100,7 @@ describe("launchManagedCodex", () => {
     expect(receipt.cdp).toEqual({ host: "127.0.0.1", port: 55123 });
   });
 
-  it("verifies CDP ownership before activating the same root", async () => {
+  it("verifies CDP ownership after the directly launched window settles", async () => {
     const paths = createRuntimePaths(
       await mkdtemp(join(tmpdir(), "ocs-launcher-")),
       "D:/install",
@@ -118,6 +118,17 @@ describe("launchManagedCodex", () => {
       ancestors: [201, receipt.root.pid],
     });
     vi.mocked(system.listCodexRoots).mockResolvedValue([receipt.root]);
+    vi.mocked(system.inspectManagedWindows)
+      .mockResolvedValueOnce({
+        rootExists: true,
+        visibleWindowCount: 0,
+        activationReady: false,
+      })
+      .mockResolvedValue({
+        rootExists: true,
+        visibleWindowCount: 1,
+        activationReady: true,
+      });
 
     await waitForManagedPort(system, receipt, { timeoutMs: 50, intervalMs: 1 });
     await activateManagedCodexWindow(system, receipt, {
@@ -125,7 +136,7 @@ describe("launchManagedCodex", () => {
       intervalMs: 1,
     });
 
-    expect(system.activateCodexApplication).toHaveBeenCalledOnce();
+    expect(system.activateCodexApplication).not.toHaveBeenCalled();
     expect(system.launch).toHaveBeenCalledOnce();
     expect(system.inspectPort).toHaveBeenCalledTimes(2);
   });
@@ -169,9 +180,103 @@ describe("launchManagedCodex", () => {
       await vi.advanceTimersByTimeAsync(15_100);
 
       await expect(activation).resolves.toBe("success");
+      expect(system.activateCodexApplication).toHaveBeenCalledOnce();
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("skips AUMID activation when the launched window and CDP ownership are already ready", async () => {
+    const system = provider(false);
+    const receipt = {
+      install: inspection,
+      root: {
+        pid: 200,
+        parentPid: 1,
+        startedAt: "2026-07-16T00:00:01.000Z",
+        executablePath: inspection.entryPath,
+      },
+      cdp: { host: "127.0.0.1" as const, port: 55123 },
+      launchedAt: "2026-07-16T00:00:01.000Z",
+    };
+    const duplicateRoot = {
+      ...receipt.root,
+      pid: 300,
+      startedAt: "2026-07-16T00:00:02.000Z",
+    };
+    let activated = false;
+    vi.mocked(system.activateCodexApplication).mockImplementation(async () => {
+      activated = true;
+    });
+    vi.mocked(system.listCodexRoots).mockImplementation(async () =>
+      activated ? [receipt.root, duplicateRoot] : [receipt.root]
+    );
+    vi.mocked(system.inspectManagedWindows).mockResolvedValue({
+      rootExists: true,
+      visibleWindowCount: 1,
+      activationReady: true,
+    });
+    vi.mocked(system.inspectPort).mockResolvedValue({
+      host: "127.0.0.1",
+      port: 55123,
+      owningPid: 201,
+      ancestors: [201, receipt.root.pid],
+    });
+
+    await expect(activateManagedCodexWindow(system, receipt, {
+      timeoutMs: 20,
+      intervalMs: 1,
+    })).resolves.toBe(receipt);
+    expect(system.activateCodexApplication).not.toHaveBeenCalled();
+  });
+
+  it("lets the directly launched window settle before attempting AUMID activation", async () => {
+    const system = provider(false);
+    const receipt = {
+      install: inspection,
+      root: {
+        pid: 200,
+        parentPid: 1,
+        startedAt: "2026-07-16T00:00:01.000Z",
+        executablePath: inspection.entryPath,
+      },
+      cdp: { host: "127.0.0.1" as const, port: 55123 },
+      launchedAt: "2026-07-16T00:00:01.000Z",
+    };
+    const duplicateRoot = {
+      ...receipt.root,
+      pid: 300,
+      startedAt: "2026-07-16T00:00:02.000Z",
+    };
+    let activated = false;
+    let windowChecks = 0;
+    vi.mocked(system.activateCodexApplication).mockImplementation(async () => {
+      activated = true;
+    });
+    vi.mocked(system.listCodexRoots).mockImplementation(async () =>
+      activated ? [receipt.root, duplicateRoot] : [receipt.root]
+    );
+    vi.mocked(system.inspectManagedWindows).mockImplementation(async () => {
+      windowChecks += 1;
+      return {
+        rootExists: true,
+        visibleWindowCount: windowChecks >= 2 ? 1 : 0,
+        activationReady: windowChecks >= 2,
+      };
+    });
+    vi.mocked(system.inspectPort).mockResolvedValue({
+      host: "127.0.0.1",
+      port: 55123,
+      owningPid: 201,
+      ancestors: [201, receipt.root.pid],
+    });
+
+    await expect(activateManagedCodexWindow(system, receipt, {
+      timeoutMs: 20,
+      intervalMs: 1,
+    })).resolves.toBe(receipt);
+    expect(system.activateCodexApplication).not.toHaveBeenCalled();
+    expect(system.inspectManagedWindows).toHaveBeenCalledTimes(2);
   });
 
   it("retries a transient port-inspection denial before connecting", async () => {
@@ -340,7 +445,22 @@ describe("launchManagedCodex", () => {
         owningPid: 301,
         ancestors: [301],
       });
+    let activated = false;
+    vi.mocked(system.activateCodexApplication).mockImplementation(async () => {
+      activated = true;
+    });
     vi.mocked(system.listCodexRoots).mockResolvedValue([receipt.root]);
+    vi.mocked(system.inspectManagedWindows).mockImplementation(async () =>
+      activated ? {
+        rootExists: true,
+        visibleWindowCount: 1,
+        activationReady: true,
+      } : {
+        rootExists: true,
+        visibleWindowCount: 0,
+        activationReady: false,
+      }
+    );
 
     await waitForManagedPort(system, receipt, { timeoutMs: 50, intervalMs: 1 });
     await expect(activateManagedCodexWindow(system, receipt, {

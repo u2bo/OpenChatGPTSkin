@@ -51,6 +51,16 @@ interface MutableFontFaceSet extends FontFaceSet {
 interface PreviewInterfaceImage {
   readonly url: string;
   readonly objectPosition: string;
+  readonly sizePx: number;
+}
+
+interface PreviewWelcomeLayout {
+  readonly anchor: ResolvedCompositionLayer["anchor"];
+  readonly positionXPercent: number;
+  readonly positionYPercent: number;
+  readonly widthPercent: number;
+  readonly textAlign: "left" | "center" | "right";
+  readonly hideNativeIcon: boolean;
 }
 
 const COMPOSITION_ANCHOR_TRANSFORMS: Readonly<Record<
@@ -116,6 +126,7 @@ function previewInterfaceImage(
   return {
     url,
     objectPosition: `${visual.positionXPercent}% ${visual.positionYPercent}%`,
+    sizePx: visual.sizePx,
   };
 }
 
@@ -216,12 +227,14 @@ function CodexSidebar({
   contentLayerVisible,
   locale,
   profileImage,
+  projectImages,
 }: {
   readonly density: "compact" | "comfortable";
   readonly taskBackgroundVisible: boolean;
   readonly contentLayerVisible: boolean;
   readonly locale: StudioLocale;
   readonly profileImage: PreviewInterfaceImage | undefined;
+  readonly projectImages: readonly PreviewInterfaceImage[];
 }) {
   const projects = locale === "en" ? PROJECTS_EN : PROJECTS;
   return (
@@ -241,7 +254,22 @@ function CodexSidebar({
         <h3>{locale === "en" ? "Projects" : "项目"}</h3>
         {projects.map(([name, task], index) => (
           <section className="codex-project-group" key={name}>
-            <div><Folder weight="regular" /><strong>{name}</strong></div>
+            <div>
+              {projectImages.length > 0 ? (
+                <img
+                  className="codex-project-image"
+                  src={projectImages[index % projectImages.length]!.url}
+                  alt=""
+                  aria-hidden="true"
+                  style={{
+                    objectPosition: projectImages[index % projectImages.length]!.objectPosition,
+                    width: projectImages[index % projectImages.length]!.sizePx,
+                    height: projectImages[index % projectImages.length]!.sizePx,
+                  }}
+                />
+              ) : <Folder weight="regular" />}
+              <strong>{name}</strong>
+            </div>
             {(index < 4 || (index === 4 && contentLayerVisible) ||
               (index === 5 && taskBackgroundVisible)) ? <p>{task}</p> : null}
           </section>
@@ -253,7 +281,11 @@ function CodexSidebar({
             className="codex-profile-avatar"
             src={profileImage.url}
             alt={locale === "en" ? "Demo user avatar" : "示例用户头像"}
-            style={{ objectPosition: profileImage.objectPosition }}
+            style={{
+              objectPosition: profileImage.objectPosition,
+              width: profileImage.sizePx,
+              height: profileImage.sizePx,
+            }}
           />
         ) : <UserCircle weight="fill" />}
         <strong>{locale === "en" ? "Demo user" : "示例用户"}</strong>
@@ -290,16 +322,33 @@ function Hero({
   module,
   lines,
   composition,
+  layout,
 }: {
   readonly module: LayoutModule;
   readonly lines: readonly string[];
   readonly composition: ReactNode;
+  readonly layout: PreviewWelcomeLayout | undefined;
 }) {
+  const headingStyle: CSSProperties | undefined = layout ? {
+    position: "absolute",
+    left: `${layout.positionXPercent}%`,
+    top: `${layout.positionYPercent}%`,
+    width: `${layout.widthPercent}%`,
+    maxWidth: "none",
+    transform: COMPOSITION_ANCHOR_TRANSFORMS[layout.anchor],
+    textAlign: layout.textAlign,
+  } : undefined;
   return (
-    <section className="codex-hero preview-module" data-module="hero" data-size={module.size} data-align={module.align}>
+    <section
+      className="codex-hero preview-module"
+      data-module="hero"
+      data-size={module.size}
+      data-align={module.align}
+      data-custom-welcome-layout={Boolean(layout)}
+    >
       {composition}
-      <TerminalWindow weight="duotone" />
-      <h2>{lines.map((line, index) => <span key={`${index}-${line}`}>{line}</span>)}</h2>
+      {!layout?.hideNativeIcon ? <TerminalWindow weight="duotone" /> : null}
+      <h2 style={headingStyle}>{lines.map((line, index) => <span key={`${index}-${line}`}>{line}</span>)}</h2>
     </section>
   );
 }
@@ -337,7 +386,11 @@ function Suggestions({
                 alt={locale === "en"
                   ? `Suggestion card ${index + 1} image`
                   : `建议卡片 ${index + 1} 图片`}
-                style={{ objectPosition: image.objectPosition }}
+                style={{
+                  objectPosition: image.objectPosition,
+                  width: image.sizePx,
+                  height: image.sizePx,
+                }}
               />
             ) : <Icon weight="regular" style={{ color }} />}
             <strong>{locale === "en" ? SUGGESTION_LABELS_EN[index] : label}</strong>
@@ -474,6 +527,10 @@ export function PreviewCanvas({
     card3: previewInterfaceImage(visual?.interfaceImagery.suggestionIcons.card3, draft?.assetUrls),
     card4: previewInterfaceImage(visual?.interfaceImagery.suggestionIcons.card4, draft?.assetUrls),
   };
+  const projectImages = (visual?.interfaceImagery.projectIcons ?? []).flatMap((image) => {
+    const resolved = previewInterfaceImage(image, draft?.assetUrls);
+    return resolved ? [resolved] : [];
+  });
   const style: PreviewStyle = {
     "--preview-accent": visual?.colors.accent ?? "#9b9b9b",
     "--preview-secondary": visual?.colors.secondary ?? "#707070",
@@ -595,6 +652,7 @@ export function PreviewCanvas({
               contentLayerVisible={contentLayer.visible}
               locale={locale}
               profileImage={profileImage}
+              projectImages={projectImages}
             />
           ) : null}
           <main className="codex-main-surface" data-preview-mode={mode}>
@@ -602,7 +660,7 @@ export function PreviewCanvas({
             {topbar.visible ? <MainTopbar /> : null}
             {mode === "task" ? <TaskWorkspace composer={composer} locale={locale} /> : (
               <div className="codex-home-content">
-                {hero.visible ? <div className="codex-module-slot" style={moduleStyle(hero)}><Hero module={hero} lines={welcomeLines} composition={compositionSurface("home-hero")} /></div> : null}
+                {hero.visible ? <div className="codex-module-slot" style={moduleStyle(hero)}><Hero module={hero} lines={welcomeLines} composition={compositionSurface("home-hero")} layout={visual?.welcome?.layout} /></div> : null}
                 {suggestions.visible ? (
                   <div className="codex-module-slot" style={moduleStyle(suggestions)}>
                     <Suggestions

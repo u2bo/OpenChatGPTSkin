@@ -24,13 +24,22 @@
       "vertical-tag": "assets/vertical-tag.webp",
       "love-code-create": "assets/love-code-create.webp"
     },
+    "fonts": {
+      "display": "fonts/display.woff2"
+    },
     "profileAvatar": "assets/profile-avatar.webp",
     "suggestionIcons": {
       "card1": "assets/suggestion-card1.webp",
       "card2": "assets/suggestion-card2.webp",
       "card3": "assets/suggestion-card3.webp",
       "card4": "assets/suggestion-card4.webp"
-    }
+    },
+    "projectIcons": [
+      "assets/suggestion-card4.webp",
+      "assets/suggestion-card1.webp",
+      "assets/suggestion-card3.webp",
+      "assets/suggestion-card2.webp"
+    ]
   },
   "colors": {
     "accent": "#ff8fbd",
@@ -58,9 +67,10 @@
     "uiWeight": 500,
     "codeWeight": 400,
     "lineHeight": 1.5,
-    "displayFamily": "Arial",
+    "displayFamily": "ocs-display",
+    "displayFontAssetKey": "display",
     "displaySize": 42,
-    "displayWeight": 500,
+    "displayWeight": 400,
     "displayLineHeight": 1.45,
     "displayLetterSpacing": 0.04
   },
@@ -170,6 +180,11 @@
     "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
     "localOnly": false
   },
+  "interfaceImages": {
+    "profileAvatarSize": 24,
+    "suggestionIconSize": 36,
+    "projectIconSize": 20
+  },
   "home": {
     "welcome": {
       "localized": {
@@ -185,6 +200,14 @@
             "in \"{projectName}\"?"
           ]
         }
+      },
+      "layout": {
+        "anchor": "top-left",
+        "positionX": 0.06,
+        "positionY": 0.46,
+        "width": 0.76,
+        "textAlign": "left",
+        "hideNativeIcon": true
       }
     }
   },

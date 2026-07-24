@@ -137,6 +137,14 @@ function suggestionIconSlot(
   return undefined;
 }
 
+function projectIconIndex(slot: StudioUploadAssetInput["slot"]): number | undefined {
+  if (slot === "project-icon1") return 0;
+  if (slot === "project-icon2") return 1;
+  if (slot === "project-icon3") return 2;
+  if (slot === "project-icon4") return 3;
+  return undefined;
+}
+
 function parseDraftRecord(value: unknown): DraftRecord {
   const persisted = PersistedDraftRecordSchema.parse(value);
   return DraftRecordSchema.parse({
@@ -483,6 +491,13 @@ export class ThemeStudioWorkspace {
           [suggestionSlot]: path,
         };
       }
+      const projectIndex = projectIconIndex(input.slot);
+      if (projectIndex !== undefined) {
+        const projectIcons = [...(theme.assets.projectIcons ?? [])];
+        while (projectIcons.length < projectIndex) projectIcons.push(path);
+        projectIcons[projectIndex] = path;
+        theme.assets.projectIcons = projectIcons;
+      }
       if (input.slot === "decoration") {
         const key = this.requiredAssetKey(input);
         theme.assets.decorations = { ...theme.assets.decorations, [key]: path };
@@ -793,19 +808,21 @@ export class ThemeStudioWorkspace {
     let output: Buffer;
     try {
       const suggestionSlot = suggestionIconSlot(input.slot);
-      const interfaceImage = input.slot === "profile-avatar" || suggestionSlot !== undefined;
+      const projectIndex = projectIconIndex(input.slot);
+      const interfaceImage = input.slot === "profile-avatar" || suggestionSlot !== undefined ||
+        projectIndex !== undefined;
       const width = input.slot === "background"
         ? 2400
         : input.slot === "profile-avatar"
           ? 256
-          : suggestionSlot
+          : suggestionSlot || projectIndex !== undefined
             ? 192
             : 1400;
       const height = input.slot === "background"
         ? 1350
         : input.slot === "profile-avatar"
           ? 256
-          : suggestionSlot
+          : suggestionSlot || projectIndex !== undefined
             ? 192
             : 1400;
       output = await sharp(input.bytes, { limitInputPixels: 80_000_000 })
@@ -836,7 +853,9 @@ export class ThemeStudioWorkspace {
           ? `assets/profile-avatar-${digest}.webp`
           : suggestionIconSlot(input.slot)
             ? `assets/${input.slot}-${digest}.webp`
-            : `assets/decoration-${this.requiredAssetKey(input)}-${digest}.webp`;
+            : projectIconIndex(input.slot) !== undefined
+              ? `assets/${input.slot}-${digest}.webp`
+              : `assets/decoration-${this.requiredAssetKey(input)}-${digest}.webp`;
     return { path, bytes: output };
   }
 

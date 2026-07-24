@@ -75,6 +75,11 @@ describe("ThemeDocumentSchema", () => {
     expect(parsed).toMatchObject({
       schemaVersion: 4,
       composition: { layers: [] },
+      interfaceImages: {
+        profileAvatarSize: 24,
+        suggestionIconSize: 20,
+        projectIconSize: 16,
+      },
       typography: {
         displayFamily: validTheme.typography.uiFamily,
         displaySize: 28,
@@ -301,6 +306,11 @@ describe("ThemeDocumentSchema", () => {
       schemaVersion: 4,
       appearance: "auto",
       composition: { layers: [] },
+      interfaceImages: {
+        profileAvatarSize: 24,
+        suggestionIconSize: 20,
+        projectIconSize: 16,
+      },
       background: {
         ...validTheme.background,
         safeArea: "auto",
@@ -442,6 +452,12 @@ describe("ThemeDocumentSchema", () => {
   it("resolves interface imagery from the shared background and custom assets", () => {
     const parsed = parseThemeDocument({
       ...validTheme,
+      schemaVersion: 4,
+      interfaceImages: {
+        profileAvatarSize: 28,
+        suggestionIconSize: 36,
+        projectIconSize: 20,
+      },
       assets: {
         background: "assets/background.webp",
         profileAvatar: "assets/background.webp",
@@ -449,6 +465,7 @@ describe("ThemeDocumentSchema", () => {
           card1: "assets/background.webp",
           card2: "assets/card2.webp",
         },
+        projectIcons: ["assets/card2.webp", "assets/background.webp"],
       },
     });
 
@@ -458,6 +475,7 @@ describe("ThemeDocumentSchema", () => {
         source: "background",
         positionXPercent: 50,
         positionYPercent: 35,
+        sizePx: 28,
       },
       suggestionIcons: {
         card1: {
@@ -465,24 +483,44 @@ describe("ThemeDocumentSchema", () => {
           source: "background",
           positionXPercent: 20,
           positionYPercent: 25,
+          sizePx: 36,
         },
         card2: {
           path: "assets/card2.webp",
           source: "custom",
           positionXPercent: 50,
           positionYPercent: 50,
+          sizePx: 36,
         },
         card3: {
           source: "default",
           positionXPercent: 50,
           positionYPercent: 50,
+          sizePx: 36,
         },
         card4: {
           source: "default",
           positionXPercent: 50,
           positionYPercent: 50,
+          sizePx: 36,
         },
       },
+      projectIcons: [
+        {
+          path: "assets/card2.webp",
+          source: "custom",
+          positionXPercent: 50,
+          positionYPercent: 50,
+          sizePx: 20,
+        },
+        {
+          path: "assets/background.webp",
+          source: "background",
+          positionXPercent: 50,
+          positionYPercent: 50,
+          sizePx: 20,
+        },
+      ],
     });
   });
 

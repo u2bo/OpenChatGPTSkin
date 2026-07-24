@@ -17,6 +17,9 @@ import type { StudioLocale } from "../studio/preferences.js";
 
 type AssetSlot = StudioUploadAssetInput["slot"];
 type InterfaceImageTarget = "profileAvatar" | SuggestionIconSlot;
+type WelcomeLayout = NonNullable<
+  NonNullable<ThemeDraftDocument["home"]>["welcome"]["layout"]
+>;
 
 const INTERFACE_IMAGE_FIELDS = [
   { target: "profileAvatar", slot: "profile-avatar", label: "用户头像", labelEn: "Profile avatar" },
@@ -30,6 +33,27 @@ const INTERFACE_IMAGE_FIELDS = [
   readonly label: string;
   readonly labelEn: string;
 }[];
+
+const PROJECT_IMAGE_FIELDS = [
+  { index: 0, slot: "project-icon1", label: "项目图标 1", labelEn: "Project icon 1" },
+  { index: 1, slot: "project-icon2", label: "项目图标 2", labelEn: "Project icon 2" },
+  { index: 2, slot: "project-icon3", label: "项目图标 3", labelEn: "Project icon 3" },
+  { index: 3, slot: "project-icon4", label: "项目图标 4", labelEn: "Project icon 4" },
+] as const satisfies readonly {
+  readonly index: number;
+  readonly slot: AssetSlot;
+  readonly label: string;
+  readonly labelEn: string;
+}[];
+
+const DEFAULT_WELCOME_LAYOUT: WelcomeLayout = {
+  anchor: "top-left",
+  positionX: 0.08,
+  positionY: 0.5,
+  width: 0.84,
+  textAlign: "left",
+  hideNativeIcon: false,
+};
 
 const COLOR_FIELDS = [
   ["accent", "主色", "Accent"],
@@ -114,12 +138,21 @@ const INSPECTOR_EN: Record<string, string> = {
   "内容": "Content",
   "中文欢迎语": "Chinese welcome",
   "英文欢迎语": "English welcome",
+  "欢迎语锚点": "Welcome anchor",
+  "欢迎语水平位置": "Welcome horizontal position",
+  "欢迎语垂直位置": "Welcome vertical position",
+  "欢迎语宽度": "Welcome width",
+  "欢迎语对齐": "Welcome alignment",
+  "隐藏 ChatGPT 原生首页图标": "Hide native ChatGPT home icon",
   "支持 1–3 行纯文本；{projectName} 会替换为当前真实项目名。未配置时保留 ChatGPT 原生欢迎语。": "Supports 1–3 plain-text lines. {projectName} is replaced with the current project name. Leave empty to keep the native ChatGPT welcome.",
   "语义颜色": "Semantic colors",
   "文字颜色会实时计算对比度，低于 4.5:1 时不能保存版本。": "Text contrast is checked live. Versions below 4.5:1 cannot be saved.",
   "背景": "Background",
   "界面素材": "Interface imagery",
-  "为首页建议卡片和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。": "Set images for home suggestions and the account area. Clear a slot to restore the ChatGPT default.",
+  "为首页建议卡片、项目列表和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。": "Set images for home suggestions, project rows, and the account area. Clear a slot to restore the ChatGPT default.",
+  "头像尺寸": "Avatar size",
+  "建议卡片图标尺寸": "Suggestion icon size",
+  "项目图标尺寸": "Project icon size",
   "上传图片": "Upload image",
   "替换图片": "Replace image",
   "清除": "Clear",
@@ -361,6 +394,7 @@ function updateWelcome(
   value: string,
 ): void {
   const localized = { ...(theme.home?.welcome.localized ?? {}) };
+  const layout = theme.home?.welcome.layout;
   const lines = welcomeLines(value);
   if (lines.length > 0) localized[locale] = { lines };
   else delete localized[locale];
@@ -368,7 +402,17 @@ function updateWelcome(
     delete theme.home;
     return;
   }
-  theme.home = { welcome: { localized } };
+  theme.home = { welcome: { localized, ...(layout ? { layout } : {}) } };
+}
+
+function updateWelcomeLayout(
+  theme: ThemeDraftDocument,
+  change: (layout: WelcomeLayout) => void,
+): void {
+  if (!theme.home) return;
+  const layout = { ...(theme.home.welcome.layout ?? DEFAULT_WELCOME_LAYOUT) };
+  change(layout);
+  theme.home.welcome.layout = layout;
 }
 
 function interfaceImagePath(
@@ -404,6 +448,22 @@ function setInterfaceImagePath(
   if (Object.keys(theme.assets.suggestionIcons).length === 0) {
     delete theme.assets.suggestionIcons;
   }
+}
+
+function setProjectImagePath(
+  theme: ThemeDraftDocument,
+  index: number,
+  path: string | undefined,
+): void {
+  const projectIcons = [...(theme.assets.projectIcons ?? [])];
+  if (!path) {
+    projectIcons.splice(index, 1);
+  } else {
+    while (projectIcons.length < index) projectIcons.push(path);
+    projectIcons[index] = path;
+  }
+  if (projectIcons.length > 0) theme.assets.projectIcons = projectIcons;
+  else delete theme.assets.projectIcons;
 }
 
 function updateEnglishMetadata(
@@ -588,6 +648,7 @@ export function Inspector({
   if (tool === "content") {
     const zhLines = theme.home?.welcome.localized["zh-CN"]?.lines ?? [];
     const enLines = theme.home?.welcome.localized.en?.lines ?? [];
+    const layout = theme.home?.welcome.layout ?? DEFAULT_WELCOME_LAYOUT;
     return (
       <>
         <h2>{tr(locale, "内容")}</h2>
@@ -616,6 +677,48 @@ export function Inspector({
                 updateWelcome(candidate, "en", event.currentTarget.value);
               })}
             />
+          </label>
+          <label>
+            {tr(locale, "欢迎语锚点")}
+            <select
+              value={layout.anchor}
+              disabled={busy || !theme.home}
+              onChange={(event) => commit((candidate) => updateWelcomeLayout(candidate, (value) => {
+                value.anchor = event.currentTarget.value as WelcomeLayout["anchor"];
+              }))}
+            >
+              {COMPOSITION_ANCHORS.map(([value, label, labelEn]) => (
+                <option value={value} key={value}>{locale === "en" ? labelEn : label}</option>
+              ))}
+            </select>
+          </label>
+          <RangeField label={tr(locale, "欢迎语水平位置")} value={layout.positionX} min={0} max={1} step={0.01} disabled={busy || !theme.home} onChange={(value) => commit((candidate) => updateWelcomeLayout(candidate, (current) => { current.positionX = value; }))} />
+          <RangeField label={tr(locale, "欢迎语垂直位置")} value={layout.positionY} min={0} max={1} step={0.01} disabled={busy || !theme.home} onChange={(value) => commit((candidate) => updateWelcomeLayout(candidate, (current) => { current.positionY = value; }))} />
+          <RangeField label={tr(locale, "欢迎语宽度")} value={layout.width} min={0.2} max={1} step={0.01} disabled={busy || !theme.home} onChange={(value) => commit((candidate) => updateWelcomeLayout(candidate, (current) => { current.width = value; }))} />
+          <label>
+            {tr(locale, "欢迎语对齐")}
+            <select
+              value={layout.textAlign}
+              disabled={busy || !theme.home}
+              onChange={(event) => commit((candidate) => updateWelcomeLayout(candidate, (value) => {
+                value.textAlign = event.currentTarget.value as WelcomeLayout["textAlign"];
+              }))}
+            >
+              <option value="left">{tr(locale, "左侧")}</option>
+              <option value="center">{tr(locale, "居中")}</option>
+              <option value="right">{tr(locale, "右侧")}</option>
+            </select>
+          </label>
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={layout.hideNativeIcon}
+              disabled={busy || !theme.home}
+              onChange={(event) => commit((candidate) => updateWelcomeLayout(candidate, (value) => {
+                value.hideNativeIcon = event.currentTarget.checked;
+              }))}
+            />
+            {tr(locale, "隐藏 ChatGPT 原生首页图标")}
           </label>
         </div>
       </>
@@ -706,7 +809,12 @@ export function Inspector({
     return (
       <>
         <h2>{tr(locale, "界面素材")}</h2>
-        <p className="inspector-lead">{tr(locale, "为首页建议卡片和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。")}</p>
+        <p className="inspector-lead">{tr(locale, "为首页建议卡片、项目列表和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。")}</p>
+        <div className="inspector-fields">
+          <RangeField label={tr(locale, "头像尺寸")} value={theme.interfaceImages.profileAvatarSize} min={12} max={48} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.interfaceImages.profileAvatarSize = value; })} />
+          <RangeField label={tr(locale, "建议卡片图标尺寸")} value={theme.interfaceImages.suggestionIconSize} min={12} max={64} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.interfaceImages.suggestionIconSize = value; })} />
+          <RangeField label={tr(locale, "项目图标尺寸")} value={theme.interfaceImages.projectIconSize} min={12} max={40} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.interfaceImages.projectIconSize = value; })} />
+        </div>
         <div className="interface-image-list">
           {INTERFACE_IMAGE_FIELDS.map((field) => {
             const value = interfaceImagePath(theme, field.target);
@@ -731,6 +839,36 @@ export function Inspector({
                 })}
                 onUseBackground={() => commit((candidate) => {
                   setInterfaceImagePath(candidate, field.target, candidate.assets.background);
+                })}
+              />
+            );
+          })}
+          {PROJECT_IMAGE_FIELDS.map((field) => {
+            const value = theme.assets.projectIcons?.[field.index];
+            const imageVisual = visual.projectIcons[field.index] ?? {
+              source: "default" as const,
+              positionXPercent: 50,
+              positionYPercent: 50,
+              sizePx: theme.interfaceImages.projectIconSize,
+            };
+            const url = value ? draft.assetUrls[value] : undefined;
+            return (
+              <InterfaceImageCard
+                key={field.slot}
+                title={locale === "en" ? field.labelEn : field.label}
+                slot={field.slot}
+                value={value}
+                visual={imageVisual}
+                url={url}
+                backgroundPath={theme.assets.background}
+                busy={busy}
+                locale={locale}
+                onUpload={onUpload}
+                onClear={() => commit((candidate) => {
+                  setProjectImagePath(candidate, field.index, undefined);
+                })}
+                onUseBackground={() => commit((candidate) => {
+                  setProjectImagePath(candidate, field.index, candidate.assets.background);
                 })}
               />
             );

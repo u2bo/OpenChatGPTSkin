@@ -986,6 +986,14 @@ label:has(input[type="file"]:not(:disabled)) {
   flex: 0 0 auto;
 }
 
+.codex-project-image {
+  flex: 0 0 auto;
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
 .codex-project-group strong {
   overflow: hidden;
   font-size: 9px;
@@ -1119,6 +1127,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .codex-hero {
+  position: relative;
   display: grid;
   place-items: center;
   align-content: end;
@@ -1147,6 +1156,10 @@ label:has(input[type="file"]:not(:disabled)) {
   letter-spacing: var(--preview-display-letter-spacing);
   line-height: var(--preview-display-line-height);
   text-align: center;
+}
+
+.codex-hero[data-custom-welcome-layout="true"] {
+  display: block;
 }
 
 .codex-hero h2 span {
@@ -1182,8 +1195,8 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .codex-suggestion-image {
-  width: 18px;
-  height: 18px;
+  max-width: 64px;
+  max-height: 64px;
   border-radius: 5px;
   object-fit: cover;
 }
@@ -2243,7 +2256,7 @@ label:has(input[type="file"]:not(:disabled)) {
   min-height: 24px;
   flex: 1;
   border-radius: 16px;
-  background-image: url("/api/theme-preview?source=builtin&id=mountain-mist&version=1.2.2");
+  background-image: var(--home-sidebar-preview, none);
   background-position: center;
   background-size: cover;
   opacity: 0.28;

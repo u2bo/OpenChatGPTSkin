@@ -23,6 +23,12 @@ function previewDraft(): StudioDraft {
     card3: backgroundPath,
     card4: backgroundPath,
   };
+  theme.assets.projectIcons = [backgroundPath, backgroundPath];
+  theme.interfaceImages = {
+    profileAvatarSize: 28,
+    suggestionIconSize: 36,
+    projectIconSize: 20,
+  };
   return {
     draftId: "00000000-0000-4000-8000-000000000099",
     theme,
@@ -60,7 +66,7 @@ describe("Theme Studio Codex preview", () => {
     render(<PreviewCanvas draft={previewDraft()} />);
 
     expect(screen.getByRole("img", { name: "示例用户头像" }))
-      .toHaveStyle({ objectPosition: "50% 35%" });
+      .toHaveStyle({ objectPosition: "50% 35%", width: "28px", height: "28px" });
     for (const [index, position] of [
       [1, "20% 25%"],
       [2, "80% 25%"],
@@ -68,14 +74,18 @@ describe("Theme Studio Codex preview", () => {
       [4, "80% 75%"],
     ] as const) {
       expect(screen.getByRole("img", { name: `建议卡片 ${index} 图片` }))
-        .toHaveStyle({ objectPosition: position });
+        .toHaveStyle({ objectPosition: position, width: "36px", height: "36px" });
     }
+    const projectImages = document.querySelectorAll<HTMLImageElement>(".codex-project-image");
+    expect(projectImages).toHaveLength(6);
+    expect(projectImages[0]).toHaveStyle({ width: "20px", height: "20px" });
   });
 
   it("restores the existing SVG visuals when interface imagery is cleared", () => {
     const draft = previewDraft();
     delete draft.theme.assets.profileAvatar;
     delete draft.theme.assets.suggestionIcons;
+    delete draft.theme.assets.projectIcons;
     render(<PreviewCanvas draft={draft} />);
 
     expect(screen.queryByRole("img", { name: "示例用户头像" })).not.toBeInTheDocument();
@@ -83,6 +93,33 @@ describe("Theme Studio Codex preview", () => {
       .not.toBeNull();
     expect(screen.getByText("探索并理解代码").closest("button")?.querySelector("svg"))
       .not.toBeNull();
+  });
+
+  it("uses the shared welcome layout and can hide the native home icon", () => {
+    const draft = previewDraft();
+    draft.theme.home = {
+      welcome: {
+        localized: { "zh-CN": { lines: ["在「{projectName}」中，", "一起创造吧"] } },
+        layout: {
+          anchor: "top-left",
+          positionX: 0.06,
+          positionY: 0.46,
+          width: 0.76,
+          textAlign: "left",
+          hideNativeIcon: true,
+        },
+      },
+    };
+    render(<PreviewCanvas draft={draft} />);
+
+    const heading = screen.getByText("在「星崎皮肤实验室」中，").closest("h2");
+    expect(heading).toHaveStyle({
+      left: "6%",
+      top: "46%",
+      width: "76%",
+      textAlign: "left",
+    });
+    expect(heading?.closest(".codex-hero")?.querySelector(":scope > svg")).toBeNull();
   });
 
   it("previews the task workbench with the same configurable surface model", () => {

@@ -409,6 +409,17 @@ export function applyExpression(theme: CompiledTheme): string {
       requiredLayerIds: [],
       requiredLayersResolved: true,
     };
+    const resolveThemeLocale = () => {
+      const declared = String(document.documentElement.lang || "").toLowerCase();
+      if (declared.startsWith("zh")) return "zh-CN";
+      const uiSample = Array.from(document.querySelectorAll(
+        "button,[role=button],[role=navigation],[aria-label]"
+      )).filter((node) => visible(node)).slice(0, 40).map((node) => [
+        node.getAttribute("aria-label") || "",
+        String(node.textContent || "").slice(0, 80)
+      ].join(" ")).join(" ");
+      return /[\u3400-\u9fff]/u.test(uiSample) ? "zh-CN" : "en";
+    };
     const syncWelcome = (main, hero, heading, activeHome) => {
       const existing = document.querySelector('[data-open-chatgpt-skin="welcome"]');
       verificationRecord.welcomeExpected = false;
@@ -417,8 +428,7 @@ export function applyExpression(theme: CompiledTheme): string {
         if (existing) restoreWelcome(existing);
         return;
       }
-      const locale = String(document.documentElement.lang || "en").toLowerCase()
-        .startsWith("zh") ? "zh-CN" : "en";
+      const locale = resolveThemeLocale();
       const lines = theme.welcome.localized[locale];
       if (!Array.isArray(lines) || lines.length === 0) {
         if (existing) restoreWelcome(existing);
@@ -430,7 +440,9 @@ export function applyExpression(theme: CompiledTheme): string {
             .join(" ")
         ))[0];
       const projectName = String(projectButton?.textContent || "").trim();
-      if (projectButton) projectButton.dataset.openChatgptSkinSurface = "project-name";
+      if (projectButton && !projectButton.dataset.openChatgptSkinSurface) {
+        projectButton.dataset.openChatgptSkinSurface = "project-name";
+      }
       const needsProjectName = lines.some((line) => Array.isArray(line) &&
         line.some((token) => token?.kind === "projectName"));
       if (needsProjectName && !projectName) {
@@ -477,12 +489,34 @@ export function applyExpression(theme: CompiledTheme): string {
           overlay.append(lineNode);
         }
       }
-      const rect = heading.getBoundingClientRect();
+      const nativeRect = heading.getBoundingClientRect();
+      const heroRect = hero.getBoundingClientRect();
+      const layout = theme.welcome.layout;
+      const anchorTransforms = {
+        "top-left": "translate(0%, 0%)",
+        "top-center": "translate(-50%, 0%)",
+        "top-right": "translate(-100%, 0%)",
+        "center-left": "translate(0%, -50%)",
+        "center": "translate(-50%, -50%)",
+        "center-right": "translate(-100%, -50%)",
+        "bottom-left": "translate(0%, -100%)",
+        "bottom-center": "translate(-50%, -100%)",
+        "bottom-right": "translate(-100%, -100%)"
+      };
+      const left = layout
+        ? heroRect.left + heroRect.width * layout.positionXPercent / 100
+        : nativeRect.left;
+      const top = layout
+        ? heroRect.top + heroRect.height * layout.positionYPercent / 100
+        : nativeRect.top;
+      const width = layout ? heroRect.width * layout.widthPercent / 100 : nativeRect.width;
       Object.assign(overlay.style, {
         position: "fixed",
-        left: String(rect.left) + "px",
-        top: String(rect.top) + "px",
-        width: String(rect.width) + "px",
+        left: String(left) + "px",
+        top: String(top) + "px",
+        width: String(width) + "px",
+        transform: layout ? anchorTransforms[layout.anchor] : "none",
+        textAlign: layout?.textAlign || "",
         pointerEvents: "none",
         userSelect: "none",
         zIndex: "0",
@@ -493,6 +527,17 @@ export function applyExpression(theme: CompiledTheme): string {
         lineHeight: String(theme.welcome.displayLineHeight),
         letterSpacing: String(theme.welcome.displayLetterSpacingEm) + "em",
       });
+      if (layout?.hideNativeIcon) {
+        const nativeHeroIcon = Array.from(hero.querySelectorAll("svg,img"))
+          .filter((node) => {
+            const rect = node.getBoundingClientRect();
+            return visible(node) && rect.width >= 12 && rect.width <= 96 &&
+              rect.height >= 12 && rect.height <= 96 &&
+              !node.closest('[data-open-chatgpt-skin="composition-layer"]');
+          })[0];
+        const iconHost = nativeHeroIcon?.parentElement || nativeHeroIcon;
+        if (iconHost) iconHost.dataset.openChatgptSkinSurface = "home-native-icon";
+      }
       heading.style.visibility = "hidden";
     };
     const syncCompositionLayers = (main, hero, suggestions, activeHome) => {
@@ -686,11 +731,17 @@ export function applyExpression(theme: CompiledTheme): string {
         const nativeRect = nativeIcon?.getBoundingClientRect();
         const nativeSizeValid = nativeRect && nativeRect.width >= 6 && nativeRect.width <= 64 &&
           nativeRect.height >= 6 && nativeRect.height <= 64;
-        const width = nativeSizeValid ? nativeRect.width : fallbackSize;
-        const height = nativeSizeValid ? nativeRect.height : fallbackSize;
-        const left = nativeSizeValid ? nativeRect.left - hostRect.left : 12;
-        const top = nativeSizeValid ? nativeRect.top - hostRect.top :
-          Math.max(6, (hostRect.height - height) / 2);
+        const configuredSize = Number(descriptor.sizePx);
+        const size = Number.isFinite(configuredSize) && configuredSize >= 6 &&
+          configuredSize <= 64 ? configuredSize : null;
+        const width = size || (nativeSizeValid ? nativeRect.width : fallbackSize);
+        const height = size || (nativeSizeValid ? nativeRect.height : fallbackSize);
+        const left = nativeSizeValid
+          ? nativeRect.left - hostRect.left + (nativeRect.width - width) / 2
+          : 12;
+        const top = nativeSizeValid
+          ? nativeRect.top - hostRect.top + (nativeRect.height - height) / 2
+          : Math.max(2, (hostRect.height - height) / 2);
         Object.assign(overlay.style, {
           position: "absolute",
           left: String(left) + "px",
@@ -736,15 +787,25 @@ export function applyExpression(theme: CompiledTheme): string {
             String(node.textContent || "").slice(0, 80)
           ].join(" "))
         }))
+        .filter((entry) => {
+          const sidebarRect = sidebar.getBoundingClientRect();
+          return entry.rect.bottom > sidebarRect.top && entry.rect.top < sidebarRect.bottom;
+        })
         .sort((left, right) => Number(right.semantic) - Number(left.semantic) ||
           right.rect.bottom - left.rect.bottom)[0] : null;
       const accountButton = accountEntry?.semantic ? accountEntry.node : null;
-      const accountAvatar = accountButton ? Array.from(accountButton.querySelectorAll("img,svg"))
+      const accountAvatar = accountButton ? Array.from(accountButton.querySelectorAll("img,svg,span"))
         .filter((node) => {
           const rect = node.getBoundingClientRect();
           return visible(node) && rect.width >= 6 && rect.width <= 64 &&
             rect.height >= 6 && rect.height <= 64;
-        })[0] : null;
+        }).map((node) => ({
+          node,
+          rect: node.getBoundingClientRect(),
+          image: node.tagName === "IMG",
+          round: /(?:rounded-full|avatar)/i.test(String(node.className || "")),
+        })).sort((left, right) => Number(right.image) - Number(left.image) ||
+          Number(right.round) - Number(left.round) || left.rect.left - right.rect.left)[0]?.node : null;
       syncInterfaceImage(
         accountButton,
         "profile-avatar",
@@ -752,6 +813,35 @@ export function applyExpression(theme: CompiledTheme): string {
         accountAvatar,
         24
       );
+      const projectIcons = Array.isArray(theme.interfaceImagery.projectIcons)
+        ? theme.interfaceImagery.projectIcons
+        : [];
+      if (sidebar && projectIcons.length > 0) {
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const projectRows = Array.from(sidebar.querySelectorAll("[role=button][aria-label]"))
+          .filter((node) => {
+            const rect = node.getBoundingClientRect();
+            return visible(node) && String(node.className || "").includes("folder-row") &&
+              rect.bottom > sidebarRect.top && rect.top < sidebarRect.bottom;
+          });
+        for (const [index, row] of projectRows.slice(0, 12).entries()) {
+          const nativeIcon = Array.from(row.querySelectorAll("svg,img"))
+            .filter((node) => {
+              const rect = node.getBoundingClientRect();
+              return visible(node) && rect.width >= 6 && rect.width <= 40 &&
+                rect.height >= 6 && rect.height <= 40;
+            })[0];
+          const host = nativeIcon?.parentElement;
+          if (!host || !nativeIcon) continue;
+          syncInterfaceImage(
+            host,
+            "project-icon-" + String(index + 1),
+            projectIcons[index % projectIcons.length],
+            nativeIcon,
+            16
+          );
+        }
+      }
       const windowTitlebar = Array.from(document.body.querySelectorAll("header,div"))
         .map((node) => ({ node, rect: node.getBoundingClientRect() }))
         .filter((entry) => entry.rect.top >= -1 && entry.rect.top <= 2 &&
@@ -1138,9 +1228,15 @@ export function applyExpression(theme: CompiledTheme): string {
       if (composer && composerInput) {
         const composerRect = composer.getBoundingClientRect();
         const inputRect = composerInput.getBoundingClientRect();
+        const statusBanners = Array.from(composer.querySelectorAll(
+          "aside,[role=alert],[role=status]"
+        )).filter((node) => node !== composerInput && !node.contains(composerInput) &&
+          visible(node) && Boolean(node.querySelector("h1,h2,h3,h4,[role=heading]")));
+        for (const banner of statusBanners) mark(banner, "status-banner");
         const projectPickerCandidates = Array.from(composer.querySelectorAll("*"))
           .filter((node) => node !== composerInput && !composerInput.contains(node) &&
-            !node.contains(composerInput) && visible(node))
+            !node.contains(composerInput) && visible(node) &&
+            !node.closest('[data-open-chatgpt-skin-surface="status-banner"]'))
           .map((node) => ({
             node,
             rect: node.getBoundingClientRect(),
@@ -1152,10 +1248,17 @@ export function applyExpression(theme: CompiledTheme): string {
           .sort((left, right) => Number(right.hasSurfaceBackground) -
             Number(left.hasSurfaceBackground) ||
             left.rect.width * left.rect.height - right.rect.width * right.rect.height);
-        const projectPicker = projectPickerCandidates[0]?.node;
+        const compactProjectControl = Array.from(composer.querySelectorAll(
+          "button,[role=button]"
+        )).filter((node) => visible(node) && /(?:switch project|project|项目)/i.test([
+          node.getAttribute("aria-label") || "",
+          node.getAttribute("data-testid") || "",
+        ].join(" ")))[0];
+        const projectPicker = projectPickerCandidates[0]?.node || compactProjectControl;
         let projectPickerStack = projectPicker;
         let projectPickerAncestor = projectPicker?.parentElement;
-        while (projectPickerAncestor && projectPickerAncestor !== composer &&
+        while (projectPickerCandidates.length > 0 && projectPickerAncestor &&
+          projectPickerAncestor !== composer &&
           !projectPickerAncestor.contains(composerInput)) {
           projectPickerStack = projectPickerAncestor;
           projectPickerAncestor = projectPickerAncestor.parentElement;

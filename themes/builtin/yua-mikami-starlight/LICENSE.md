@@ -71,6 +71,13 @@
 - Source SHA-256: 9dbe564a87e2443eefae1f990441d880417a6734870b95317e2062eeb576128b
 - Prompt: Transparent background, glowing pink neon heart outline standing on a small glass-like base, handwritten words on three exact lines: Love, Code, Create; elegant warm rose light, no environment, no extra text, 1:1 composition.
 
+## assets/zcool-xiaowei-display.woff2
+
+- License: OFL-1.1
+- Attribution: ZCOOL XiaoWei Project Authors; WOFF2 distribution by Fontsource
+- Source: https://cdn.jsdelivr.net/npm/@fontsource/zcool-xiaowei@5.3.0/files/zcool-xiaowei-chinese-simplified-400-normal.woff2
+- Source SHA-256: f943c7337ff42159a70a21555604b8ae0e40599ecb1455b5c7b219f22642cff2
+
 - Output SHA-256 (assets/background.webp): fed8afe7236e5494f1eaa727493ab82df263d0d6f1588df0271531da8582f1e9
 - Output SHA-256 (assets/profile-avatar.webp): 24062dfed88e98da6ea94c263d361c6c307231f42e5cb6c89cb9c75885929418
 - Output SHA-256 (assets/suggestion-card1.webp): c69db342bb74416ceb6855fa197178423fde54b6a0980b591eb9b588815dfa09
@@ -81,5 +88,6 @@
 - Output SHA-256 (assets/corner-signature.webp): a9c0c05fc8013451a6b1193f9c073e7291793aa2ac786703c6872ff1ebed46d9
 - Output SHA-256 (assets/vertical-tag.webp): 830d8689d9a483b516bfb6255782cbf20f6bb93a270c7182c9e6d56451619dcf
 - Output SHA-256 (assets/love-code-create.webp): 080cb00ae54f14e4b2756698241e4473d26f97bce9265b44ff41974b11f69ce8
+- Output SHA-256 (fonts/display.woff2): f943c7337ff42159a70a21555604b8ae0e40599ecb1455b5c7b219f22642cff2
 - Output SHA-256 (preview.webp): d445f4ed9061956fa9d2e12fd95e0925454d7be04894a1ef5c3d0ce301b737a5
 - Background SHA-256: fed8afe7236e5494f1eaa727493ab82df263d0d6f1588df0271531da8582f1e9

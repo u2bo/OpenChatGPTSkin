@@ -68,6 +68,10 @@ describe("Theme Studio Bridge contracts", () => {
       "suggestion-card2",
       "suggestion-card3",
       "suggestion-card4",
+      "project-icon1",
+      "project-icon2",
+      "project-icon3",
+      "project-icon4",
     ]) {
       expect(StudioAssetSlotSchema.parse(slot)).toBe(slot);
     }

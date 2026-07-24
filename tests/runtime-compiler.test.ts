@@ -57,6 +57,14 @@ describe("compileTheme", () => {
               lines: ["在「{projectName}」中，", "你想一起打造什么呢？"],
             },
           },
+          layout: {
+            anchor: "top-left",
+            positionX: 0.06,
+            positionY: 0.46,
+            width: 0.76,
+            textAlign: "left",
+            hideNativeIcon: true,
+          },
         },
       },
       composition: {
@@ -97,6 +105,14 @@ describe("compileTheme", () => {
       displayWeight: 500,
       displayLineHeight: 1.45,
       displayLetterSpacingEm: 0.04,
+      layout: {
+        anchor: "top-left",
+        positionXPercent: 6,
+        positionYPercent: 46,
+        widthPercent: 76,
+        textAlign: "left",
+        hideNativeIcon: true,
+      },
     });
     expect(compiled.compositionLayers[0]).toMatchObject({
       id: "hero-signature",
@@ -141,6 +157,7 @@ describe("compileTheme", () => {
             card3: customPath,
             card4: backgroundPath,
           },
+          projectIcons: [customPath, backgroundPath],
         },
       },
       files: new Map([...bundle.files, [customPath, background]]),
@@ -151,6 +168,7 @@ describe("compileTheme", () => {
       asset: "background",
       positionXPercent: 50,
       positionYPercent: 35,
+      sizePx: 24,
     });
     expect(compiled.interfaceImagery.suggestionIcons).toMatchObject({
       card1: { asset: "background", positionXPercent: 20, positionYPercent: 25 },
@@ -158,6 +176,10 @@ describe("compileTheme", () => {
       card3: { asset: 0, positionXPercent: 50, positionYPercent: 50 },
       card4: { asset: "background", positionXPercent: 80, positionYPercent: 75 },
     });
+    expect(compiled.interfaceImagery.projectIcons).toEqual([
+      { asset: 0, positionXPercent: 50, positionYPercent: 50, sizePx: 16 },
+      { asset: "background", positionXPercent: 50, positionYPercent: 50, sizePx: 16 },
+    ]);
   });
 
   it("compiles mountain-mist into fixed CSS and bounded data resources", async () => {
@@ -233,6 +255,15 @@ describe("compileTheme", () => {
     );
     expect(compiled.themeCss).toContain(
       '[data-open-chatgpt-skin-surface="composer"] :where(button:disabled,[role=button][aria-disabled=true]){color:var(--ocs-muted)!important;}',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="status-banner"] :is([class*="bg-token-input-background"],[class*="bg-token-main-surface"],[class*="bg-token-elevated-surface"]){background:transparent!important;',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="status-banner"] :where(button,[role=button]){color:var(--ocs-text)!important;background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="status-banner"] :where(button,[role=button])[class~="bg-token-foreground"]{color:var(--ocs-panel)!important;background-color:var(--ocs-accent)!important;',
     );
     expect(compiled.themeCss).toContain(
       "min-height:max(180px,calc(min(var(--ocs-hero-height),45vh) - var(--ocs-home-overlap-relief)))",

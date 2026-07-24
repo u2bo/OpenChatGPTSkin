@@ -180,6 +180,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
   const composerSurface = surfaceSelector("composer");
   const composerChromeSurface = surfaceSelector("composer-chrome");
   const projectPickerStackSurface = surfaceSelector("project-picker-stack");
+  const statusBannerSurface = surfaceSelector("status-banner");
   const settingsSurface = surfaceSelector("settings");
   const settingsPanelSurface = surfaceSelector("settings-panel");
   const overlaySurface = surfaceSelector("overlay");
@@ -308,12 +309,14 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
         asset: "background",
         positionXPercent: image.positionXPercent,
         positionYPercent: image.positionYPercent,
+        sizePx: image.sizePx,
       };
     }
     return {
       asset: imageAsset(image.path),
       positionXPercent: image.positionXPercent,
       positionYPercent: image.positionYPercent,
+      sizePx: image.sizePx,
     };
   };
   const profileAvatar = compileInterfaceImage(visual.interfaceImagery.profileAvatar);
@@ -324,9 +327,13 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
         entry[1] !== undefined
       ),
   );
+  const projectIcons = visual.interfaceImagery.projectIcons
+    .map(compileInterfaceImage)
+    .filter((image): image is CompiledInterfaceImage => image !== undefined);
   const interfaceImagery = {
     ...(profileAvatar ? { profileAvatar } : {}),
     suggestionIcons,
+    ...(projectIcons.length > 0 ? { projectIcons } : {}),
   };
   const uiFamily = cssString(theme.typography.uiFamily);
   const codeFamily = cssString(theme.typography.codeFamily);
@@ -610,6 +617,30 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;}`,
     `[data-open-chatgpt-skin-surface="project-picker"] *{color:inherit!important;}`,
+    `${statusBannerSurface}{color:var(--ocs-text)!important;` +
+      `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;` +
+      `border-color:var(--ocs-border)!important;box-shadow:none!important;` +
+      `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `${statusBannerSurface} :where(h1,h2,h3,h4,h5,h6,[role=heading]){` +
+      `color:var(--ocs-text)!important;}`,
+    `${statusBannerSurface} :where(div,section,article,span,p,label,small,svg){` +
+      `color:inherit!important;border-color:var(--ocs-border)!important;}`,
+    `${statusBannerSurface} :is(.text-token-description-foreground,` +
+      `.text-token-text-secondary,.text-token-text-tertiary){` +
+      `color:var(--ocs-text-secondary)!important;}`,
+    `${statusBannerSurface} :is([class*="bg-token-input-background"],` +
+      `[class*="bg-token-main-surface"],[class*="bg-token-elevated-surface"]){` +
+      `background:transparent!important;background-image:none!important;` +
+      `box-shadow:none!important;}`,
+    `${statusBannerSurface} :where(button,[role=button]){` +
+      `color:var(--ocs-text)!important;` +
+      `background-color:color-mix(in srgb,var(--ocs-panel) ` +
+      `var(--ocs-surface-panel-mix),transparent)!important;` +
+      `border-color:var(--ocs-border)!important;box-shadow:none!important;}`,
+    `${statusBannerSurface} :where(button,[role=button])[class~="bg-token-foreground"]{` +
+      `color:var(--ocs-panel)!important;background-color:var(--ocs-accent)!important;` +
+      `border-color:var(--ocs-accent)!important;}`,
+    `${statusBannerSurface} :where(button,[role=button]) svg{color:inherit!important;}`,
     `[data-open-chatgpt-skin-surface="suggestions"]{display:grid!important;`,
     `grid-template-columns:repeat(var(--ocs-card-columns),minmax(0,1fr))!important;`,
     `grid-auto-rows:1fr!important;align-items:stretch!important;`,
@@ -627,6 +658,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `[data-open-chatgpt-skin-surface="hero"]{`,
     `min-height:max(180px,calc(min(var(--ocs-hero-height),45vh) - var(--ocs-home-overlap-relief)))!important;}`,
     `[data-open-chatgpt-skin-surface="hero"] *{color:inherit!important;}`,
+    `[data-open-chatgpt-skin-surface="home-native-icon"]{visibility:hidden!important;}`,
     priorityThemeCss,
     compileModuleCss(visual.layout.modules),
   ].join("");
@@ -664,6 +696,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     displayWeight: visual.displayTypography.weight,
     displayLineHeight: visual.displayTypography.lineHeight,
     displayLetterSpacingEm: visual.displayTypography.letterSpacingEm,
+    ...(visual.welcome.layout ? { layout: visual.welcome.layout } : {}),
   } : undefined;
   const compiled = withMeasuredBytes({
     themeId: theme.id,

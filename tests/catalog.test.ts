@@ -114,9 +114,11 @@ describe("built-in catalog", () => {
           version: "1.0.0",
           background: { scale: 1 },
           typography: {
-            displayFamily: "Arial",
+            displayFamily: "ocs-display",
+            displayFontAssetKey: "display",
           },
           assets: {
+            fonts: { display: "fonts/display.woff2" },
             decorations: {
               "hero-signature": "assets/hero-signature.webp",
               "corner-signature": "assets/corner-signature.webp",

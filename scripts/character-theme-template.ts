@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ThemeDraftDocumentSchema } from
+import { parseThemeDocument, ThemeDraftDocumentSchema } from
   "../packages/theme-schema/src/index.js";
 
 const WINDOWS_RESERVED_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
@@ -52,7 +52,7 @@ export const SourceProvenanceSchema = z.object({
 }).strict();
 
 export const CharacterThemeTemplateSchema = z.object({
-  theme: ThemeDraftDocumentSchema,
+  theme: z.preprocess((value) => parseThemeDocument(value), ThemeDraftDocumentSchema),
   outputs: z.record(OutputPathSchema, CharacterThemeOutputSourceSchema),
   provenance: z.array(SourceProvenanceSchema).min(1),
 }).strict();

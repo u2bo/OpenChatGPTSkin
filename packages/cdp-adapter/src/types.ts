@@ -26,6 +26,7 @@ export interface CompiledInterfaceImage {
   readonly asset: "background" | number;
   readonly positionXPercent: number;
   readonly positionYPercent: number;
+  readonly sizePx?: number;
 }
 
 export interface CompiledInterfaceImagery {
@@ -34,6 +35,7 @@ export interface CompiledInterfaceImagery {
     SuggestionIconSlot,
     CompiledInterfaceImage
   >>>;
+  readonly projectIcons?: readonly CompiledInterfaceImage[];
 }
 
 export interface CompiledWelcome {
@@ -46,6 +48,14 @@ export interface CompiledWelcome {
   readonly displayWeight: number;
   readonly displayLineHeight: number;
   readonly displayLetterSpacingEm: number;
+  readonly layout?: {
+    readonly anchor: ThemeCompositionLayer["anchor"];
+    readonly positionXPercent: number;
+    readonly positionYPercent: number;
+    readonly widthPercent: number;
+    readonly textAlign: "left" | "center" | "right";
+    readonly hideNativeIcon: boolean;
+  };
 }
 
 export interface CompiledCompositionLayer {

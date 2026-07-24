@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { ThemeCompositionSchema } from "./composition.js";
+import {
+  ThemeCompositionAnchorSchema,
+  ThemeCompositionSchema,
+} from "./composition.js";
 
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"] as const;
 const FONT_EXTENSIONS = [".woff2"] as const;
@@ -121,6 +124,14 @@ export const ThemeHomeSchema = z.object({
         (value) => Object.keys(value).length > 0,
         "welcome requires at least one locale",
       ),
+    layout: z.object({
+      anchor: ThemeCompositionAnchorSchema,
+      positionX: z.number().min(0).max(1),
+      positionY: z.number().min(0).max(1),
+      width: z.number().min(0.2).max(1),
+      textAlign: z.enum(["left", "center", "right"]),
+      hideNativeIcon: z.boolean().default(false),
+    }).strict().optional(),
   }).strict(),
 }).strict();
 
@@ -272,6 +283,19 @@ const ThemeAssetsSchema = ThemeAssetsV2Schema.extend({
     card3: imagePath.optional(),
     card4: imagePath.optional(),
   }).strict().optional(),
+  projectIcons: z.array(imagePath).min(1).max(12).optional(),
+}).strict();
+
+export const DEFAULT_THEME_INTERFACE_IMAGES = {
+  profileAvatarSize: 24,
+  suggestionIconSize: 20,
+  projectIconSize: 16,
+} as const;
+
+export const ThemeInterfaceImagesSchema = z.object({
+  profileAvatarSize: z.number().int().min(16).max(48),
+  suggestionIconSize: z.number().int().min(16).max(64),
+  projectIconSize: z.number().int().min(12).max(32),
 }).strict();
 
 const ThemeTypographyV3Schema = z.object({
@@ -363,6 +387,7 @@ const ThemeDocumentV3FieldsSchema = z.object({
 const ThemeDocumentV4InputFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
   schemaVersion: z.literal(4),
   typography: ThemeTypographyV4InputSchema,
+  interfaceImages: ThemeInterfaceImagesSchema.optional(),
   home: ThemeHomeSchema.optional(),
   composition: ThemeCompositionSchema.optional(),
 }).strict();
@@ -370,6 +395,7 @@ const ThemeDocumentV4InputFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
 const ThemeDocumentFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
   schemaVersion: z.literal(4),
   typography: ThemeTypographyV4Schema,
+  interfaceImages: ThemeInterfaceImagesSchema,
   home: ThemeHomeSchema.optional(),
   composition: ThemeCompositionSchema,
 }).strict();
@@ -471,6 +497,7 @@ export function themeAssetPaths(
     theme.assets.portrait,
     theme.assets.profileAvatar,
     ...Object.values(theme.assets.suggestionIcons ?? {}),
+    ...(theme.assets.projectIcons ?? []),
     ...Object.values(theme.assets.decorations ?? {}),
     ...Object.values(theme.assets.fonts ?? {}),
   ].filter((value): value is string => Boolean(value)))];
@@ -491,6 +518,7 @@ function normalizeV4(input: ThemeDocumentV4Input): ThemeDocumentFields {
       displayLineHeight: input.typography.displayLineHeight ?? input.typography.lineHeight,
       displayLetterSpacing: input.typography.displayLetterSpacing ?? 0,
     },
+    interfaceImages: input.interfaceImages ?? DEFAULT_THEME_INTERFACE_IMAGES,
     composition: input.composition ?? { layers: [] },
   };
 }

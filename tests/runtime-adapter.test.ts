@@ -178,6 +178,44 @@ function compiledWelcomeTheme() {
       displayWeight: 500,
       displayLineHeight: 1.45,
       displayLetterSpacingEm: 0.04,
+      layout: {
+        anchor: "top-left" as const,
+        positionXPercent: 6,
+        positionYPercent: 46,
+        widthPercent: 76,
+        textAlign: "left" as const,
+      },
+    },
+  };
+}
+
+function compiledInterfaceTheme() {
+  const base = compiledTheme();
+  return {
+    ...base,
+    assetDataUrls: [
+      "data:image/webp;base64,AQ==",
+      "data:image/webp;base64,Ag==",
+      "data:image/webp;base64,Aw==",
+      "data:image/webp;base64,BA==",
+    ],
+    interfaceImagery: {
+      profileAvatar: {
+        ...base.interfaceImagery.profileAvatar,
+        sizePx: 24,
+      },
+      suggestionIcons: Object.fromEntries(Object.entries(base.interfaceImagery.suggestionIcons)
+        .map(([slot, image], index) => [slot, {
+          ...image,
+          asset: index,
+          sizePx: 36,
+        }])),
+      projectIcons: [0, 1, 2, 3].map((asset) => ({
+        asset,
+        positionXPercent: 50,
+        positionYPercent: 50,
+        sizePx: 20,
+      })),
     },
   };
 }
@@ -202,6 +240,26 @@ function compiledLayerTheme() {
 }
 
 describe("CurrentCodexAdapter", () => {
+  it("uses the visible application language when html lang is stale", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="en">')
+      .replace("Tasks", "新建任务")
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+
+    await expect(client.evaluate(
+      'document.querySelector(\'[data-open-chatgpt-skin="welcome"]\')?.textContent ?? null',
+    )).resolves.toBe("在「DataMate」中，你想一起打造什么呢？");
+  });
+
   it("renders localized welcome with the real project name", async () => {
     const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
       .replace("<html>", '<html lang="zh-CN">')
@@ -219,9 +277,17 @@ describe("CurrentCodexAdapter", () => {
     await expect(client.evaluate(`(() => ({
       welcome: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.textContent ?? null,
       nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+      left: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.left ?? null,
+      top: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.top ?? null,
+      width: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.width ?? null,
+      textAlign: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.textAlign ?? null,
     }))()`)).resolves.toEqual({
       welcome: "在「DataMate」中，你想一起打造什么呢？",
       nativeVisibility: "hidden",
+      left: "428px",
+      top: "182.8px",
+      width: "608px",
+      textAlign: "left",
     });
   });
 
@@ -695,6 +761,106 @@ describe("CurrentCodexAdapter", () => {
     expect(await client.evaluate<number>(
       'document.querySelectorAll("[data-open-chatgpt-skin-interface-image],[data-open-chatgpt-skin-native-icon],[data-open-chatgpt-skin-interface-host]").length',
     )).toBe(0);
+  });
+
+  it("themes the current quota banner without mistaking it for the project picker", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace(
+        '<div id="native-project-picker-stack" class="z-0 relative -mb-2" data-rect="430,530,700,43">',
+        '<aside id="current-quota-banner" class="bg-token-main-surface-primary" ' +
+          'style="background-color: rgb(31, 31, 31)" data-rect="430,470,700,48">' +
+          '<h3 data-rect="450,480,420,20">你已达到工作空间额度上限</h3>' +
+          '<button data-rect="980,480,100,24">通知所有者</button>' +
+        '</aside>' +
+        '<div id="native-project-picker-stack" class="z-0 relative -mb-2" data-rect="430,530,700,43">',
+      );
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledTheme());
+
+    await expect(client.evaluate(`(() => ({
+      banner: document.querySelector('#current-quota-banner')
+        ?.getAttribute('data-open-chatgpt-skin-surface') ?? null,
+      picker: document.querySelector('#native-project-picker')
+        ?.getAttribute('data-open-chatgpt-skin-surface') ?? null,
+    }))()`)).resolves.toEqual({ banner: "status-banner", picker: "project-picker" });
+  });
+
+  it("uses the visible footer account avatar instead of an offscreen semantic match", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace(
+        '<button id="native-account-button" aria-label="Account menu" data-rect="12,708,250,40">',
+        '<button id="offscreen-account-button" aria-label="个人设置" data-rect="12,1600,250,40">' +
+          '<svg data-rect="20,1608,24,24" aria-hidden="true"></svg>Hidden user' +
+        '</button>' +
+        '<button id="current-account-button" aria-label="打开个人资料菜单" data-rect="12,708,250,40">' +
+          '<span id="current-account-avatar" class="rounded-full" data-rect="20,716,18,18">J</span>',
+      )
+      .replace(
+        /<span id="native-account-avatar"[\s\S]*?<\/span>/,
+        '<span data-rect="48,714,120,24">JYSoft</span>',
+      );
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledInterfaceTheme());
+
+    await expect(client.evaluate(`(() => ({
+      actualHost: document.querySelector('#current-account-button')
+        ?.getAttribute('data-open-chatgpt-skin-interface-host') ?? null,
+      offscreenHost: document.querySelector('#offscreen-account-button')
+        ?.getAttribute('data-open-chatgpt-skin-interface-host') ?? null,
+      nativeHidden: document.querySelector('#current-account-avatar')
+        ?.getAttribute('data-open-chatgpt-skin-native-icon') ?? null,
+      avatarSize: document.querySelector('[data-open-chatgpt-skin-surface="profile-avatar"]')
+        ?.style.width ?? null,
+    }))()`)).resolves.toEqual({
+      actualHost: "profile-avatar",
+      offscreenHost: null,
+      nativeHidden: "profile-avatar",
+      avatarSize: "24px",
+    });
+  });
+
+  it("replaces visible project folder icons and enlarges suggestion imagery", async () => {
+    const projectRows = ["OpenChatGPTSkin", "DataMate", "Demo Lab", "Theme Test"]
+      .map((name, index) =>
+        `<div class="sidebar-item folder-row" role="button" aria-label="${name}" ` +
+          `data-rect="12,${100 + index * 36},250,30">` +
+          `<span id="project-icon-host-${index + 1}" data-rect="16,${100 + index * 36},30,30">` +
+            `<svg id="project-native-icon-${index + 1}" ` +
+              `data-rect="23,${107 + index * 36},16,16"></svg>` +
+          `</span><span data-rect="50,${104 + index * 36},160,22">${name}</span>` +
+        `</div>`,
+      ).join("");
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace(
+        '<button id="native-account-button"',
+        `${projectRows}<button id="native-account-button"`,
+      );
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledInterfaceTheme());
+
+    await expect(client.evaluate(`(() => ({
+      projectImages: document.querySelectorAll(
+        '[data-open-chatgpt-skin-surface^="project-icon-"]'
+      ).length,
+      firstProjectNative: document.querySelector('#project-native-icon-1')
+        ?.getAttribute('data-open-chatgpt-skin-native-icon') ?? null,
+      firstProjectSize: document.querySelector('[data-open-chatgpt-skin-surface="project-icon-1"]')
+        ?.style.width ?? null,
+      suggestionSizes: Array.from(document.querySelectorAll(
+        '[data-open-chatgpt-skin-surface^="suggestion-icon-"]'
+      )).map((node) => node.style.width),
+    }))()`)).resolves.toEqual({
+      projectImages: 4,
+      firstProjectNative: "project-icon-1",
+      firstProjectSize: "20px",
+      suggestionSizes: ["36px", "36px", "36px", "36px"],
+    });
   });
 
   it("re-marks Codex surfaces after React replaces the rendered subtree", async () => {

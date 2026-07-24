@@ -25,7 +25,7 @@ afterEach(() => {
 
 const bootstrap = {
   protocolVersion: 2 as const,
-  studioVersion: "0.1.0",
+  studioVersion: "0.2.0",
   repositoryUrl: null,
   capabilities: [
     "studio-shell",
@@ -123,13 +123,14 @@ function deferred<T>(): {
 }
 
 describe("Theme Studio home", () => {
-  it("opens on the localized theme home with four built-in themes and metadata details", async () => {
+  it("opens on the localized theme home with five built-in themes and metadata details", async () => {
     const studioBridge = bridge();
     const themes = [
       ["future-idol-cyan", "未来歌姬"],
       ["glacier-aurora", "冰川极光"],
       ["mountain-mist", "山岚云海"],
       ["rose-carpet-star", "玫瑰星光"],
+      ["yua-mikami-starlight", "Yua Mikami Starlight"],
     ].map(([id, name]) => ({
       ref: { id: id!, version: "1.2.2" },
       name: name!,
@@ -148,7 +149,7 @@ describe("Theme Studio home", () => {
     expect(await screen.findByRole("heading", { name: "给工作台，换一种心情。" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "我的主题" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "更多主题" })).toBeVisible();
-    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(4);
+    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(5);
     expect(screen.getAllByText("OpenChatGPTSkin").length).toBeGreaterThan(0);
     expect(screen.getAllByText("v1.2.2").length).toBeGreaterThan(0);
     expect(document.querySelector(".home-product-logo")).toBeInTheDocument();
@@ -161,6 +162,9 @@ describe("Theme Studio home", () => {
     fireEvent.click(screen.getByRole("button", { name: /冰川极光 冰川极光主题描述/ }));
     expect(screen.getByRole("heading", { name: "冰川极光" })).toBeVisible();
     expect(screen.getByText("冰川极光主题描述", { selector: ".home-description p" })).toBeVisible();
+    expect((document.querySelector(".studio-home-shell") as HTMLElement).style
+      .getPropertyValue("--home-sidebar-preview"))
+      .toBe('url("/api/theme-preview?source=builtin&id=glacier-aurora&version=1.2.2")');
   });
 
   it("shows the selected personal theme with its real source badge", async () => {
@@ -469,7 +473,7 @@ describe("Theme Studio application shell", () => {
       .theme.composition.layers[0]?.surface).toBe("main");
   });
 
-  it("exposes five localized interface imagery resource cards", async () => {
+  it("exposes localized avatar, suggestion, and project imagery resource cards", async () => {
     const studioBridge = bridge();
     const imageryDraft = draft(
       "00000000-0000-4000-8000-000000000018",
@@ -490,8 +494,12 @@ describe("Theme Studio application shell", () => {
     expect(within(inspector).getByRole("heading", { name: "界面素材" })).toBeVisible();
     expect(within(inspector).getByText("用户头像", { selector: "strong" })).toBeVisible();
     expect(within(inspector).getByText("建议卡片 4", { selector: "strong" })).toBeVisible();
-    expect(within(inspector).getAllByText("官方默认")).toHaveLength(10);
-    expect(within(inspector).getAllByText("使用主题背景")).toHaveLength(5);
+    expect(within(inspector).getByText("项目图标 4", { selector: "strong" })).toBeVisible();
+    expect(within(inspector).getAllByText("官方默认")).toHaveLength(18);
+    expect(within(inspector).getAllByText("使用主题背景")).toHaveLength(9);
+    expect(within(inspector).getByLabelText("头像尺寸")).toHaveValue("24");
+    expect(within(inspector).getByLabelText("建议卡片图标尺寸")).toHaveValue("20");
+    expect(within(inspector).getByLabelText("项目图标尺寸")).toHaveValue("16");
   });
 
   it("does not expose geometry controls for the native project picker", async () => {

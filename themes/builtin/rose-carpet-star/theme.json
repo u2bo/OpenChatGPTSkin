@@ -165,6 +165,11 @@
     "attribution": "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
     "localOnly": false
   },
+  "interfaceImages": {
+    "profileAvatarSize": 24,
+    "suggestionIconSize": 20,
+    "projectIconSize": 16
+  },
   "composition": {
     "layers": []
   }

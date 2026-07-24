@@ -4,8 +4,8 @@
   "themeVersion": "1.0.0",
   "files": {
     "theme.json": {
-      "bytes": 6084,
-      "sha256": "7a8c3cb3018887917719ac4d2d4fb7c6be78473a9c016f2e070735464da1f9df"
+      "bytes": 6676,
+      "sha256": "1f7cbfecc8987084814486130c7b70235653659ebdbad0e704be0e5707c5bc86"
     },
     "assets/background.webp": {
       "bytes": 169602,
@@ -46,6 +46,10 @@
     "assets/vertical-tag.webp": {
       "bytes": 20772,
       "sha256": "830d8689d9a483b516bfb6255782cbf20f6bb93a270c7182c9e6d56451619dcf"
+    },
+    "fonts/display.woff2": {
+      "bytes": 2194136,
+      "sha256": "f943c7337ff42159a70a21555604b8ae0e40599ecb1455b5c7b219f22642cff2"
     },
     "preview.webp": {
       "bytes": 52314,

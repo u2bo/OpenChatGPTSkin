@@ -4,8 +4,8 @@
   "themeVersion": "1.3.0",
   "files": {
     "theme.json": {
-      "bytes": 3895,
-      "sha256": "c232c86e416098108db464206fb032abfde9c6ea41bf6d3b0e7c2164ec0c72d5"
+      "bytes": 4008,
+      "sha256": "9032d1fccc9fce04fc65f84d97126b22664fe8db5592ab420604fd2a7bd36094"
     },
     "assets/background.webp": {
       "bytes": 304512,

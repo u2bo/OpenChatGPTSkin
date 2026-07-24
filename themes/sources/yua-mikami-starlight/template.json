@@ -26,6 +26,15 @@
         "card3": "assets/suggestion-card3.webp",
         "card4": "assets/suggestion-card4.webp"
       },
+      "projectIcons": [
+        "assets/suggestion-card4.webp",
+        "assets/suggestion-card1.webp",
+        "assets/suggestion-card3.webp",
+        "assets/suggestion-card2.webp"
+      ],
+      "fonts": {
+        "display": "fonts/display.woff2"
+      },
       "decorations": {
         "hero-signature": "assets/hero-signature.webp",
         "corner-signature": "assets/corner-signature.webp",
@@ -59,9 +68,10 @@
       "uiWeight": 500,
       "codeWeight": 400,
       "lineHeight": 1.5,
-      "displayFamily": "Arial",
+      "displayFamily": "ocs-display",
+      "displayFontAssetKey": "display",
       "displaySize": 42,
-      "displayWeight": 500,
+      "displayWeight": 400,
       "displayLineHeight": 1.45,
       "displayLetterSpacing": 0.04
     },
@@ -81,6 +91,11 @@
       "elevatedOpacity": 0.58,
       "terminalOpacity": 0.72,
       "blur": 0
+    },
+    "interfaceImages": {
+      "profileAvatarSize": 24,
+      "suggestionIconSize": 36,
+      "projectIconSize": 20
     },
     "decorations": [
       {
@@ -124,6 +139,14 @@
           "en": {
             "lines": ["What would you like to create", "in \"{projectName}\"?"]
           }
+        },
+        "layout": {
+          "anchor": "top-left",
+          "positionX": 0.06,
+          "positionY": 0.46,
+          "width": 0.76,
+          "textAlign": "left",
+          "hideNativeIcon": true
         }
       }
     },
@@ -191,6 +214,7 @@
     "assets/corner-signature.webp": { "kind": "file", "file": "assets/corner-signature.png" },
     "assets/vertical-tag.webp": { "kind": "file", "file": "assets/vertical-tag.png" },
     "assets/love-code-create.webp": { "kind": "file", "file": "assets/love-code-create.png" },
+    "fonts/display.woff2": { "kind": "file", "file": "assets/zcool-xiaowei-display.woff2" },
     "preview.webp": { "kind": "background-crop", "positionX": 0.5, "positionY": 0.5 }
   },
   "provenance": [
@@ -252,6 +276,12 @@
       "attribution": "Generated decorative asset supplied and authorized by the OpenChatGPTSkin project owner",
       "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
       "generationPrompt": "Transparent background, glowing pink neon heart outline standing on a small glass-like base, handwritten words on three exact lines: Love, Code, Create; elegant warm rose light, no environment, no extra text, 1:1 composition."
+    },
+    {
+      "file": "assets/zcool-xiaowei-display.woff2",
+      "licenseId": "OFL-1.1",
+      "attribution": "ZCOOL XiaoWei Project Authors; WOFF2 distribution by Fontsource",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource/zcool-xiaowei@5.3.0/files/zcool-xiaowei-chinese-simplified-400-normal.woff2"
     }
   ]
 }

@@ -34,6 +34,10 @@ const stopped: StudioRuntimeStatus = {
   nextAction: "Launch a managed Codex session.",
 };
 
+function woff2(): Uint8Array {
+  return Uint8Array.from([0x77, 0x4f, 0x46, 0x32]);
+}
+
 async function createWorkspace(): Promise<{
   readonly workspace: ThemeStudioWorkspace;
   readonly paths: RuntimePaths;
@@ -64,10 +68,173 @@ async function createWorkspace(): Promise<{
 }
 
 describe("ThemeStudioWorkspace", () => {
+  it("creates and saves only schema v4 drafts", async () => {
+    const { workspace } = await createWorkspace();
+    const source = (await workspace.listThemes()).themes
+      .find((theme) => theme.ref.id === "mountain-mist")!;
+    const draft = await workspace.createDraft({
+      source: { source: source.source, ref: source.ref },
+      themeId: "schema-v4-draft",
+      name: "Schema v4 Draft",
+    });
+
+    expect(draft.theme.schemaVersion).toBe(4);
+    const saved = await workspace.saveVersion({
+      draftId: draft.draftId,
+      expectedRevision: draft.revision,
+    });
+    expect(saved.draft.theme.schemaVersion).toBe(4);
+  });
+
+  it("uploads and references a display font", async () => {
+    const { workspace } = await createWorkspace();
+    const source = (await workspace.listThemes()).themes
+      .find((theme) => theme.ref.id === "mountain-mist")!;
+    const draft = await workspace.createDraft({
+      source: { source: source.source, ref: source.ref },
+      themeId: "display-font-draft",
+      name: "Display Font Draft",
+    });
+
+    const uploaded = await workspace.uploadAsset({
+      draftId: draft.draftId,
+      expectedRevision: draft.revision,
+      slot: "display-font",
+      fileName: "display.woff2",
+      mimeType: "font/woff2",
+      bytes: woff2(),
+    });
+
+    expect(uploaded.theme.assets.fonts?.["display-font"])
+      .toMatch(/^fonts\/display-font-[0-9a-f]{12}\.woff2$/);
+    expect(uploaded.theme.typography).toMatchObject({
+      displayFontAssetKey: "display-font",
+      displayFamily: "ocs-display-font",
+    });
+  });
+
+  it("uploads a composition layer and replaces the same layer ID", async () => {
+    const { workspace } = await createWorkspace();
+    const source = (await workspace.listThemes()).themes
+      .find((theme) => theme.ref.id === "mountain-mist")!;
+    const draft = await workspace.createDraft({
+      source: { source: source.source, ref: source.ref },
+      themeId: "composition-layer-draft",
+      name: "Composition Layer Draft",
+    });
+    const sourceImage = await sharp({
+      create: {
+        width: 320,
+        height: 180,
+        channels: 4,
+        background: { r: 220, g: 80, b: 140, alpha: 1 },
+      },
+    }).png().toBuffer();
+
+    const uploaded = await workspace.uploadAsset({
+      draftId: draft.draftId,
+      expectedRevision: draft.revision,
+      slot: "composition-layer",
+      assetKey: "hero-signature",
+      fileName: "hero-signature.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    });
+
+    expect(uploaded.theme.assets.decorations?.["hero-signature"])
+      .toMatch(/^assets\/decoration-hero-signature-[0-9a-f]{12}\.webp$/);
+    expect(uploaded.theme.composition.layers).toEqual([{
+      id: "hero-signature",
+      asset: { kind: "decoration", assetKey: "hero-signature" },
+      surface: "home-hero",
+      anchor: "top-left",
+      positionX: 0.1,
+      positionY: 0.1,
+      width: 0.2,
+      opacity: 1,
+      rotation: 0,
+      required: false,
+    }]);
+
+    const replaced = await workspace.uploadAsset({
+      draftId: uploaded.draftId,
+      expectedRevision: uploaded.revision,
+      slot: "composition-layer",
+      assetKey: "hero-signature",
+      fileName: "hero-signature.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    });
+    expect(replaced.theme.composition.layers).toHaveLength(1);
+    expect(replaced.theme.composition.layers[0]?.id).toBe("hero-signature");
+  });
+
+  it("rejects a 25th distinct composition layer without changing the draft", async () => {
+    const { workspace } = await createWorkspace();
+    const source = (await workspace.listThemes()).themes
+      .find((theme) => theme.ref.id === "mountain-mist")!;
+    const draft = await workspace.createDraft({
+      source: { source: source.source, ref: source.ref },
+      themeId: "full-composition-draft",
+      name: "Full Composition Draft",
+    });
+    const fullTheme = structuredClone(draft.theme);
+    const sharedPath = fullTheme.assets.background!;
+    fullTheme.assets.decorations = Object.fromEntries(
+      Array.from({ length: 24 }, (_value, index) => [
+        `layer-${index}`,
+        sharedPath,
+      ]),
+    );
+    fullTheme.composition.layers = Array.from({ length: 24 }, (_value, index) => ({
+      id: `layer-${index}`,
+      asset: { kind: "decoration" as const, assetKey: `layer-${index}` },
+      surface: "home-hero" as const,
+      anchor: "top-left" as const,
+      positionX: 0.1,
+      positionY: 0.1,
+      width: 0.2,
+      opacity: 1,
+      rotation: 0,
+      required: false,
+    }));
+    const full = await workspace.updateDraft({
+      draftId: draft.draftId,
+      expectedRevision: draft.revision,
+      theme: fullTheme,
+    });
+    const sourceImage = await sharp({
+      create: {
+        width: 64,
+        height: 64,
+        channels: 4,
+        background: { r: 220, g: 80, b: 140, alpha: 1 },
+      },
+    }).png().toBuffer();
+
+    await expect(workspace.uploadAsset({
+      draftId: full.draftId,
+      expectedRevision: full.revision,
+      slot: "composition-layer",
+      assetKey: "layer-24",
+      fileName: "layer-24.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    })).rejects.toMatchObject({ code: "STUDIO_ASSET_INVALID" });
+    const unchanged = await workspace.openDraft(full.draftId);
+    expect(unchanged).toMatchObject({
+      revision: full.revision,
+      theme: { composition: { layers: expect.arrayContaining([
+        expect.objectContaining({ id: "layer-0" }),
+      ]) } },
+    });
+    expect(unchanged.theme.composition.layers).toHaveLength(24);
+  });
+
   it("creates, updates, validates, undoes, and redoes a typed draft", async () => {
     const { workspace, applyRuntimeTheme } = await createWorkspace();
     const library = await workspace.listThemes();
-    expect(library.themes.filter((theme) => theme.source === "builtin")).toHaveLength(4);
+    expect(library.themes.filter((theme) => theme.source === "builtin")).toHaveLength(5);
     expect(library.themes.filter((theme) => theme.source === "recipe")).toHaveLength(0);
 
     const source = library.themes.find((theme) => theme.ref.id === "mountain-mist")!;
@@ -333,7 +500,22 @@ describe("ThemeStudioWorkspace", () => {
       suggestionPath,
     )).bytes).metadata()).toMatchObject({ width: 192, height: 192 });
 
-    const sharedTheme = structuredClone(suggestion.theme);
+    const project = await workspace.uploadAsset({
+      draftId: suggestion.draftId,
+      expectedRevision: suggestion.revision,
+      slot: "project-icon1",
+      fileName: "project.png",
+      mimeType: "image/png",
+      bytes: sourceImage,
+    });
+    const projectPath = project.theme.assets.projectIcons?.[0]!;
+    expect(projectPath).toMatch(/^assets\/project-icon1-[0-9a-f]{12}\.webp$/);
+    expect(await sharp((await workspace.readDraftAsset(
+      project.draftId,
+      projectPath,
+    )).bytes).metadata()).toMatchObject({ width: 192, height: 192 });
+
+    const sharedTheme = structuredClone(project.theme);
     const backgroundPath = sharedTheme.assets.background!;
     sharedTheme.assets.profileAvatar = backgroundPath;
     sharedTheme.assets.suggestionIcons = {
@@ -343,8 +525,8 @@ describe("ThemeStudioWorkspace", () => {
       card4: backgroundPath,
     };
     const shared = await workspace.updateDraft({
-      draftId: suggestion.draftId,
-      expectedRevision: suggestion.revision,
+      draftId: project.draftId,
+      expectedRevision: project.revision,
       theme: sharedTheme,
     });
     expect(shared.assetUrls[backgroundPath]).toMatch(/^\/api\/draft-asset/);
@@ -380,7 +562,7 @@ describe("ThemeStudioWorkspace", () => {
     await expect(readFile(orphanPath)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("migrates persisted v2 draft history to v3 when it is reopened", async () => {
+  it("migrates persisted v2 draft history to v4 when it is reopened", async () => {
     const { workspace, paths } = await createWorkspace();
     const source = (await workspace.listThemes()).themes
       .find((theme) => theme.ref.id === "mountain-mist")!;
@@ -394,17 +576,26 @@ describe("ThemeStudioWorkspace", () => {
     record.theme.schemaVersion = 2;
     delete record.theme.assets.profileAvatar;
     delete record.theme.assets.suggestionIcons;
+    delete record.theme.assets.projectIcons;
+    delete record.theme.interfaceImages;
+    delete record.theme.typography.displayFamily;
+    delete record.theme.typography.displayFontAssetKey;
+    delete record.theme.typography.displaySize;
+    delete record.theme.typography.displayWeight;
+    delete record.theme.typography.displayLineHeight;
+    delete record.theme.typography.displayLetterSpacing;
+    delete record.theme.composition;
     record.past = [{ ...record.theme }];
     await writeFile(recordPath, `${JSON.stringify(record, null, 2)}\n`, "utf8");
 
     const migrated = await workspace.openDraft(draft.draftId);
 
-    expect(migrated.theme.schemaVersion).toBe(3);
+    expect(migrated.theme.schemaVersion).toBe(4);
     expect(migrated.undoAvailable).toBe(true);
     await expect(workspace.undo({
       draftId: migrated.draftId,
       expectedRevision: migrated.revision,
-    })).resolves.toMatchObject({ theme: { schemaVersion: 3 } });
+    })).resolves.toMatchObject({ theme: { schemaVersion: 4 } });
   });
 
   it("never creates a personal version from the apply command", async () => {

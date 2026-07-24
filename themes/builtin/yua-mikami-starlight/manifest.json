@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "themeId": "yua-mikami-starlight",
+  "themeVersion": "1.0.0",
+  "files": {
+    "theme.json": {
+      "bytes": 6676,
+      "sha256": "1f7cbfecc8987084814486130c7b70235653659ebdbad0e704be0e5707c5bc86"
+    },
+    "assets/background.webp": {
+      "bytes": 169602,
+      "sha256": "fed8afe7236e5494f1eaa727493ab82df263d0d6f1588df0271531da8582f1e9"
+    },
+    "assets/corner-signature.webp": {
+      "bytes": 168038,
+      "sha256": "a9c0c05fc8013451a6b1193f9c073e7291793aa2ac786703c6872ff1ebed46d9"
+    },
+    "assets/hero-signature.webp": {
+      "bytes": 129608,
+      "sha256": "370a0e22ea3c177a0062664218b527451d2ac8aa7793c1e7cc6121a8c8aea5c8"
+    },
+    "assets/love-code-create.webp": {
+      "bytes": 216826,
+      "sha256": "080cb00ae54f14e4b2756698241e4473d26f97bce9265b44ff41974b11f69ce8"
+    },
+    "assets/profile-avatar.webp": {
+      "bytes": 13744,
+      "sha256": "24062dfed88e98da6ea94c263d361c6c307231f42e5cb6c89cb9c75885929418"
+    },
+    "assets/suggestion-card1.webp": {
+      "bytes": 10078,
+      "sha256": "c69db342bb74416ceb6855fa197178423fde54b6a0980b591eb9b588815dfa09"
+    },
+    "assets/suggestion-card2.webp": {
+      "bytes": 7380,
+      "sha256": "b3eaab2a698974faa4ade58cff3a4770e9260fc71728b298555315e65c1746c5"
+    },
+    "assets/suggestion-card3.webp": {
+      "bytes": 8560,
+      "sha256": "494a1555675586a908e474e71675bc596658aefb0ff0ee8fe7c091c3a4d9cb49"
+    },
+    "assets/suggestion-card4.webp": {
+      "bytes": 10126,
+      "sha256": "56e64ab7419d9a14fe6219cc0f34cb9511aa6be9f38b91c2449bc98d1219c109"
+    },
+    "assets/vertical-tag.webp": {
+      "bytes": 20772,
+      "sha256": "830d8689d9a483b516bfb6255782cbf20f6bb93a270c7182c9e6d56451619dcf"
+    },
+    "fonts/display.woff2": {
+      "bytes": 2194136,
+      "sha256": "f943c7337ff42159a70a21555604b8ae0e40599ecb1455b5c7b219f22642cff2"
+    },
+    "preview.webp": {
+      "bytes": 52314,
+      "sha256": "d445f4ed9061956fa9d2e12fd95e0925454d7be04894a1ef5c3d0ce301b737a5"
+    }
+  }
+}

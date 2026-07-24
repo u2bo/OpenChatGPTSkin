@@ -330,6 +330,46 @@ describe("RuntimeControlDispatcher", () => {
     expect(JSON.stringify(stored?.recentRequests)).not.toContain("Configured apply failure");
   });
 
+  it.each([
+    "THEME_SCHEMA_VERSION_UNSUPPORTED",
+    "THEME_WELCOME_INVALID",
+    "THEME_DISPLAY_FONT_MISSING",
+    "THEME_COMPOSITION_INVALID",
+  ] as const)("recommends repairing the package for %s", async (code) => {
+    const fixture = await createRuntimeControllerFixture({ applyError: code });
+    const dispatcher = new RuntimeControlDispatcher(fixture.controller, fixture.state);
+    const result = await dispatcher.dispatch(launchRequest(
+      `00000000-0000-4000-8001-${String(code.length).padStart(12, "0")}`,
+    ));
+
+    expect(result.response).toMatchObject({
+      ok: false,
+      error: {
+        code,
+        nextAction: "Repair or replace the theme package.",
+      },
+    });
+  });
+
+  it.each([
+    "THEME_HOME_WELCOME_UNSUPPORTED",
+    "THEME_REQUIRED_LAYER_UNRESOLVED",
+  ] as const)("recommends returning to a supported surface for %s", async (code) => {
+    const fixture = await createRuntimeControllerFixture({ applyError: code });
+    const dispatcher = new RuntimeControlDispatcher(fixture.controller, fixture.state);
+    const result = await dispatcher.dispatch(launchRequest(
+      `00000000-0000-4000-8002-${String(code.length).padStart(12, "0")}`,
+    ));
+
+    expect(result.response).toMatchObject({
+      ok: false,
+      error: {
+        code,
+        nextAction: "Return to a supported ChatGPT/Codex home surface or restore the previous theme.",
+      },
+    });
+  });
+
   it("explains a window activation failure without suggesting a new request ID", async () => {
     const fixture = await createRuntimeControllerFixture();
     fixture.activateWindow.mockRejectedValueOnce(new RuntimeError(

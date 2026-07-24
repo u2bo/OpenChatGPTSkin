@@ -7,7 +7,7 @@ OpenChatGPTSkin now has a macOS Runtime adapter. Theme Studio, the theme engine,
 > [!WARNING]
 > The implementation passes TypeScript, unit tests, and macOS command-contract tests on Windows. It has not yet completed the visual Codex loop on a real Mac. Publish it as a developer preview; do not treat expected behavior in this document as real-device evidence.
 
-GitHub Actions assembles bundled Node.js, native `sharp`, the single-file Theme Studio, and all four themes on separate macOS x64 and ARM64 runners. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
+GitHub Actions assembles bundled Node.js, native `sharp`, the single-file Theme Studio, and all five themes on separate macOS x64 and ARM64 runners. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ It also documents the macOS app log directory as `~/Library/Logs/com.openai.code
 
 ## Install the unsigned preview
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.1.0_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.1.0_macos_x64.dmg`. Intel x64 still requires a matching official Codex build and real-device evidence.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_<version>_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_<version>_macos_x64.dmg`. Intel x64 still requires a matching official ChatGPT build and real-device evidence.
 2. Run `shasum -a 256 <filename>` and compare it with `checksums.txt` from the GitHub Release.
 3. Open the DMG and drag `OpenChatGPTSkin.app` to Applications.
 4. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt.
@@ -98,7 +98,7 @@ Use a test account/workspace with no private projects or sensitive chats:
    /usr/sbin/spctl --assess --type execute --verbose=4 /Applications/Codex.app
    ```
 
-3. Run `launch` and three `switch` commands. Check all four built-in themes across home, history, tasks, settings, plugins, menus, overlays, composers, sidebars, and terminal.
+3. Run `launch` and four `switch` commands. Check all five built-in themes across home, history, tasks, settings, plugins, menus, overlays, composers, sidebars, and terminal.
 4. Run `pause` and `resume`. Pause must remove projection; resume must reapply only the selected theme.
 5. Run `restore`, verify the official appearance, and quit from the Codex menu so cleanup can finish.
 6. During the run, `ls -l /tmp/OpenChatGPTSkin-*.sock` must show a current-user `srw-------` socket. The endpoint must disappear after Controller exit.

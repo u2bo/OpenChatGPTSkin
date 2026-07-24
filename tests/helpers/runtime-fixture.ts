@@ -44,6 +44,7 @@ import {
 } from "@open-chatgpt-skin/windows-runtime";
 
 export interface RuntimeControllerFixtureOptions {
+  readonly preflightError?: RuntimeErrorCode;
   readonly applyError?: RuntimeErrorCode;
   readonly cleanupError?: RuntimeErrorCode;
   readonly failApplyFor?: readonly RuntimeBuiltinThemeId[];
@@ -224,6 +225,17 @@ export async function createRuntimeControllerFixture(
   const closeListeners = new Set<() => void>();
 
   const adapter = {
+    preflight: vi.fn(async () => {
+      calls.push("preflight-theme");
+      if (options.preflightError) {
+        throw new RuntimeError(options.preflightError, "Configured preflight failure");
+      }
+      return {
+        valid: true,
+        welcomeSupported: true,
+        requiredLayersResolved: true,
+      };
+    }),
     apply: vi.fn(async (compiled: { readonly themeId?: RuntimeBuiltinThemeId }) => {
       calls.push("apply-theme");
       applyCount += 1;
@@ -626,6 +638,7 @@ function controlledAdapter(
 ): RuntimeThemeAdapter {
   return {
     probe: () => adapter.probe(),
+    preflight: (theme) => adapter.preflight(theme),
     verify: () => adapter.verify(),
     verifyOfficialAppearance: () => adapter.verifyOfficialAppearance(),
     remove: () => adapter.remove(),

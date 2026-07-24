@@ -1,6 +1,9 @@
 import type {
+  CompiledWelcomeLine,
   SuggestionIconSlot,
+  ThemeCompositionLayer,
   ThemeLayout,
+  ThemeLocale,
 } from "@open-chatgpt-skin/theme-schema";
 
 export interface CompiledDecoration {
@@ -16,22 +19,56 @@ export interface CompiledDecoration {
   readonly opacity: number;
   readonly scale: number;
   readonly placement: "background" | "corners" | "hero" | "cards";
-  readonly dataUrl?: string;
+  readonly asset?: number;
 }
 
 export interface CompiledInterfaceImage {
   readonly asset: "background" | number;
   readonly positionXPercent: number;
   readonly positionYPercent: number;
+  readonly sizePx?: number;
 }
 
 export interface CompiledInterfaceImagery {
-  readonly dataUrls: readonly string[];
   readonly profileAvatar?: CompiledInterfaceImage;
   readonly suggestionIcons: Readonly<Partial<Record<
     SuggestionIconSlot,
     CompiledInterfaceImage
   >>>;
+  readonly projectIcons?: readonly CompiledInterfaceImage[];
+}
+
+export interface CompiledWelcome {
+  readonly localized: Readonly<Partial<Record<
+    ThemeLocale,
+    readonly CompiledWelcomeLine[]
+  >>>;
+  readonly displayFamily: string;
+  readonly displaySizePx: number;
+  readonly displayWeight: number;
+  readonly displayLineHeight: number;
+  readonly displayLetterSpacingEm: number;
+  readonly layout?: {
+    readonly anchor: ThemeCompositionLayer["anchor"];
+    readonly positionXPercent: number;
+    readonly positionYPercent: number;
+    readonly widthPercent: number;
+    readonly textAlign: "left" | "center" | "right";
+    readonly hideNativeIcon: boolean;
+  };
+}
+
+export interface CompiledCompositionLayer {
+  readonly id: string;
+  readonly asset: number;
+  readonly surface: ThemeCompositionLayer["surface"];
+  readonly anchor: ThemeCompositionLayer["anchor"];
+  readonly positionXPercent: number;
+  readonly positionYPercent: number;
+  readonly widthPercent: number;
+  readonly opacity: number;
+  readonly rotationDeg: number;
+  readonly required: boolean;
 }
 
 export interface CompiledTheme {
@@ -43,6 +80,9 @@ export interface CompiledTheme {
   readonly layout: ThemeLayout;
   readonly decorations: readonly CompiledDecoration[];
   readonly interfaceImagery: CompiledInterfaceImagery;
+  readonly assetDataUrls: readonly string[];
+  readonly welcome?: CompiledWelcome;
+  readonly compositionLayers: readonly CompiledCompositionLayer[];
   readonly totalBytes: number;
 }
 
@@ -69,8 +109,17 @@ export interface AdapterProbe {
   readonly missing: readonly string[];
 }
 
+export interface AdapterPreflight {
+  readonly valid: boolean;
+  readonly welcomeSupported: boolean;
+  readonly requiredLayersResolved: boolean;
+}
+
 export interface AdapterVerification {
   readonly valid: boolean;
+  readonly welcomeValid: boolean;
+  readonly requiredLayersResolved: boolean;
+  readonly managedLayerCount: number;
   readonly backgroundReady: boolean;
   readonly themeMarkers: number;
   readonly fontMarkers: number;
@@ -98,6 +147,7 @@ export interface OfficialAppearanceVerification {
 
 export interface RuntimeThemeAdapter {
   probe(): Promise<AdapterProbe>;
+  preflight(theme: CompiledTheme): Promise<AdapterPreflight>;
   apply(theme: CompiledTheme): Promise<void>;
   verify(): Promise<AdapterVerification>;
   verifyOfficialAppearance(): Promise<OfficialAppearanceVerification>;

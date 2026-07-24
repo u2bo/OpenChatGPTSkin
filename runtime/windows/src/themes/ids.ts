@@ -5,6 +5,7 @@ export const RUNTIME_BUILTIN_THEME_IDS = [
   "rose-carpet-star",
   "mountain-mist",
   "glacier-aurora",
+  "yua-mikami-starlight",
 ] as const;
 
 export const RuntimeBuiltinThemeIdSchema = z.enum(RUNTIME_BUILTIN_THEME_IDS);

@@ -1,3 +1,15 @@
+export const RUNTIME_THEME_PACKAGE_ERROR_CODES = [
+  "THEME_SCHEMA_VERSION_UNSUPPORTED",
+  "THEME_WELCOME_INVALID",
+  "THEME_DISPLAY_FONT_MISSING",
+  "THEME_COMPOSITION_INVALID",
+] as const;
+
+export const RUNTIME_THEME_SURFACE_ERROR_CODES = [
+  "THEME_HOME_WELCOME_UNSUPPORTED",
+  "THEME_REQUIRED_LAYER_UNRESOLVED",
+] as const;
+
 export const RUNTIME_ERROR_CODES = [
   "CODEX_NOT_INSTALLED",
   "CODEX_DISCOVERY_REQUIRES_BOOTSTRAP",
@@ -18,6 +30,8 @@ export const RUNTIME_ERROR_CODES = [
   "THEME_SWITCH_FAILED",
   "THEME_ROLLBACK_FAILED",
   "THEME_RUNTIME_TOO_LARGE",
+  ...RUNTIME_THEME_PACKAGE_ERROR_CODES,
+  ...RUNTIME_THEME_SURFACE_ERROR_CODES,
   "THEME_NOT_FOUND",
   "THEME_NOT_READY",
   "RUNTIME_SESSION_STALE",
@@ -33,6 +47,25 @@ export const RUNTIME_ERROR_CODES = [
 ] as const;
 
 export type RuntimeErrorCode = typeof RUNTIME_ERROR_CODES[number];
+
+function includesRuntimeCode(
+  codes: readonly string[],
+  value: RuntimeErrorCode,
+): boolean {
+  return codes.includes(value);
+}
+
+export function isRuntimeThemePackageErrorCode(value: RuntimeErrorCode): boolean {
+  return includesRuntimeCode(RUNTIME_THEME_PACKAGE_ERROR_CODES, value);
+}
+
+export function isRuntimeThemeSurfaceErrorCode(value: RuntimeErrorCode): boolean {
+  return includesRuntimeCode(RUNTIME_THEME_SURFACE_ERROR_CODES, value);
+}
+
+export function isRuntimeThemeV4ErrorCode(value: RuntimeErrorCode): boolean {
+  return isRuntimeThemePackageErrorCode(value) || isRuntimeThemeSurfaceErrorCode(value);
+}
 
 export function isRuntimeErrorCode(value: unknown): value is RuntimeErrorCode {
   return typeof value === "string" &&

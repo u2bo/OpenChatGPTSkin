@@ -1,0 +1,287 @@
+{
+  "theme": {
+    "schemaVersion": 4,
+    "kind": "theme",
+    "appearance": "dark",
+    "id": "yua-mikami-starlight",
+    "name": "三上悠亚·星光粉",
+    "description": "柔粉霓虹、星光与人物视觉构成的沉浸式创作主题。",
+    "version": "1.0.0",
+    "author": "OpenChatGPTSkin",
+    "metadata": {
+      "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "localized": {
+        "en": {
+          "name": "Yua Mikami Starlight",
+          "description": "An immersive creative theme shaped by soft-pink neon, starlight, and character visuals."
+        }
+      }
+    },
+    "assets": {
+      "background": "assets/background.webp",
+      "profileAvatar": "assets/profile-avatar.webp",
+      "suggestionIcons": {
+        "card1": "assets/suggestion-card1.webp",
+        "card2": "assets/suggestion-card2.webp",
+        "card3": "assets/suggestion-card3.webp",
+        "card4": "assets/suggestion-card4.webp"
+      },
+      "projectIcons": [
+        "assets/suggestion-card4.webp",
+        "assets/suggestion-card1.webp",
+        "assets/suggestion-card3.webp",
+        "assets/suggestion-card2.webp"
+      ],
+      "fonts": {
+        "display": "fonts/display.woff2"
+      },
+      "decorations": {
+        "hero-signature": "assets/hero-signature.webp",
+        "corner-signature": "assets/corner-signature.webp",
+        "vertical-tag": "assets/vertical-tag.webp",
+        "love-code-create": "assets/love-code-create.webp"
+      }
+    },
+    "colors": {
+      "accent": "#ff8fbd",
+      "secondary": "#f5b0c9",
+      "text": "#ffe8f1",
+      "textSecondary": "#efc7d5",
+      "muted": "#c498a8",
+      "link": "#ff9bc5",
+      "inputText": "#fff0f5",
+      "placeholder": "#b98d9e",
+      "codeText": "#ffdbea",
+      "panel": "#1d1119",
+      "border": "rgba(255,143,189,0.42)",
+      "success": "#83d5b3",
+      "warning": "#ffc978",
+      "danger": "#ff7d9d",
+      "info": "#b7a0ff"
+    },
+    "typography": {
+      "uiFamily": "Microsoft YaHei UI",
+      "codeFamily": "Cascadia Code",
+      "scale": 1,
+      "uiSize": 14,
+      "codeSize": 13,
+      "uiWeight": 500,
+      "codeWeight": 400,
+      "lineHeight": 1.5,
+      "displayFamily": "ocs-display",
+      "displayFontAssetKey": "display",
+      "displaySize": 42,
+      "displayWeight": 400,
+      "displayLineHeight": 1.45,
+      "displayLetterSpacing": 0.04
+    },
+    "background": {
+      "positionX": 0.5,
+      "positionY": 0.5,
+      "scale": 1,
+      "blur": 0,
+      "brightness": 1,
+      "overlay": 0,
+      "safeArea": "none",
+      "taskMode": "full",
+      "taskOpacity": 0.18
+    },
+    "surfaces": {
+      "baseOpacity": 0.18,
+      "elevatedOpacity": 0.58,
+      "terminalOpacity": 0.72,
+      "blur": 0
+    },
+    "interfaceImages": {
+      "profileAvatarSize": 24,
+      "suggestionIconSize": 36,
+      "projectIconSize": 20
+    },
+    "decorations": [
+      {
+        "type": "sparkles",
+        "enabled": true,
+        "intensity": 0.42,
+        "placement": "background",
+        "opacity": 0.62,
+        "scale": 1
+      }
+    ],
+    "layout": {
+      "heroHeight": 380,
+      "cardColumns": 4,
+      "composerWidth": 0.76,
+      "sidebarDensity": "comfortable",
+      "moduleGap": 16,
+      "modules": [
+        { "id": "sidebar", "order": 0, "visible": true, "size": "regular", "align": "stretch", "spacing": 12 },
+        { "id": "topbar", "order": 1, "visible": true, "size": "regular", "align": "stretch", "spacing": 12 },
+        { "id": "hero", "order": 2, "visible": true, "size": "expanded", "align": "stretch", "spacing": 16 },
+        { "id": "suggestions", "order": 3, "visible": true, "size": "regular", "align": "stretch", "spacing": 16 },
+        { "id": "project-picker", "order": 4, "visible": true, "size": "regular", "align": "stretch", "spacing": 16 },
+        { "id": "composer", "order": 5, "visible": true, "size": "regular", "align": "center", "spacing": 12 },
+        { "id": "task-background", "order": 6, "visible": true, "size": "regular", "align": "stretch", "spacing": 0 },
+        { "id": "content-layer", "order": 7, "visible": true, "size": "regular", "align": "stretch", "spacing": 12 }
+      ]
+    },
+    "rights": {
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-Authorized",
+      "attribution": "Authorized portrait and generated decorative assets supplied by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "localOnly": false
+    },
+    "home": {
+      "welcome": {
+        "localized": {
+          "zh-CN": {
+            "lines": ["在「{projectName}」中，", "你想一起打造什么呢？"]
+          },
+          "en": {
+            "lines": ["What would you like to create", "in \"{projectName}\"?"]
+          }
+        },
+        "layout": {
+          "anchor": "top-left",
+          "positionX": 0.06,
+          "positionY": 0.46,
+          "width": 0.76,
+          "textAlign": "left",
+          "hideNativeIcon": true
+        }
+      }
+    },
+    "composition": {
+      "layers": [
+        {
+          "id": "hero-signature",
+          "asset": { "kind": "decoration", "assetKey": "hero-signature" },
+          "surface": "home-hero",
+          "anchor": "top-left",
+          "positionX": 0.08,
+          "positionY": 0.04,
+          "width": 0.18,
+          "opacity": 1,
+          "rotation": 0,
+          "required": true
+        },
+        {
+          "id": "corner-signature",
+          "asset": { "kind": "decoration", "assetKey": "corner-signature" },
+          "surface": "viewport",
+          "anchor": "top-right",
+          "positionX": 0.96,
+          "positionY": 0.08,
+          "width": 0.13,
+          "opacity": 0.95,
+          "rotation": 0,
+          "required": true
+        },
+        {
+          "id": "vertical-tag",
+          "asset": { "kind": "decoration", "assetKey": "vertical-tag" },
+          "surface": "viewport",
+          "anchor": "top-right",
+          "positionX": 0.99,
+          "positionY": 0.12,
+          "width": 0.025,
+          "opacity": 0.9,
+          "rotation": 0,
+          "required": true
+        },
+        {
+          "id": "love-code-create",
+          "asset": { "kind": "decoration", "assetKey": "love-code-create" },
+          "surface": "viewport",
+          "anchor": "bottom-right",
+          "positionX": 0.985,
+          "positionY": 0.94,
+          "width": 0.1,
+          "opacity": 0.95,
+          "rotation": 0,
+          "required": true
+        }
+      ]
+    }
+  },
+  "outputs": {
+    "assets/background.webp": { "kind": "file", "file": "assets/background.png" },
+    "assets/profile-avatar.webp": { "kind": "background-crop", "positionX": 0.68, "positionY": 0.25 },
+    "assets/suggestion-card1.webp": { "kind": "file", "file": "assets/suggestion-card1.png" },
+    "assets/suggestion-card2.webp": { "kind": "file", "file": "assets/suggestion-card2.png" },
+    "assets/suggestion-card3.webp": { "kind": "file", "file": "assets/suggestion-card3.png" },
+    "assets/suggestion-card4.webp": { "kind": "file", "file": "assets/suggestion-card4.png" },
+    "assets/hero-signature.webp": { "kind": "file", "file": "assets/hero-signature.png" },
+    "assets/corner-signature.webp": { "kind": "file", "file": "assets/corner-signature.png" },
+    "assets/vertical-tag.webp": { "kind": "file", "file": "assets/vertical-tag.png" },
+    "assets/love-code-create.webp": { "kind": "file", "file": "assets/love-code-create.png" },
+    "fonts/display.woff2": { "kind": "file", "file": "assets/zcool-xiaowei-display.woff2" },
+    "preview.webp": { "kind": "background-crop", "positionX": 0.5, "positionY": 0.5 }
+  },
+  "provenance": [
+    {
+      "file": "assets/background.png",
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Authorized-Portrait",
+      "attribution": "Authorized portrait background supplied by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "generationPrompt": "Authorized source portrait background supplied by the project owner; preserve the original pose and composition."
+    },
+    {
+      "file": "assets/suggestion-card1.png",
+      "licenseId": "MIT",
+      "attribution": "Phosphor Icons MagicWand, rendered by OpenChatGPTSkin",
+      "source": "https://github.com/phosphor-icons/core"
+    },
+    {
+      "file": "assets/suggestion-card2.png",
+      "licenseId": "MIT",
+      "attribution": "Phosphor Icons Gift, rendered by OpenChatGPTSkin",
+      "source": "https://github.com/phosphor-icons/core"
+    },
+    {
+      "file": "assets/suggestion-card3.png",
+      "licenseId": "MIT",
+      "attribution": "Phosphor Icons Code, rendered by OpenChatGPTSkin",
+      "source": "https://github.com/phosphor-icons/core"
+    },
+    {
+      "file": "assets/suggestion-card4.png",
+      "licenseId": "MIT",
+      "attribution": "Phosphor Icons Heart, rendered by OpenChatGPTSkin",
+      "source": "https://github.com/phosphor-icons/core"
+    },
+    {
+      "file": "assets/hero-signature.png",
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Authorized-Generated",
+      "attribution": "Generated decorative asset supplied and authorized by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "generationPrompt": "Transparent background, elegant handwritten neon-pink signature reading exactly Yua, a tiny outlined heart and two four-point sparkles, with small uppercase caption MIKAMI YUA ♥ below; thin rose-pink tube light, no other text, no dark rectangle, 2:1 landscape composition."
+    },
+    {
+      "file": "assets/corner-signature.png",
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Authorized-Generated",
+      "attribution": "Generated decorative asset supplied and authorized by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "generationPrompt": "Transparent background, elegant two-line handwritten neon-pink signature reading exactly Yua Mikami, a small line-art crown above, three small sparkles around it, and the small caption 三上悠亚 ♥ below; no background panel, right-aligned 1:1 composition."
+    },
+    {
+      "file": "assets/vertical-tag.png",
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Authorized-Generated",
+      "attribution": "Generated decorative asset supplied and authorized by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "generationPrompt": "Transparent background, a very thin vertical pink line with compact uppercase text reading exactly IDOL · BEAUTY · CODE · ♥, rotated for vertical reading, minimal neon-pink editorial mark, no other elements, 1:4 portrait composition."
+    },
+    {
+      "file": "assets/love-code-create.png",
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Authorized-Generated",
+      "attribution": "Generated decorative asset supplied and authorized by the OpenChatGPTSkin project owner",
+      "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+      "generationPrompt": "Transparent background, glowing pink neon heart outline standing on a small glass-like base, handwritten words on three exact lines: Love, Code, Create; elegant warm rose light, no environment, no extra text, 1:1 composition."
+    },
+    {
+      "file": "assets/zcool-xiaowei-display.woff2",
+      "licenseId": "OFL-1.1",
+      "attribution": "ZCOOL XiaoWei Project Authors; WOFF2 distribution by Fontsource",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource/zcool-xiaowei@5.3.0/files/zcool-xiaowei-chinese-simplified-400-normal.woff2"
+    }
+  ]
+}

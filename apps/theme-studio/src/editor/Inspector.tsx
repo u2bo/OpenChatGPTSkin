@@ -8,6 +8,7 @@ import {
   createThemeVisualModel,
   NATIVE_GEOMETRY_MODULE_IDS,
   type SuggestionIconSlot,
+  type ThemeCompositionLayer,
   type ThemeDraftDocument,
   type ThemeInterfaceImageVisual,
 } from "@open-chatgpt-skin/theme-schema";
@@ -16,6 +17,9 @@ import type { StudioLocale } from "../studio/preferences.js";
 
 type AssetSlot = StudioUploadAssetInput["slot"];
 type InterfaceImageTarget = "profileAvatar" | SuggestionIconSlot;
+type WelcomeLayout = NonNullable<
+  NonNullable<ThemeDraftDocument["home"]>["welcome"]["layout"]
+>;
 
 const INTERFACE_IMAGE_FIELDS = [
   { target: "profileAvatar", slot: "profile-avatar", label: "用户头像", labelEn: "Profile avatar" },
@@ -29,6 +33,27 @@ const INTERFACE_IMAGE_FIELDS = [
   readonly label: string;
   readonly labelEn: string;
 }[];
+
+const PROJECT_IMAGE_FIELDS = [
+  { index: 0, slot: "project-icon1", label: "项目图标 1", labelEn: "Project icon 1" },
+  { index: 1, slot: "project-icon2", label: "项目图标 2", labelEn: "Project icon 2" },
+  { index: 2, slot: "project-icon3", label: "项目图标 3", labelEn: "Project icon 3" },
+  { index: 3, slot: "project-icon4", label: "项目图标 4", labelEn: "Project icon 4" },
+] as const satisfies readonly {
+  readonly index: number;
+  readonly slot: AssetSlot;
+  readonly label: string;
+  readonly labelEn: string;
+}[];
+
+const DEFAULT_WELCOME_LAYOUT: WelcomeLayout = {
+  anchor: "top-left",
+  positionX: 0.08,
+  positionY: 0.5,
+  width: 0.84,
+  textAlign: "left",
+  hideNativeIcon: false,
+};
 
 const COLOR_FIELDS = [
   ["accent", "主色", "Accent"],
@@ -88,14 +113,46 @@ const DECORATION_LABELS_EN: Record<keyof typeof DECORATION_LABELS, string> = {
   image: "Image decoration",
 };
 
+const COMPOSITION_SURFACES = [
+  ["viewport", "整个窗口", "Viewport"],
+  ["main", "主内容区", "Main content"],
+  ["home-hero", "首页主视觉", "Home hero"],
+  ["suggestions", "建议卡片区", "Suggestions"],
+] as const satisfies readonly (readonly [ThemeCompositionLayer["surface"], string, string])[];
+
+const COMPOSITION_ANCHORS = [
+  ["top-left", "左上", "Top left"],
+  ["top-center", "上中", "Top center"],
+  ["top-right", "右上", "Top right"],
+  ["center-left", "左中", "Center left"],
+  ["center", "中心", "Center"],
+  ["center-right", "右中", "Center right"],
+  ["bottom-left", "左下", "Bottom left"],
+  ["bottom-center", "下中", "Bottom center"],
+  ["bottom-right", "右下", "Bottom right"],
+] as const satisfies readonly (readonly [ThemeCompositionLayer["anchor"], string, string])[];
+
 const INSPECTOR_EN: Record<string, string> = {
   "属性检查器": "Inspector",
   "先从左侧主题库创建草稿，所有编辑才会在本地安全保存。": "Create or open a draft from the theme library before editing.",
+  "内容": "Content",
+  "中文欢迎语": "Chinese welcome",
+  "英文欢迎语": "English welcome",
+  "欢迎语锚点": "Welcome anchor",
+  "欢迎语水平位置": "Welcome horizontal position",
+  "欢迎语垂直位置": "Welcome vertical position",
+  "欢迎语宽度": "Welcome width",
+  "欢迎语对齐": "Welcome alignment",
+  "隐藏 ChatGPT 原生首页图标": "Hide native ChatGPT home icon",
+  "支持 1–3 行纯文本；{projectName} 会替换为当前真实项目名。未配置时保留 ChatGPT 原生欢迎语。": "Supports 1–3 plain-text lines. {projectName} is replaced with the current project name. Leave empty to keep the native ChatGPT welcome.",
   "语义颜色": "Semantic colors",
   "文字颜色会实时计算对比度，低于 4.5:1 时不能保存版本。": "Text contrast is checked live. Versions below 4.5:1 cannot be saved.",
   "背景": "Background",
   "界面素材": "Interface imagery",
-  "为首页建议卡片和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。": "Set images for home suggestions and the account area. Clear a slot to restore the ChatGPT default.",
+  "为首页建议卡片、项目列表和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。": "Set images for home suggestions, project rows, and the account area. Clear a slot to restore the ChatGPT default.",
+  "头像尺寸": "Avatar size",
+  "建议卡片图标尺寸": "Suggestion icon size",
+  "项目图标尺寸": "Project icon size",
   "上传图片": "Upload image",
   "替换图片": "Replace image",
   "清除": "Clear",
@@ -142,6 +199,13 @@ const INSPECTOR_EN: Record<string, string> = {
   "上传代码字体（WOFF2）": "Upload code font (WOFF2)",
   "移除上传的界面字体": "Remove uploaded UI font",
   "移除上传的代码字体": "Remove uploaded code font",
+  "展示字体": "Display font",
+  "上传展示字体（WOFF2）": "Upload display font (WOFF2)",
+  "移除上传的展示字体": "Remove uploaded display font",
+  "展示字号": "Display size",
+  "展示字重": "Display weight",
+  "展示行高": "Display line height",
+  "展示字距": "Display letter spacing",
   "整体缩放": "Overall scale",
   "界面字号": "UI size",
   "代码字号": "Code size",
@@ -159,6 +223,17 @@ const INSPECTOR_EN: Record<string, string> = {
   "卡片区域": "Card area",
   "强度": "Intensity",
   "透明度": "Opacity",
+  "视觉图层": "Visual layers",
+  "上传视觉图层图片": "Upload visual layer image",
+  "图层仅用于视觉合成，不会拦截 ChatGPT 的点击、输入或键盘操作。": "Visual layers are non-interactive and never block ChatGPT clicks, input, or keyboard controls.",
+  "尚未添加视觉图层": "No visual layers yet",
+  "绑定区域": "Surface",
+  "锚点": "Anchor",
+  "水平位置": "Horizontal position",
+  "垂直位置": "Vertical position",
+  "宽度": "Width",
+  "旋转角度": "Rotation",
+  "必需图层": "Required layer",
   "模块布局": "Module layout",
   "隔离预览与真实 ChatGPT 使用同一布局契约；项目选择保持 ChatGPT 官方大小与位置，仅适配主题配色，其余安全模块可调整主视觉、卡片、输入框宽度、密度、显示、尺寸、对齐和间距。": "The preview and ChatGPT share one layout contract. Project selection keeps the native geometry; other safe modules can adjust hero, cards, composer, density, visibility, sizing, alignment, and spacing.",
   "主视觉高度": "Hero height",
@@ -251,21 +326,93 @@ function removeDecoration(theme: ThemeDraftDocument, index: number): void {
   }
 }
 
-function removeUploadedFont(theme: ThemeDraftDocument, kind: "ui" | "code"): void {
+function removeUploadedFont(
+  theme: ThemeDraftDocument,
+  kind: "ui" | "code" | "display",
+): void {
   const key = kind === "ui"
     ? theme.typography.uiFontAssetKey
-    : theme.typography.codeFontAssetKey;
-  if (key && theme.assets.fonts) {
-    delete theme.assets.fonts[key];
-    if (Object.keys(theme.assets.fonts).length === 0) delete theme.assets.fonts;
-  }
+    : kind === "code"
+      ? theme.typography.codeFontAssetKey
+      : theme.typography.displayFontAssetKey;
   if (kind === "ui") {
     delete theme.typography.uiFontAssetKey;
     theme.typography.uiFamily = "Microsoft YaHei UI";
-  } else {
+  } else if (kind === "code") {
     delete theme.typography.codeFontAssetKey;
     theme.typography.codeFamily = "Cascadia Code";
+  } else {
+    delete theme.typography.displayFontAssetKey;
+    theme.typography.displayFamily = theme.typography.uiFamily;
   }
+  const stillReferenced = key && [
+    theme.typography.uiFontAssetKey,
+    theme.typography.codeFontAssetKey,
+    theme.typography.displayFontAssetKey,
+  ].includes(key);
+  if (key && !stillReferenced && theme.assets.fonts) {
+    delete theme.assets.fonts[key];
+    if (Object.keys(theme.assets.fonts).length === 0) delete theme.assets.fonts;
+  }
+}
+
+function nextCompositionAssetKey(theme: ThemeDraftDocument): string {
+  const used = new Set([
+    ...theme.composition.layers.map((layer) => layer.id),
+    ...Object.keys(theme.assets.decorations ?? {}),
+  ]);
+  for (let index = 1; index <= 24; index += 1) {
+    const key = `layer-${index}`;
+    if (!used.has(key)) return key;
+  }
+  return "layer-24";
+}
+
+function removeCompositionLayer(theme: ThemeDraftDocument, index: number): void {
+  const [removed] = theme.composition.layers.splice(index, 1);
+  if (!removed || removed.asset.kind !== "decoration") return;
+  const key = removed.asset.assetKey;
+  const stillReferenced = theme.composition.layers.some((layer) =>
+    layer.asset.kind === "decoration" && layer.asset.assetKey === key
+  ) || theme.decorations.some((decoration) => decoration.assetKey === key);
+  if (stillReferenced || !theme.assets.decorations) return;
+  delete theme.assets.decorations[key];
+  if (Object.keys(theme.assets.decorations).length === 0) {
+    delete theme.assets.decorations;
+  }
+}
+
+function welcomeLines(value: string): string[] {
+  const lines = value.replaceAll("\r", "").split("\n");
+  while (lines.at(-1)?.trim() === "") lines.pop();
+  return lines;
+}
+
+function updateWelcome(
+  theme: ThemeDraftDocument,
+  locale: "zh-CN" | "en",
+  value: string,
+): void {
+  const localized = { ...(theme.home?.welcome.localized ?? {}) };
+  const layout = theme.home?.welcome.layout;
+  const lines = welcomeLines(value);
+  if (lines.length > 0) localized[locale] = { lines };
+  else delete localized[locale];
+  if (Object.keys(localized).length === 0) {
+    delete theme.home;
+    return;
+  }
+  theme.home = { welcome: { localized, ...(layout ? { layout } : {}) } };
+}
+
+function updateWelcomeLayout(
+  theme: ThemeDraftDocument,
+  change: (layout: WelcomeLayout) => void,
+): void {
+  if (!theme.home) return;
+  const layout = { ...(theme.home.welcome.layout ?? DEFAULT_WELCOME_LAYOUT) };
+  change(layout);
+  theme.home.welcome.layout = layout;
 }
 
 function interfaceImagePath(
@@ -301,6 +448,22 @@ function setInterfaceImagePath(
   if (Object.keys(theme.assets.suggestionIcons).length === 0) {
     delete theme.assets.suggestionIcons;
   }
+}
+
+function setProjectImagePath(
+  theme: ThemeDraftDocument,
+  index: number,
+  path: string | undefined,
+): void {
+  const projectIcons = [...(theme.assets.projectIcons ?? [])];
+  if (!path) {
+    projectIcons.splice(index, 1);
+  } else {
+    while (projectIcons.length < index) projectIcons.push(path);
+    projectIcons[index] = path;
+  }
+  if (projectIcons.length > 0) theme.assets.projectIcons = projectIcons;
+  else delete theme.assets.projectIcons;
 }
 
 function updateEnglishMetadata(
@@ -482,6 +645,86 @@ export function Inspector({
     onChange(changedTheme(draft, change));
   };
 
+  if (tool === "content") {
+    const zhLines = theme.home?.welcome.localized["zh-CN"]?.lines ?? [];
+    const enLines = theme.home?.welcome.localized.en?.lines ?? [];
+    const layout = theme.home?.welcome.layout ?? DEFAULT_WELCOME_LAYOUT;
+    return (
+      <>
+        <h2>{tr(locale, "内容")}</h2>
+        <p className="inspector-lead">
+          {tr(locale, "支持 1–3 行纯文本；{projectName} 会替换为当前真实项目名。未配置时保留 ChatGPT 原生欢迎语。")}
+        </p>
+        <div className="inspector-fields">
+          <label>
+            {tr(locale, "中文欢迎语")}
+            <textarea
+              key={zhLines.join("\n")}
+              defaultValue={zhLines.join("\n")}
+              disabled={busy}
+              onBlur={(event) => commit((candidate) => {
+                updateWelcome(candidate, "zh-CN", event.currentTarget.value);
+              })}
+            />
+          </label>
+          <label>
+            {tr(locale, "英文欢迎语")}
+            <textarea
+              key={enLines.join("\n")}
+              defaultValue={enLines.join("\n")}
+              disabled={busy}
+              onBlur={(event) => commit((candidate) => {
+                updateWelcome(candidate, "en", event.currentTarget.value);
+              })}
+            />
+          </label>
+          <label>
+            {tr(locale, "欢迎语锚点")}
+            <select
+              value={layout.anchor}
+              disabled={busy || !theme.home}
+              onChange={(event) => commit((candidate) => updateWelcomeLayout(candidate, (value) => {
+                value.anchor = event.currentTarget.value as WelcomeLayout["anchor"];
+              }))}
+            >
+              {COMPOSITION_ANCHORS.map(([value, label, labelEn]) => (
+                <option value={value} key={value}>{locale === "en" ? labelEn : label}</option>
+              ))}
+            </select>
+          </label>
+          <RangeField label={tr(locale, "欢迎语水平位置")} value={layout.positionX} min={0} max={1} step={0.01} disabled={busy || !theme.home} onChange={(value) => commit((candidate) => updateWelcomeLayout(candidate, (current) => { current.positionX = value; }))} />
+          <RangeField label={tr(locale, "欢迎语垂直位置")} value={layout.positionY} min={0} max={1} step={0.01} disabled={busy || !theme.home} onChange={(value) => commit((candidate) => updateWelcomeLayout(candidate, (current) => { current.positionY = value; }))} />
+          <RangeField label={tr(locale, "欢迎语宽度")} value={layout.width} min={0.2} max={1} step={0.01} disabled={busy || !theme.home} onChange={(value) => commit((candidate) => updateWelcomeLayout(candidate, (current) => { current.width = value; }))} />
+          <label>
+            {tr(locale, "欢迎语对齐")}
+            <select
+              value={layout.textAlign}
+              disabled={busy || !theme.home}
+              onChange={(event) => commit((candidate) => updateWelcomeLayout(candidate, (value) => {
+                value.textAlign = event.currentTarget.value as WelcomeLayout["textAlign"];
+              }))}
+            >
+              <option value="left">{tr(locale, "左侧")}</option>
+              <option value="center">{tr(locale, "居中")}</option>
+              <option value="right">{tr(locale, "右侧")}</option>
+            </select>
+          </label>
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={layout.hideNativeIcon}
+              disabled={busy || !theme.home}
+              onChange={(event) => commit((candidate) => updateWelcomeLayout(candidate, (value) => {
+                value.hideNativeIcon = event.currentTarget.checked;
+              }))}
+            />
+            {tr(locale, "隐藏 ChatGPT 原生首页图标")}
+          </label>
+        </div>
+      </>
+    );
+  }
+
   if (tool === "colors") {
     return (
       <>
@@ -566,7 +809,12 @@ export function Inspector({
     return (
       <>
         <h2>{tr(locale, "界面素材")}</h2>
-        <p className="inspector-lead">{tr(locale, "为首页建议卡片和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。")}</p>
+        <p className="inspector-lead">{tr(locale, "为首页建议卡片、项目列表和账户区域设置图片。清除后恢复 ChatGPT 官方视觉。")}</p>
+        <div className="inspector-fields">
+          <RangeField label={tr(locale, "头像尺寸")} value={theme.interfaceImages.profileAvatarSize} min={12} max={48} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.interfaceImages.profileAvatarSize = value; })} />
+          <RangeField label={tr(locale, "建议卡片图标尺寸")} value={theme.interfaceImages.suggestionIconSize} min={12} max={64} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.interfaceImages.suggestionIconSize = value; })} />
+          <RangeField label={tr(locale, "项目图标尺寸")} value={theme.interfaceImages.projectIconSize} min={12} max={40} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.interfaceImages.projectIconSize = value; })} />
+        </div>
         <div className="interface-image-list">
           {INTERFACE_IMAGE_FIELDS.map((field) => {
             const value = interfaceImagePath(theme, field.target);
@@ -595,6 +843,36 @@ export function Inspector({
               />
             );
           })}
+          {PROJECT_IMAGE_FIELDS.map((field) => {
+            const value = theme.assets.projectIcons?.[field.index];
+            const imageVisual = visual.projectIcons[field.index] ?? {
+              source: "default" as const,
+              positionXPercent: 50,
+              positionYPercent: 50,
+              sizePx: theme.interfaceImages.projectIconSize,
+            };
+            const url = value ? draft.assetUrls[value] : undefined;
+            return (
+              <InterfaceImageCard
+                key={field.slot}
+                title={locale === "en" ? field.labelEn : field.label}
+                slot={field.slot}
+                value={value}
+                visual={imageVisual}
+                url={url}
+                backgroundPath={theme.assets.background}
+                busy={busy}
+                locale={locale}
+                onUpload={onUpload}
+                onClear={() => commit((candidate) => {
+                  setProjectImagePath(candidate, field.index, undefined);
+                })}
+                onUseBackground={() => commit((candidate) => {
+                  setProjectImagePath(candidate, field.index, candidate.assets.background);
+                })}
+              />
+            );
+          })}
         </div>
       </>
     );
@@ -607,16 +885,107 @@ export function Inspector({
         <div className="inspector-fields">
           <label>{tr(locale, "界面字体")}<input key={theme.typography.uiFamily} defaultValue={theme.typography.uiFamily} disabled={busy} onBlur={(event) => commit((candidate) => { candidate.typography.uiFamily = event.currentTarget.value; })} /></label>
           <label>{tr(locale, "代码字体")}<input key={theme.typography.codeFamily} defaultValue={theme.typography.codeFamily} disabled={busy} onBlur={(event) => commit((candidate) => { candidate.typography.codeFamily = event.currentTarget.value; })} /></label>
+          <label>{tr(locale, "展示字体")}<input key={theme.typography.displayFamily} defaultValue={theme.typography.displayFamily} disabled={busy} onBlur={(event) => commit((candidate) => { candidate.typography.displayFamily = event.currentTarget.value; })} /></label>
           <FilePicker label={tr(locale, "上传界面字体（WOFF2）")} accept=".woff2,font/woff2" disabled={busy} onPick={(file) => onUpload("ui-font", file, "ui-font")} />
           <FilePicker label={tr(locale, "上传代码字体（WOFF2）")} accept=".woff2,font/woff2" disabled={busy} onPick={(file) => onUpload("code-font", file, "code-font")} />
+          <FilePicker label={tr(locale, "上传展示字体（WOFF2）")} accept=".woff2,font/woff2" disabled={busy} onPick={(file) => onUpload("display-font", file, "display-font")} />
           {theme.typography.uiFontAssetKey ? <button type="button" className="wide-button" disabled={busy} onClick={() => commit((candidate) => removeUploadedFont(candidate, "ui"))}>{tr(locale, "移除上传的界面字体")}</button> : null}
           {theme.typography.codeFontAssetKey ? <button type="button" className="wide-button" disabled={busy} onClick={() => commit((candidate) => removeUploadedFont(candidate, "code"))}>{tr(locale, "移除上传的代码字体")}</button> : null}
+          {theme.typography.displayFontAssetKey ? <button type="button" className="wide-button" disabled={busy} onClick={() => commit((candidate) => removeUploadedFont(candidate, "display"))}>{tr(locale, "移除上传的展示字体")}</button> : null}
           <RangeField label={tr(locale, "整体缩放")} value={theme.typography.scale} min={0.85} max={1.3} step={0.01} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.scale = value; })} />
           <RangeField label={tr(locale, "界面字号")} value={theme.typography.uiSize} min={12} max={22} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.uiSize = value; })} />
           <RangeField label={tr(locale, "代码字号")} value={theme.typography.codeSize} min={11} max={22} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.codeSize = value; })} />
+          <RangeField label={tr(locale, "展示字号")} value={theme.typography.displaySize} min={20} max={72} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.displaySize = value; })} />
           <label>{tr(locale, "界面字重")}<select value={theme.typography.uiWeight} disabled={busy} onChange={(event) => commit((candidate) => { candidate.typography.uiWeight = Number(event.currentTarget.value) as typeof candidate.typography.uiWeight; })}><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option></select></label>
           <label>{tr(locale, "代码字重")}<select value={theme.typography.codeWeight} disabled={busy} onChange={(event) => commit((candidate) => { candidate.typography.codeWeight = Number(event.currentTarget.value) as typeof candidate.typography.codeWeight; })}><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option></select></label>
+          <label>{tr(locale, "展示字重")}<select value={theme.typography.displayWeight} disabled={busy} onChange={(event) => commit((candidate) => { candidate.typography.displayWeight = Number(event.currentTarget.value) as typeof candidate.typography.displayWeight; })}><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option></select></label>
           <RangeField label={tr(locale, "行高")} value={theme.typography.lineHeight} min={1.2} max={1.8} step={0.05} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.lineHeight = value; })} />
+          <RangeField label={tr(locale, "展示行高")} value={theme.typography.displayLineHeight} min={1.1} max={1.8} step={0.05} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.displayLineHeight = value; })} />
+          <RangeField label={tr(locale, "展示字距")} value={theme.typography.displayLetterSpacing} min={-0.05} max={0.2} step={0.01} disabled={busy} onChange={(value) => commit((candidate) => { candidate.typography.displayLetterSpacing = value; })} />
+        </div>
+      </>
+    );
+  }
+
+  if (tool === "composition") {
+    return (
+      <>
+        <h2>{tr(locale, "视觉图层")}</h2>
+        <p className="inspector-lead">
+          {tr(locale, "图层仅用于视觉合成，不会拦截 ChatGPT 的点击、输入或键盘操作。")}
+        </p>
+        <FilePicker
+          label={tr(locale, "上传视觉图层图片")}
+          accept="image/png,image/jpeg,image/webp"
+          disabled={busy || theme.composition.layers.length >= 24}
+          onPick={(file) => onUpload(
+            "composition-layer",
+            file,
+            nextCompositionAssetKey(theme),
+          )}
+        />
+        {theme.composition.layers.length === 0
+          ? <p className="inspector-empty-note">{tr(locale, "尚未添加视觉图层")}</p>
+          : null}
+        <div className="composition-layer-list">
+          {theme.composition.layers.map((layer, index) => (
+            <article key={layer.id}>
+              <header>
+                <strong>{layer.id}</strong>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => commit((candidate) => removeCompositionLayer(candidate, index))}
+                >
+                  {tr(locale, "删除")}
+                </button>
+              </header>
+              <label>
+                {tr(locale, "绑定区域")}
+                <select
+                  value={layer.surface}
+                  disabled={busy}
+                  onChange={(event) => commit((candidate) => {
+                    candidate.composition.layers[index]!.surface = event.currentTarget.value as ThemeCompositionLayer["surface"];
+                  })}
+                >
+                  {COMPOSITION_SURFACES.map(([value, label, labelEn]) => (
+                    <option value={value} key={value}>{locale === "en" ? labelEn : label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {tr(locale, "锚点")}
+                <select
+                  value={layer.anchor}
+                  disabled={busy}
+                  onChange={(event) => commit((candidate) => {
+                    candidate.composition.layers[index]!.anchor = event.currentTarget.value as ThemeCompositionLayer["anchor"];
+                  })}
+                >
+                  {COMPOSITION_ANCHORS.map(([value, label, labelEn]) => (
+                    <option value={value} key={value}>{locale === "en" ? labelEn : label}</option>
+                  ))}
+                </select>
+              </label>
+              <RangeField label={tr(locale, "水平位置")} value={layer.positionX} min={0} max={1} step={0.01} disabled={busy} onChange={(value) => commit((candidate) => { candidate.composition.layers[index]!.positionX = value; })} />
+              <RangeField label={tr(locale, "垂直位置")} value={layer.positionY} min={0} max={1} step={0.01} disabled={busy} onChange={(value) => commit((candidate) => { candidate.composition.layers[index]!.positionY = value; })} />
+              <RangeField label={tr(locale, "宽度")} value={layer.width} min={0.02} max={1.5} step={0.01} disabled={busy} onChange={(value) => commit((candidate) => { candidate.composition.layers[index]!.width = value; })} />
+              <RangeField label={tr(locale, "透明度")} value={layer.opacity} min={0} max={1} step={0.05} disabled={busy} onChange={(value) => commit((candidate) => { candidate.composition.layers[index]!.opacity = value; })} />
+              <RangeField label={tr(locale, "旋转角度")} value={layer.rotation} min={-180} max={180} step={1} disabled={busy} onChange={(value) => commit((candidate) => { candidate.composition.layers[index]!.rotation = value; })} />
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  checked={layer.required}
+                  disabled={busy}
+                  onChange={(event) => commit((candidate) => {
+                    candidate.composition.layers[index]!.required = event.currentTarget.checked;
+                  })}
+                />
+                {tr(locale, "必需图层")}
+              </label>
+            </article>
+          ))}
         </div>
       </>
     );

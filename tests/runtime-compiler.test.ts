@@ -1,8 +1,10 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadThemeDirectory } from "@open-chatgpt-skin/theme-core";
+import { parseThemeDocument } from "@open-chatgpt-skin/theme-schema";
 import {
   applyExpression,
+  assertRuntimeThemeSize,
   compileTheme,
   RUNTIME_MAX_COMPILED_THEME_BYTES,
 } from "@open-chatgpt-skin/cdp-adapter";
@@ -12,6 +14,7 @@ const RUNTIME_THEME_IDS = [
   "rose-carpet-star",
   "mountain-mist",
   "glacier-aurora",
+  "yua-mikami-starlight",
 ] as const;
 
 function cssPercent(value: number): number {
@@ -19,6 +22,109 @@ function cssPercent(value: number): number {
 }
 
 describe("compileTheme", () => {
+  it("enforces the exact 8 MiB compiled-theme boundary", () => {
+    expect(RUNTIME_MAX_COMPILED_THEME_BYTES).toBe(8 * 1024 * 1024);
+    expect(() => assertRuntimeThemeSize(RUNTIME_MAX_COMPILED_THEME_BYTES))
+      .not.toThrow();
+    expect(() => assertRuntimeThemeSize(RUNTIME_MAX_COMPILED_THEME_BYTES + 1))
+      .toThrow(expect.objectContaining({ code: "THEME_RUNTIME_TOO_LARGE" }));
+  });
+
+  it("compiles v4 welcome, display typography, and exact composition layers", async () => {
+    const bundle = await loadThemeDirectory(resolve("themes/builtin/mountain-mist"));
+    const signaturePath = "assets/hero-signature.webp";
+    const theme = parseThemeDocument({
+      ...bundle.theme,
+      assets: {
+        ...bundle.theme.assets,
+        decorations: {
+          ...bundle.theme.assets.decorations,
+          "hero-signature": signaturePath,
+        },
+      },
+      typography: {
+        ...bundle.theme.typography,
+        displayFamily: "Noto Serif SC",
+        displaySize: 42,
+        displayWeight: 500,
+        displayLineHeight: 1.45,
+        displayLetterSpacing: 0.04,
+      },
+      home: {
+        welcome: {
+          localized: {
+            "zh-CN": {
+              lines: ["在「{projectName}」中，", "你想一起打造什么呢？"],
+            },
+          },
+          layout: {
+            anchor: "top-left",
+            positionX: 0.06,
+            positionY: 0.46,
+            width: 0.76,
+            textAlign: "left",
+            hideNativeIcon: true,
+          },
+        },
+      },
+      composition: {
+        layers: [{
+          id: "hero-signature",
+          asset: { kind: "decoration", assetKey: "hero-signature" },
+          surface: "home-hero",
+          anchor: "top-left",
+          positionX: 0.1,
+          positionY: 0.08,
+          width: 0.22,
+          opacity: 1,
+          rotation: 0,
+          required: true,
+        }],
+      },
+    });
+    const compiled = compileTheme({
+      ...bundle,
+      theme,
+      files: new Map([
+        ...bundle.files,
+        [signaturePath, bundle.files.get(bundle.theme.assets.background!)!],
+      ]),
+    });
+
+    expect(compiled.welcome?.localized["zh-CN"]).toEqual([
+      [
+        { kind: "text", value: "在「" },
+        { kind: "projectName" },
+        { kind: "text", value: "」中，" },
+      ],
+      [{ kind: "text", value: "你想一起打造什么呢？" }],
+    ]);
+    expect(compiled.welcome).toMatchObject({
+      displayFamily: "Noto Serif SC",
+      displaySizePx: 42,
+      displayWeight: 500,
+      displayLineHeight: 1.45,
+      displayLetterSpacingEm: 0.04,
+      layout: {
+        anchor: "top-left",
+        positionXPercent: 6,
+        positionYPercent: 46,
+        widthPercent: 76,
+        textAlign: "left",
+        hideNativeIcon: true,
+      },
+    });
+    expect(compiled.compositionLayers[0]).toMatchObject({
+      id: "hero-signature",
+      surface: "home-hero",
+      required: true,
+    });
+    const layerAsset = compiled.compositionLayers[0]?.asset;
+    expect(layerAsset).toBeTypeOf("number");
+    expect(compiled.assetDataUrls[layerAsset!]).toMatch(/^data:image\/webp;base64,/);
+    expect(compiled.totalBytes).toBe(Buffer.byteLength(JSON.stringify(compiled)));
+  });
+
   it.each(RUNTIME_THEME_IDS)("compiles %s within the fixed Runtime limit", async (themeId) => {
     const bundle = await loadThemeDirectory(
       resolve("themes", "builtin", themeId),
@@ -51,16 +157,18 @@ describe("compileTheme", () => {
             card3: customPath,
             card4: backgroundPath,
           },
+          projectIcons: [customPath, backgroundPath],
         },
       },
       files: new Map([...bundle.files, [customPath, background]]),
     });
 
-    expect(compiled.interfaceImagery.dataUrls).toHaveLength(1);
+    expect(compiled.assetDataUrls).toHaveLength(1);
     expect(compiled.interfaceImagery.profileAvatar).toEqual({
       asset: "background",
       positionXPercent: 50,
       positionYPercent: 35,
+      sizePx: 24,
     });
     expect(compiled.interfaceImagery.suggestionIcons).toMatchObject({
       card1: { asset: "background", positionXPercent: 20, positionYPercent: 25 },
@@ -68,6 +176,10 @@ describe("compileTheme", () => {
       card3: { asset: 0, positionXPercent: 50, positionYPercent: 50 },
       card4: { asset: "background", positionXPercent: 80, positionYPercent: 75 },
     });
+    expect(compiled.interfaceImagery.projectIcons).toEqual([
+      { asset: 0, positionXPercent: 50, positionYPercent: 50, sizePx: 16 },
+      { asset: "background", positionXPercent: 50, positionYPercent: 50, sizePx: 16 },
+    ]);
   });
 
   it("compiles mountain-mist into fixed CSS and bounded data resources", async () => {
@@ -143,6 +255,15 @@ describe("compileTheme", () => {
     );
     expect(compiled.themeCss).toContain(
       '[data-open-chatgpt-skin-surface="composer"] :where(button:disabled,[role=button][aria-disabled=true]){color:var(--ocs-muted)!important;}',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="status-banner"] :is([class*="bg-token-input-background"],[class*="bg-token-main-surface"],[class*="bg-token-elevated-surface"]){background:transparent!important;',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="status-banner"] :where(button,[role=button]){color:var(--ocs-text)!important;background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="status-banner"] :where(button,[role=button])[class~="bg-token-foreground"]{color:var(--ocs-panel)!important;background-color:var(--ocs-accent)!important;',
     );
     expect(compiled.themeCss).toContain(
       "min-height:max(180px,calc(min(var(--ocs-hero-height),45vh) - var(--ocs-home-overlap-relief)))",
@@ -287,13 +408,7 @@ describe("compileTheme", () => {
     expect(compiled.decorations).toEqual([
       expect.objectContaining({ kind: "particles", count: 5 }),
     ]);
-    expect(compiled.totalBytes).toBe(
-      Buffer.byteLength(compiled.backgroundDataUrl) +
-      Buffer.byteLength(compiled.themeCss) +
-      Buffer.byteLength(compiled.fontCss) +
-      Buffer.byteLength(JSON.stringify(compiled.decorations)) +
-      Buffer.byteLength(JSON.stringify(compiled.interfaceImagery)),
-    );
+    expect(compiled.totalBytes).toBe(Buffer.byteLength(JSON.stringify(compiled)));
   });
 
   it("ignores project picker geometry from imported theme layout values", async () => {

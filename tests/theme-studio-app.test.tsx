@@ -25,7 +25,7 @@ afterEach(() => {
 
 const bootstrap = {
   protocolVersion: 2 as const,
-  studioVersion: "0.1.0",
+  studioVersion: "0.2.0",
   repositoryUrl: null,
   capabilities: [
     "studio-shell",
@@ -123,13 +123,14 @@ function deferred<T>(): {
 }
 
 describe("Theme Studio home", () => {
-  it("opens on the localized theme home with four built-in themes and metadata details", async () => {
+  it("opens on the localized theme home with five built-in themes and metadata details", async () => {
     const studioBridge = bridge();
     const themes = [
       ["future-idol-cyan", "未来歌姬"],
       ["glacier-aurora", "冰川极光"],
       ["mountain-mist", "山岚云海"],
       ["rose-carpet-star", "玫瑰星光"],
+      ["yua-mikami-starlight", "Yua Mikami Starlight"],
     ].map(([id, name]) => ({
       ref: { id: id!, version: "1.2.2" },
       name: name!,
@@ -148,7 +149,7 @@ describe("Theme Studio home", () => {
     expect(await screen.findByRole("heading", { name: "给工作台，换一种心情。" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "我的主题" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "更多主题" })).toBeVisible();
-    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(4);
+    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(5);
     expect(screen.getAllByText("OpenChatGPTSkin").length).toBeGreaterThan(0);
     expect(screen.getAllByText("v1.2.2").length).toBeGreaterThan(0);
     expect(document.querySelector(".home-product-logo")).toBeInTheDocument();
@@ -161,6 +162,9 @@ describe("Theme Studio home", () => {
     fireEvent.click(screen.getByRole("button", { name: /冰川极光 冰川极光主题描述/ }));
     expect(screen.getByRole("heading", { name: "冰川极光" })).toBeVisible();
     expect(screen.getByText("冰川极光主题描述", { selector: ".home-description p" })).toBeVisible();
+    expect((document.querySelector(".studio-home-shell") as HTMLElement).style
+      .getPropertyValue("--home-sidebar-preview"))
+      .toBe('url("/api/theme-preview?source=builtin&id=glacier-aurora&version=1.2.2")');
   });
 
   it("shows the selected personal theme with its real source badge", async () => {
@@ -304,7 +308,172 @@ describe("Theme Studio application shell", () => {
     expect(within(inspector).getByLabelText(/终端面板遮罩强度/)).toBeVisible();
   });
 
-  it("exposes five localized interface imagery resource cards", async () => {
+  it("edits localized welcome lines through the explicit save flow", async () => {
+    const studioBridge = bridge();
+    const current = draft(
+      "00000000-0000-4000-8000-000000000019",
+      "welcome-theme",
+      "欢迎语主题",
+    );
+    vi.mocked(studioBridge.openLatestDraft).mockResolvedValueOnce(current);
+    vi.mocked(studioBridge.updateDraft).mockImplementation(async (input) => ({
+      ...current,
+      theme: input.theme,
+      revision: 1,
+      undoAvailable: true,
+    }));
+    vi.mocked(studioBridge.saveVersion).mockImplementation(async () => ({
+      draft: {
+        ...current,
+        revision: 2,
+        savedRef: { id: current.theme.id, version: "1.0.0" },
+        dirty: false,
+      },
+      ref: { id: current.theme.id, version: "1.0.0" },
+    }));
+
+    render(<ThemeStudioApp bootstrap={bootstrap} bridge={studioBridge} />);
+    await screen.findByText("欢迎语主题");
+    fireEvent.click(screen.getByRole("tab", { name: "编辑工具" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "主题编辑工具" }))
+      .getByRole("button", { name: /内容/ }));
+    const welcome = within(screen.getByRole("region", { name: "属性检查器" }))
+      .getByLabelText("中文欢迎语");
+    fireEvent.change(welcome, {
+      target: { value: "在「{projectName}」中，\n一起创造吧" },
+    });
+    fireEvent.blur(welcome);
+
+    expect(screen.getByText("在「星崎皮肤实验室」中，")).toBeVisible();
+    expect(screen.getByText("一起创造吧")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "保存版本" }));
+    await waitFor(() => expect(studioBridge.updateDraft).toHaveBeenCalledOnce());
+    expect(vi.mocked(studioBridge.updateDraft).mock.calls[0]?.[0].theme.home)
+      .toEqual({
+        welcome: {
+          localized: {
+            "zh-CN": { lines: ["在「{projectName}」中，", "一起创造吧"] },
+          },
+        },
+      });
+  });
+
+  it("clears a display font without deleting a shared font asset", async () => {
+    const studioBridge = bridge();
+    const current = draft(
+      "00000000-0000-4000-8000-000000000020",
+      "display-font-theme",
+      "展示字体主题",
+    );
+    current.theme.assets.fonts = { shared: "fonts/shared.woff2" };
+    current.theme.typography.uiFontAssetKey = "shared";
+    current.theme.typography.uiFamily = "ocs-shared";
+    current.theme.typography.displayFontAssetKey = "shared";
+    current.theme.typography.displayFamily = "ocs-shared";
+    vi.mocked(studioBridge.openLatestDraft).mockResolvedValueOnce(current);
+    vi.mocked(studioBridge.updateDraft).mockImplementation(async (input) => ({
+      ...current,
+      theme: input.theme,
+      revision: 1,
+      undoAvailable: true,
+    }));
+    vi.mocked(studioBridge.saveVersion).mockImplementation(async () => ({
+      draft: { ...current, revision: 2, dirty: false },
+      ref: { id: current.theme.id, version: "1.0.0" },
+    }));
+
+    render(<ThemeStudioApp bootstrap={bootstrap} bridge={studioBridge} />);
+    await screen.findByText("展示字体主题");
+    fireEvent.click(screen.getByRole("tab", { name: "编辑工具" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "主题编辑工具" }))
+      .getByRole("button", { name: /字体/ }));
+    const inspector = screen.getByRole("region", { name: "属性检查器" });
+    expect(within(inspector).getByLabelText("展示字体")).toHaveValue("ocs-shared");
+    expect(within(inspector).getByText("上传展示字体（WOFF2）")).toBeVisible();
+    fireEvent.click(within(inspector).getByRole("button", {
+      name: "移除上传的展示字体",
+    }));
+    fireEvent.click(screen.getByRole("button", { name: "保存版本" }));
+
+    await waitFor(() => expect(studioBridge.updateDraft).toHaveBeenCalledOnce());
+    const saved = vi.mocked(studioBridge.updateDraft).mock.calls[0]![0].theme;
+    expect(saved.typography.displayFontAssetKey).toBeUndefined();
+    expect(saved.typography.displayFamily).toBe("ocs-shared");
+    expect(saved.assets.fonts).toEqual({ shared: "fonts/shared.woff2" });
+  });
+
+  it("edits and previews exact composition layers without blocking controls", async () => {
+    const studioBridge = bridge();
+    const current = draft(
+      "00000000-0000-4000-8000-000000000021",
+      "composition-theme",
+      "视觉图层主题",
+    );
+    current.theme.assets.decorations = {
+      "hero-signature": "decorations/hero-signature.webp",
+    };
+    current.theme.composition.layers = [{
+      id: "hero-signature",
+      asset: { kind: "decoration", assetKey: "hero-signature" },
+      surface: "home-hero",
+      anchor: "top-left",
+      positionX: 0.08,
+      positionY: 0.04,
+      width: 0.18,
+      opacity: 1,
+      rotation: 0,
+      required: true,
+    }];
+    current.assetUrls["decorations/hero-signature.webp"] =
+      "data:image/webp;base64,UklGRg==";
+    vi.mocked(studioBridge.openLatestDraft).mockResolvedValueOnce(current);
+    vi.mocked(studioBridge.updateDraft).mockImplementation(async (input) => ({
+      ...current,
+      theme: input.theme,
+      revision: 1,
+      undoAvailable: true,
+    }));
+    vi.mocked(studioBridge.saveVersion).mockImplementation(async () => ({
+      draft: { ...current, revision: 2, dirty: false },
+      ref: { id: current.theme.id, version: "1.0.0" },
+    }));
+
+    render(<ThemeStudioApp bootstrap={bootstrap} bridge={studioBridge} />);
+    await screen.findByText("视觉图层主题");
+    const layer = screen.getByTestId("composition-layer-hero-signature");
+    expect(layer).toHaveStyle({
+      left: "8%",
+      top: "4%",
+      width: "18%",
+      pointerEvents: "none",
+    });
+    expect(layer).toHaveAttribute("aria-hidden", "true");
+
+    fireEvent.click(screen.getByRole("tab", { name: "编辑工具" }));
+    fireEvent.click(within(screen.getByRole("navigation", { name: "主题编辑工具" }))
+      .getByRole("button", { name: /视觉图层/ }));
+    const inspector = screen.getByRole("region", { name: "属性检查器" });
+    expect(within(inspector).getByText("hero-signature", { selector: "strong" }))
+      .toBeVisible();
+    expect(within(inspector).getByLabelText("绑定区域")).toHaveValue("home-hero");
+    expect(within(inspector).getByLabelText("锚点")).toHaveValue("top-left");
+    expect(within(inspector).getByLabelText(/水平位置/)).toHaveValue("0.08");
+    expect(within(inspector).getByLabelText(/旋转角度/)).toHaveValue("0");
+    expect(within(inspector).getByLabelText("必需图层")).toBeChecked();
+
+    fireEvent.change(within(inspector).getByLabelText("绑定区域"), {
+      target: { value: "main" },
+    });
+    await waitFor(() => expect(screen.getByTestId("composition-layer-hero-signature")
+      .closest('[data-composition-surface="main"]')).not.toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "保存版本" }));
+
+    await waitFor(() => expect(studioBridge.updateDraft).toHaveBeenCalledOnce());
+    expect(vi.mocked(studioBridge.updateDraft).mock.calls[0]![0]
+      .theme.composition.layers[0]?.surface).toBe("main");
+  });
+
+  it("exposes localized avatar, suggestion, and project imagery resource cards", async () => {
     const studioBridge = bridge();
     const imageryDraft = draft(
       "00000000-0000-4000-8000-000000000018",
@@ -325,8 +494,12 @@ describe("Theme Studio application shell", () => {
     expect(within(inspector).getByRole("heading", { name: "界面素材" })).toBeVisible();
     expect(within(inspector).getByText("用户头像", { selector: "strong" })).toBeVisible();
     expect(within(inspector).getByText("建议卡片 4", { selector: "strong" })).toBeVisible();
-    expect(within(inspector).getAllByText("官方默认")).toHaveLength(10);
-    expect(within(inspector).getAllByText("使用主题背景")).toHaveLength(5);
+    expect(within(inspector).getByText("项目图标 4", { selector: "strong" })).toBeVisible();
+    expect(within(inspector).getAllByText("官方默认")).toHaveLength(18);
+    expect(within(inspector).getAllByText("使用主题背景")).toHaveLength(9);
+    expect(within(inspector).getByLabelText("头像尺寸")).toHaveValue("24");
+    expect(within(inspector).getByLabelText("建议卡片图标尺寸")).toHaveValue("20");
+    expect(within(inspector).getByLabelText("项目图标尺寸")).toHaveValue("16");
   });
 
   it("does not expose geometry controls for the native project picker", async () => {

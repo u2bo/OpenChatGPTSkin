@@ -1,4 +1,9 @@
-import { runtimeErrorCode, type RuntimeErrorCode } from "../errors.js";
+import {
+  isRuntimeThemePackageErrorCode,
+  isRuntimeThemeSurfaceErrorCode,
+  runtimeErrorCode,
+  type RuntimeErrorCode,
+} from "../errors.js";
 import type { RecentRequest, RuntimeStateStore } from "../state.js";
 import { RuntimeController } from "../controller/runtime-controller.js";
 import {
@@ -39,6 +44,12 @@ function errorMessage(code: RuntimeErrorCode): string {
 }
 
 function errorNextAction(code: RuntimeErrorCode): string {
+  if (isRuntimeThemeSurfaceErrorCode(code)) {
+    return "Return to a supported ChatGPT/Codex home surface or restore the previous theme.";
+  }
+  if (isRuntimeThemePackageErrorCode(code)) {
+    return "Repair or replace the theme package.";
+  }
   if (code === "CODEX_WINDOW_ACTIVATION_FAILED") {
     return "Quit Codex completely and retry once. If it repeats, report " +
       "CODEX_WINDOW_ACTIVATION_FAILED with the installed Codex version.";

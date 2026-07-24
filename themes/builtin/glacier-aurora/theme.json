@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "kind": "theme",
   "appearance": "dark",
   "id": "glacier-aurora",
@@ -18,12 +18,12 @@
   },
   "assets": {
     "background": "assets/background.webp",
-    "profileAvatar": "assets/background.webp",
+    "profileAvatar": "assets/profile-avatar.webp",
     "suggestionIcons": {
-      "card1": "assets/background.webp",
-      "card2": "assets/background.webp",
-      "card3": "assets/background.webp",
-      "card4": "assets/background.webp"
+      "card1": "assets/suggestion-card1.webp",
+      "card2": "assets/suggestion-card2.webp",
+      "card3": "assets/suggestion-card3.webp",
+      "card4": "assets/suggestion-card4.webp"
     }
   },
   "colors": {
@@ -51,7 +51,12 @@
     "codeSize": 13,
     "uiWeight": 500,
     "codeWeight": 400,
-    "lineHeight": 1.5
+    "lineHeight": 1.5,
+    "displayFamily": "Microsoft YaHei UI",
+    "displaySize": 28,
+    "displayWeight": 500,
+    "displayLineHeight": 1.5,
+    "displayLetterSpacing": 0
   },
   "background": {
     "positionX": 0.68,
@@ -154,5 +159,13 @@
     "licenseId": "LicenseRef-OpenChatGPTSkin-Original",
     "attribution": "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
     "localOnly": false
+  },
+  "interfaceImages": {
+    "profileAvatarSize": 24,
+    "suggestionIconSize": 20,
+    "projectIconSize": 16
+  },
+  "composition": {
+    "layers": []
   }
 }

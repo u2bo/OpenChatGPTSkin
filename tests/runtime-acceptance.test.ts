@@ -201,15 +201,21 @@ describe("Runtime acceptance evidence", () => {
     }
   });
 
-  it("records all four themes and all 12 directed switch pairs", async () => {
+  it("records all five themes and all 20 directed switch pairs", async () => {
     const fixture = acceptanceFixture();
     const result = await runRuntimeAcceptance({ kind: "begin" }, fixture.dependencies);
 
     expect(result.phase).toBe("awaiting-exit");
     expect(fixture.appliedThemeIds()).toEqual(expect.arrayContaining([
       "future-idol-cyan", "rose-carpet-star", "mountain-mist", "glacier-aurora",
+      "yua-mikami-starlight",
     ]));
-    expect(fixture.switchEdges()).toHaveLength(12);
+    expect(fixture.switchEdges()).toHaveLength(20);
+    expect(new Set(fixture.switchEdges().map(([source, target]) => `${source}->${target}`)).size)
+      .toBe(20);
+    expect(fixture.switchEdges().every((edge, index, edges) =>
+      index === 0 || edges[index - 1]![1] === edge[0]
+    )).toBe(true);
     expect(fixture.lastCommand()).toBe("restore");
   });
 

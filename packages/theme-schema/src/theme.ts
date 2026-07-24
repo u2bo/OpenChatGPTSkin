@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  ThemeCompositionAnchorSchema,
+  ThemeCompositionSchema,
+} from "./composition.js";
 
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"] as const;
 const FONT_EXTENSIONS = [".woff2"] as const;
@@ -57,6 +61,79 @@ const httpsUrl = z.string().url().max(500).refine(
 );
 
 export const ThemeLocaleSchema = z.enum(["zh-CN", "en"]);
+
+export type ThemeSchemaErrorCode =
+  | "THEME_SCHEMA_VERSION_UNSUPPORTED"
+  | "THEME_WELCOME_INVALID"
+  | "THEME_DISPLAY_FONT_MISSING"
+  | "THEME_COMPOSITION_INVALID"
+  | "THEME_SCHEMA_INVALID";
+
+export class ThemeSchemaError extends Error {
+  constructor(
+    public readonly code: ThemeSchemaErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ThemeSchemaError";
+  }
+}
+
+const PROJECT_TOKEN = "{projectName}";
+const UNKNOWN_OR_UNBALANCED_PLACEHOLDER = /[{}]/;
+const FORBIDDEN_WELCOME_MARKUP = /<[^>]*>|\[[^\]]+\]\([^)]+\)|\x60{1,3}[^\x60]*\x60{1,3}|\*\*|__|~~|(?:^|\s)#{1,6}\s/;
+const FORBIDDEN_WELCOME_CSS = /(?:^|[;{])\s*(?:color|background(?:-color)?|font(?:-family|-size|-weight)?|position|display|opacity|z-index)\s*:/i;
+const FORBIDDEN_WELCOME_ESCAPE = /\\(?:n|r|t|u|x)/;
+
+const WelcomeLineSchema = z.string().transform((value) => value.trim())
+  .superRefine((line, context) => {
+    const withoutProjectToken = line.replaceAll(PROJECT_TOKEN, "");
+    if ([...line].length < 1 || [...line].length > 120) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "welcome line must contain 1-120 code points",
+      });
+    }
+    if (UNKNOWN_OR_UNBALANCED_PLACEHOLDER.test(withoutProjectToken) ||
+      FORBIDDEN_WELCOME_MARKUP.test(line) || FORBIDDEN_WELCOME_CSS.test(line) ||
+      FORBIDDEN_WELCOME_ESCAPE.test(line)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "welcome line must be plain text with only {projectName}",
+      });
+    }
+  });
+
+const LocalizedWelcomeSchema = z.object({
+  lines: z.array(WelcomeLineSchema).min(1).max(3),
+}).strict().superRefine(({ lines }, context) => {
+  const codePoints = lines.reduce((total, line) => total + [...line].length, 0);
+  if (codePoints > 240) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["lines"],
+      message: "welcome text exceeds 240 code points",
+    });
+  }
+});
+
+export const ThemeHomeSchema = z.object({
+  welcome: z.object({
+    localized: z.record(ThemeLocaleSchema, LocalizedWelcomeSchema)
+      .refine(
+        (value) => Object.keys(value).length > 0,
+        "welcome requires at least one locale",
+      ),
+    layout: z.object({
+      anchor: ThemeCompositionAnchorSchema,
+      positionX: z.number().min(0).max(1),
+      positionY: z.number().min(0).max(1),
+      width: z.number().min(0.2).max(1),
+      textAlign: z.enum(["left", "center", "right"]),
+      hideNativeIcon: z.boolean().default(false),
+    }).strict().optional(),
+  }).strict(),
+}).strict();
 
 export const SuggestionIconSlotSchema = z.enum([
   "card1",
@@ -206,9 +283,60 @@ const ThemeAssetsSchema = ThemeAssetsV2Schema.extend({
     card3: imagePath.optional(),
     card4: imagePath.optional(),
   }).strict().optional(),
+  projectIcons: z.array(imagePath).min(1).max(12).optional(),
 }).strict();
 
-const ThemeDocumentFieldsSchema = z.object({
+export const DEFAULT_THEME_INTERFACE_IMAGES = {
+  profileAvatarSize: 24,
+  suggestionIconSize: 20,
+  projectIconSize: 16,
+} as const;
+
+export const ThemeInterfaceImagesSchema = z.object({
+  profileAvatarSize: z.number().int().min(16).max(48),
+  suggestionIconSize: z.number().int().min(16).max(64),
+  projectIconSize: z.number().int().min(12).max(32),
+}).strict();
+
+const ThemeTypographyV3Schema = z.object({
+  uiFamily: z.string().trim().min(1).max(120),
+  codeFamily: z.string().trim().min(1).max(120),
+  uiFontAssetKey: assetKey.optional(),
+  codeFontAssetKey: assetKey.optional(),
+  scale: z.number().min(0.85).max(1.3),
+  uiSize: z.number().min(12).max(22),
+  codeSize: z.number().min(11).max(22),
+  uiWeight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700)]),
+  codeWeight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700)]),
+  lineHeight: z.number().min(1.2).max(1.8),
+}).strict();
+
+const displayWeight = z.union([
+  z.literal(400),
+  z.literal(500),
+  z.literal(600),
+  z.literal(700),
+]);
+
+const ThemeTypographyV4InputSchema = ThemeTypographyV3Schema.extend({
+  displayFamily: z.string().trim().min(1).max(120).optional(),
+  displayFontAssetKey: assetKey.optional(),
+  displaySize: z.number().min(20).max(72).optional(),
+  displayWeight: displayWeight.optional(),
+  displayLineHeight: z.number().min(1.1).max(1.8).optional(),
+  displayLetterSpacing: z.number().min(-0.05).max(0.2).optional(),
+}).strict();
+
+const ThemeTypographyV4Schema = ThemeTypographyV3Schema.extend({
+  displayFamily: z.string().trim().min(1).max(120),
+  displayFontAssetKey: assetKey.optional(),
+  displaySize: z.number().min(20).max(72),
+  displayWeight,
+  displayLineHeight: z.number().min(1.1).max(1.8),
+  displayLetterSpacing: z.number().min(-0.05).max(0.2),
+}).strict();
+
+const ThemeDocumentV3FieldsSchema = z.object({
   schemaVersion: z.literal(3),
   kind: z.enum(["theme", "recipe"]),
   appearance: z.enum(["auto", "light", "dark"]).default("auto"),
@@ -220,18 +348,7 @@ const ThemeDocumentFieldsSchema = z.object({
   metadata: ThemeMetadataSchema.optional(),
   assets: ThemeAssetsSchema,
   colors: ThemeColorsSchema,
-  typography: z.object({
-    uiFamily: z.string().trim().min(1).max(120),
-    codeFamily: z.string().trim().min(1).max(120),
-    uiFontAssetKey: assetKey.optional(),
-    codeFontAssetKey: assetKey.optional(),
-    scale: z.number().min(0.85).max(1.3),
-    uiSize: z.number().min(12).max(22),
-    codeSize: z.number().min(11).max(22),
-    uiWeight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700)]),
-    codeWeight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700)]),
-    lineHeight: z.number().min(1.2).max(1.8),
-  }).strict(),
+  typography: ThemeTypographyV3Schema,
   background: z.object({
     positionX: z.number().min(0).max(1),
     positionY: z.number().min(0).max(1),
@@ -267,6 +384,23 @@ const ThemeDocumentFieldsSchema = z.object({
   }).strict(),
 }).strict();
 
+const ThemeDocumentV4InputFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
+  schemaVersion: z.literal(4),
+  typography: ThemeTypographyV4InputSchema,
+  interfaceImages: ThemeInterfaceImagesSchema.optional(),
+  home: ThemeHomeSchema.optional(),
+  composition: ThemeCompositionSchema.optional(),
+}).strict();
+
+const ThemeDocumentFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
+  schemaVersion: z.literal(4),
+  typography: ThemeTypographyV4Schema,
+  interfaceImages: ThemeInterfaceImagesSchema,
+  home: ThemeHomeSchema.optional(),
+  composition: ThemeCompositionSchema,
+}).strict();
+
+type ThemeDocumentV4Input = z.infer<typeof ThemeDocumentV4InputFieldsSchema>;
 type ThemeDocumentFields = z.infer<typeof ThemeDocumentFieldsSchema>;
 
 function validateThemeRelationships(
@@ -304,7 +438,19 @@ function validateThemeRelationships(
       });
     }
   });
-  for (const field of ["uiFontAssetKey", "codeFontAssetKey"] as const) {
+  theme.composition.layers.forEach((layer, index) => {
+    const path = layer.asset.kind === "portrait"
+      ? theme.assets.portrait
+      : theme.assets.decorations?.[layer.asset.assetKey];
+    if (!path) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["composition", "layers", index, "asset"],
+        message: "composition layer asset is not declared",
+      });
+    }
+  });
+  for (const field of ["uiFontAssetKey", "codeFontAssetKey", "displayFontAssetKey"] as const) {
     const key = theme.typography[field];
     if (key && !theme.assets.fonts?.[key]) {
       context.addIssue({
@@ -324,7 +470,7 @@ export const ThemeDocumentSchema = ThemeDocumentFieldsSchema.superRefine(
   (theme, context) => validateThemeRelationships(theme, context, true),
 );
 
-const ThemeDocumentV2Schema = ThemeDocumentFieldsSchema.extend({
+const ThemeDocumentV2Schema = ThemeDocumentV3FieldsSchema.extend({
   schemaVersion: z.literal(2),
   assets: ThemeAssetsV2Schema,
 }).strict();
@@ -351,30 +497,85 @@ export function themeAssetPaths(
     theme.assets.portrait,
     theme.assets.profileAvatar,
     ...Object.values(theme.assets.suggestionIcons ?? {}),
+    ...(theme.assets.projectIcons ?? []),
     ...Object.values(theme.assets.decorations ?? {}),
     ...Object.values(theme.assets.fonts ?? {}),
   ].filter((value): value is string => Boolean(value)))];
 }
 
+function normalizeV4(input: ThemeDocumentV4Input): ThemeDocumentFields {
+  return {
+    ...input,
+    schemaVersion: 4,
+    typography: {
+      ...input.typography,
+      displayFamily: input.typography.displayFamily ?? input.typography.uiFamily,
+      displaySize: input.typography.displaySize ?? Math.min(
+        72,
+        Math.max(20, input.typography.uiSize * input.typography.scale * 2),
+      ),
+      displayWeight: input.typography.displayWeight ?? input.typography.uiWeight,
+      displayLineHeight: input.typography.displayLineHeight ?? input.typography.lineHeight,
+      displayLetterSpacing: input.typography.displayLetterSpacing ?? 0,
+    },
+    interfaceImages: input.interfaceImages ?? DEFAULT_THEME_INTERFACE_IMAGES,
+    composition: input.composition ?? { layers: [] },
+  };
+}
+
+function issueCode(error: z.ZodError): ThemeSchemaErrorCode {
+  const first = error.issues[0];
+  const root = first?.path[0];
+  if (root === "home") return "THEME_WELCOME_INVALID";
+  if (root === "composition") return "THEME_COMPOSITION_INVALID";
+  if (root === "typography" && first?.path[1] === "displayFontAssetKey") {
+    return "THEME_DISPLAY_FONT_MISSING";
+  }
+  return "THEME_SCHEMA_INVALID";
+}
+
+function assertSupportedSchemaVersion(value: unknown): void {
+  if (typeof value !== "object" || value === null || !("schemaVersion" in value)) return;
+  const version = value.schemaVersion;
+  if (typeof version === "number" && ![1, 2, 3, 4].includes(version)) {
+    throw new ThemeSchemaError(
+      "THEME_SCHEMA_VERSION_UNSUPPORTED",
+      `unsupported theme schema version: ${version}`,
+    );
+  }
+}
+
 function migrateThemeDocument(value: unknown): unknown {
+  assertSupportedSchemaVersion(value);
+  if (typeof value === "object" && value !== null &&
+    "schemaVersion" in value && value.schemaVersion === 4) {
+    return normalizeV4(ThemeDocumentV4InputFieldsSchema.parse(value));
+  }
+
   if (typeof value === "object" && value !== null &&
     "schemaVersion" in value && value.schemaVersion === 3) {
-    return value;
+    const previous = ThemeDocumentV3FieldsSchema.parse(value);
+    return normalizeV4({
+      ...previous,
+      schemaVersion: 4,
+      composition: { layers: [] },
+    });
   }
 
   if (typeof value === "object" && value !== null &&
     "schemaVersion" in value && value.schemaVersion === 2) {
     const previous = ThemeDocumentV2Schema.parse(value);
-    return {
+    return normalizeV4({
       ...previous,
-      schemaVersion: 3,
-    };
+      schemaVersion: 4,
+      composition: { layers: [] },
+    });
   }
 
   const legacy = LegacyThemeDocumentSchema.parse(value);
-  return {
+  return normalizeV4({
     ...legacy,
-    schemaVersion: 3,
+    schemaVersion: 4,
     colors: {
       ...legacy.colors,
       textSecondary: legacy.colors.text,
@@ -383,13 +584,30 @@ function migrateThemeDocument(value: unknown): unknown {
       placeholder: legacy.colors.muted,
       codeText: legacy.colors.text,
     },
-  };
+    composition: { layers: [] },
+  });
 }
 
 export function parseThemeDraftDocument(value: unknown): ThemeDraftDocument {
-  return ThemeDraftDocumentSchema.parse(migrateThemeDocument(value));
+  try {
+    return ThemeDraftDocumentSchema.parse(migrateThemeDocument(value));
+  } catch (error) {
+    if (error instanceof ThemeSchemaError) throw error;
+    if (error instanceof z.ZodError) {
+      throw new ThemeSchemaError(issueCode(error), error.message);
+    }
+    throw error;
+  }
 }
 
 export function parseThemeDocument(value: unknown): ThemeDocument {
-  return ThemeDocumentSchema.parse(migrateThemeDocument(value));
+  try {
+    return ThemeDocumentSchema.parse(migrateThemeDocument(value));
+  } catch (error) {
+    if (error instanceof ThemeSchemaError) throw error;
+    if (error instanceof z.ZodError) {
+      throw new ThemeSchemaError(issueCode(error), error.message);
+    }
+    throw error;
+  }
 }

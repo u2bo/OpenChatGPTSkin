@@ -128,6 +128,10 @@ export const StudioInterfaceImageSlotSchema = z.enum([
   "suggestion-card2",
   "suggestion-card3",
   "suggestion-card4",
+  "project-icon1",
+  "project-icon2",
+  "project-icon3",
+  "project-icon4",
 ]);
 
 export const StudioAssetSlotSchema = z.enum([
@@ -136,11 +140,17 @@ export const StudioAssetSlotSchema = z.enum([
   "decoration",
   "ui-font",
   "code-font",
+  "display-font",
+  "composition-layer",
   "profile-avatar",
   "suggestion-card1",
   "suggestion-card2",
   "suggestion-card3",
   "suggestion-card4",
+  "project-icon1",
+  "project-icon2",
+  "project-icon3",
+  "project-icon4",
 ]);
 
 export const StudioUploadAssetInputSchema = StudioDraftCommandInputSchema.extend({

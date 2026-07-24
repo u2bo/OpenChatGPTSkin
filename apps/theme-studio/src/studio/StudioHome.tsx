@@ -13,6 +13,7 @@ import {
   Trash,
   UploadSimple,
 } from "@phosphor-icons/react";
+import type { CSSProperties } from "react";
 import type {
   StudioBootstrap,
   StudioRuntimeStatus,
@@ -117,9 +118,14 @@ export function StudioHome(props: StudioHomeProps) {
     .includes(runtime.status);
   const isApplied = (theme: StudioThemeListItem) => runtime.appliedTheme?.id === theme.ref.id &&
     runtime.appliedTheme.version === theme.ref.version;
+  const homeStyle = {
+    "--home-sidebar-preview": selectedTheme?.previewUrl
+      ? `url(${JSON.stringify(selectedTheme.previewUrl)})`
+      : "none",
+  } as CSSProperties;
 
   return (
-    <main className="studio-home-shell">
+    <main className="studio-home-shell" style={homeStyle}>
       <header className="home-topbar">
         <div className="home-brand-heading">
           <span><StarFour weight="fill" />OPEN CHATGPT SKIN</span>

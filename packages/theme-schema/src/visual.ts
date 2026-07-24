@@ -3,12 +3,31 @@ import type {
   ThemeColors,
   ThemeDraftDocument,
   ThemeLayout,
+  ThemeLocale,
   ThemeLayoutModule,
 } from "./theme.js";
+import {
+  resolveCompositionLayer,
+  type ThemeCompositionLayer,
+  type ResolvedCompositionLayer,
+} from "./composition.js";
+import {
+  compileWelcomeLines,
+  type CompiledWelcomeLine,
+} from "./welcome.js";
 
 type ThemeVisualSource = Pick<
   ThemeDraftDocument,
-  "appearance" | "assets" | "colors" | "typography" | "background" | "surfaces" | "layout"
+  | "appearance"
+  | "assets"
+  | "colors"
+  | "typography"
+  | "background"
+  | "surfaces"
+  | "interfaceImages"
+  | "layout"
+  | "home"
+  | "composition"
 >;
 
 type ResolvedAppearance = "light" | "dark";
@@ -28,6 +47,7 @@ export interface ThemeInterfaceImageVisual {
   readonly source: "default" | "background" | "custom";
   readonly positionXPercent: number;
   readonly positionYPercent: number;
+  readonly sizePx: number;
 }
 
 function colorChannels(value: string): readonly [number, number, number] {
@@ -73,12 +93,14 @@ function resolveInterfaceImage(
   path: string | undefined,
   backgroundPath: string | undefined,
   slot: SuggestionIconSlot | "profileAvatar",
+  sizePx: number,
 ): ThemeInterfaceImageVisual {
   if (!path) {
     return {
       source: "default",
       positionXPercent: 50,
       positionYPercent: 50,
+      sizePx,
     };
   }
   if (path === backgroundPath) {
@@ -86,6 +108,7 @@ function resolveInterfaceImage(
       path,
       source: "background",
       ...THEME_INTERFACE_IMAGERY_CROPS[slot],
+      sizePx,
     };
   }
   return {
@@ -93,6 +116,7 @@ function resolveInterfaceImage(
     source: "custom",
     positionXPercent: 50,
     positionYPercent: 50,
+    sizePx,
   };
 }
 
@@ -144,6 +168,31 @@ export interface ThemeVisualModel {
     readonly codeWeight: number;
     readonly lineHeight: number;
   };
+  readonly displayTypography: {
+    readonly family: string;
+    readonly fontAssetKey?: string;
+    readonly size: number;
+    readonly weight: number;
+    readonly lineHeight: number;
+    readonly letterSpacingEm: number;
+  };
+  readonly welcome?: {
+    readonly localized: Readonly<Partial<Record<
+      ThemeLocale,
+      readonly CompiledWelcomeLine[]
+    >>>;
+    readonly layout?: {
+      readonly anchor: ThemeCompositionLayer["anchor"];
+      readonly positionXPercent: number;
+      readonly positionYPercent: number;
+      readonly widthPercent: number;
+      readonly textAlign: "left" | "center" | "right";
+      readonly hideNativeIcon: boolean;
+    };
+  };
+  readonly composition: {
+    readonly layers: readonly ResolvedCompositionLayer[];
+  };
   readonly background: {
     readonly positionXPercent: number;
     readonly positionYPercent: number;
@@ -165,6 +214,7 @@ export interface ThemeVisualModel {
   readonly interfaceImagery: {
     readonly profileAvatar: ThemeInterfaceImageVisual;
     readonly suggestionIcons: Readonly<Record<SuggestionIconSlot, ThemeInterfaceImageVisual>>;
+    readonly projectIcons: readonly ThemeInterfaceImageVisual[];
   };
   readonly layout: ThemeLayout;
   readonly modules: Readonly<Record<ThemeLayoutModule["id"], ThemeLayoutModule>>;
@@ -174,6 +224,12 @@ export function createThemeVisualModel(theme: ThemeVisualSource): ThemeVisualMod
   const modules = Object.fromEntries(
     theme.layout.modules.map((module) => [module.id, { ...module }]),
   ) as Record<ThemeLayoutModule["id"], ThemeLayoutModule>;
+  const localized: Partial<Record<ThemeLocale, readonly CompiledWelcomeLine[]>> = {};
+  for (const locale of ["zh-CN", "en"] as const) {
+    const value = theme.home?.welcome.localized[locale];
+    if (value) localized[locale] = compileWelcomeLines(value.lines);
+  }
+  const hasWelcome = Object.keys(localized).length > 0;
   return {
     appearance: {
       mode: theme.appearance,
@@ -188,6 +244,37 @@ export function createThemeVisualModel(theme: ThemeVisualSource): ThemeVisualMod
       uiWeight: theme.typography.uiWeight,
       codeWeight: theme.typography.codeWeight,
       lineHeight: theme.typography.lineHeight,
+    },
+    displayTypography: {
+      family: theme.typography.displayFamily,
+      ...(theme.typography.displayFontAssetKey
+        ? { fontAssetKey: theme.typography.displayFontAssetKey }
+        : {}),
+      size: theme.typography.displaySize,
+      weight: theme.typography.displayWeight,
+      lineHeight: theme.typography.displayLineHeight,
+      letterSpacingEm: theme.typography.displayLetterSpacing,
+    },
+    ...(hasWelcome ? {
+      welcome: {
+        localized,
+        ...(theme.home?.welcome.layout ? {
+          layout: {
+            anchor: theme.home.welcome.layout.anchor,
+            positionXPercent: theme.home.welcome.layout.positionX * 100,
+            positionYPercent: theme.home.welcome.layout.positionY * 100,
+            widthPercent: theme.home.welcome.layout.width * 100,
+            textAlign: theme.home.welcome.layout.textAlign,
+            hideNativeIcon: theme.home.welcome.layout.hideNativeIcon,
+          },
+        } : {}),
+      },
+    } : {}),
+    composition: {
+      layers: theme.composition.layers.map((layer) => {
+        const resolved = resolveCompositionLayer(layer);
+        return { ...resolved, asset: { ...resolved.asset } };
+      }),
     },
     background: {
       positionXPercent: theme.background.positionX * 100,
@@ -212,29 +299,41 @@ export function createThemeVisualModel(theme: ThemeVisualSource): ThemeVisualMod
         theme.assets.profileAvatar,
         theme.assets.background,
         "profileAvatar",
+        theme.interfaceImages.profileAvatarSize,
       ),
       suggestionIcons: {
         card1: resolveInterfaceImage(
           theme.assets.suggestionIcons?.card1,
           theme.assets.background,
           "card1",
+          theme.interfaceImages.suggestionIconSize,
         ),
         card2: resolveInterfaceImage(
           theme.assets.suggestionIcons?.card2,
           theme.assets.background,
           "card2",
+          theme.interfaceImages.suggestionIconSize,
         ),
         card3: resolveInterfaceImage(
           theme.assets.suggestionIcons?.card3,
           theme.assets.background,
           "card3",
+          theme.interfaceImages.suggestionIconSize,
         ),
         card4: resolveInterfaceImage(
           theme.assets.suggestionIcons?.card4,
           theme.assets.background,
           "card4",
+          theme.interfaceImages.suggestionIconSize,
         ),
       },
+      projectIcons: (theme.assets.projectIcons ?? []).map((path) => ({
+        path,
+        source: path === theme.assets.background ? "background" as const : "custom" as const,
+        positionXPercent: 50,
+        positionYPercent: 50,
+        sizePx: theme.interfaceImages.projectIconSize,
+      })),
     },
     layout: {
       ...theme.layout,

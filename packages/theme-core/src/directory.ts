@@ -1,6 +1,10 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { parseThemeDocument, type ThemeDocument } from "@open-chatgpt-skin/theme-schema";
+import {
+  parseThemeDocument,
+  themeAssetPaths,
+  type ThemeDocument,
+} from "@open-chatgpt-skin/theme-schema";
 import {
   THEME_MAX_FONT_BYTES,
   THEME_MAX_IMAGE_BYTES,
@@ -15,15 +19,6 @@ export class ThemeDirectoryError extends Error {
     super(message);
     this.name = "ThemeDirectoryError";
   }
-}
-
-function referencedPaths(theme: ThemeDocument): string[] {
-  return [
-    theme.assets.background,
-    theme.assets.portrait,
-    ...Object.values(theme.assets.decorations ?? {}),
-    ...Object.values(theme.assets.fonts ?? {}),
-  ].filter((value): value is string => Boolean(value));
 }
 
 async function readBoundedFile(
@@ -54,7 +49,7 @@ export async function loadThemeDirectory(directory: string): Promise<ValidatedTh
   }
 
   const files = new Map<string, Uint8Array>();
-  for (const name of referencedPaths(theme)) {
+  for (const name of themeAssetPaths(theme)) {
     const isFont = name.toLowerCase().endsWith(".woff2");
     files.set(name, await readBoundedFile(
       join(directory, ...name.split("/")),

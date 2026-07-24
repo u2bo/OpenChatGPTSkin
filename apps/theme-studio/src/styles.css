@@ -750,7 +750,8 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .preview-overlay,
-.preview-decorations {
+.preview-decorations,
+.preview-composition-surface {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -763,6 +764,23 @@ label:has(input[type="file"]:not(:disabled)) {
 .preview-decorations {
   z-index: 5;
   overflow: hidden;
+}
+
+.preview-composition-surface {
+  z-index: 0;
+  overflow: visible;
+}
+
+.preview-composition-surface[data-composition-surface="viewport"] {
+  z-index: 2;
+}
+
+.preview-composition-surface img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  height: auto;
+  pointer-events: none;
 }
 
 .preview-font-warning {
@@ -968,6 +986,14 @@ label:has(input[type="file"]:not(:disabled)) {
   flex: 0 0 auto;
 }
 
+.codex-project-image {
+  flex: 0 0 auto;
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
 .codex-project-group strong {
   overflow: hidden;
   font-size: 9px;
@@ -1101,6 +1127,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .codex-hero {
+  position: relative;
   display: grid;
   place-items: center;
   align-content: end;
@@ -1123,11 +1150,20 @@ label:has(input[type="file"]:not(:disabled)) {
   max-width: 90%;
   margin: 0;
   color: var(--preview-text);
-  font-size: clamp(18px, 2.4vw, 31px);
-  font-weight: 400;
-  letter-spacing: -0.045em;
-  line-height: 1.15;
+  font-family: var(--preview-display-family), var(--preview-ui-family), sans-serif;
+  font-size: clamp(18px, 2.4vw, var(--preview-display-size));
+  font-weight: var(--preview-display-weight);
+  letter-spacing: var(--preview-display-letter-spacing);
+  line-height: var(--preview-display-line-height);
   text-align: center;
+}
+
+.codex-hero[data-custom-welcome-layout="true"] {
+  display: block;
+}
+
+.codex-hero h2 span {
+  display: block;
 }
 
 .codex-suggestions {
@@ -1159,8 +1195,8 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .codex-suggestion-image {
-  width: 18px;
-  height: 18px;
+  max-width: 64px;
+  max-height: 64px;
   border-radius: 5px;
   object-fit: cover;
 }
@@ -1564,6 +1600,7 @@ label:has(input[type="file"]:not(:disabled)) {
 .color-fields,
 .inspector-fields,
 .decoration-list,
+.composition-layer-list,
 .module-list {
   display: grid;
   gap: 10px;
@@ -1571,6 +1608,7 @@ label:has(input[type="file"]:not(:disabled)) {
 
 .color-field,
 .inspector-fields > label,
+.composition-layer-list article > label,
 .module-list article > label {
   display: grid;
   gap: 5px;
@@ -1603,6 +1641,7 @@ label:has(input[type="file"]:not(:disabled)) {
 .inspector-fields input,
 .inspector-fields select,
 .inspector-fields textarea,
+.composition-layer-list select,
 .module-list select {
   min-width: 0;
   min-height: 32px;
@@ -1626,6 +1665,12 @@ label:has(input[type="file"]:not(:disabled)) {
   border-style: dashed;
   color: #235f5a;
   background: #f4f9f8;
+}
+
+.inspector-empty-note {
+  margin: 8px 0 0;
+  color: var(--app-muted, #71807d);
+  font-size: 10px;
 }
 
 .range-field {
@@ -1677,6 +1722,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .decoration-list article,
+.composition-layer-list article,
 .module-list article,
 .version-current {
   display: grid;
@@ -1688,6 +1734,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .decoration-list article header,
+.composition-layer-list article header,
 .module-list article header {
   display: flex;
   justify-content: space-between;
@@ -1696,6 +1743,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 .decoration-list article header button,
+.composition-layer-list article header button,
 .module-list article header button {
   min-width: 27px;
   min-height: 26px;
@@ -2208,7 +2256,7 @@ label:has(input[type="file"]:not(:disabled)) {
   min-height: 24px;
   flex: 1;
   border-radius: 16px;
-  background-image: url("/api/theme-preview?source=builtin&id=mountain-mist&version=1.2.2");
+  background-image: var(--home-sidebar-preview, none);
   background-position: center;
   background-size: cover;
   opacity: 0.28;
@@ -2869,6 +2917,7 @@ label:has(input[type="file"]:not(:disabled)) {
 
 [data-studio-theme] .color-field,
 [data-studio-theme] .inspector-fields > label,
+[data-studio-theme] .composition-layer-list article > label,
 [data-studio-theme] .module-list article > label,
 [data-studio-theme] .range-field,
 [data-studio-theme] .version-current span,
@@ -2881,6 +2930,7 @@ label:has(input[type="file"]:not(:disabled)) {
 [data-studio-theme] .inspector-fields input,
 [data-studio-theme] .inspector-fields select,
 [data-studio-theme] .inspector-fields textarea,
+[data-studio-theme] .composition-layer-list select,
 [data-studio-theme] .module-list select,
 [data-studio-theme] .color-control > input[type="color"] {
   color: var(--app-text);
@@ -2889,6 +2939,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 [data-studio-theme] .decoration-list article,
+[data-studio-theme] .composition-layer-list article,
 [data-studio-theme] .module-list article,
 [data-studio-theme] .version-current,
 [data-studio-theme] .version-list li {
@@ -2898,6 +2949,7 @@ label:has(input[type="file"]:not(:disabled)) {
 }
 
 [data-studio-theme] .decoration-list article header button,
+[data-studio-theme] .composition-layer-list article header button,
 [data-studio-theme] .module-list article header button {
   color: var(--app-muted);
   border-color: var(--app-border);

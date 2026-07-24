@@ -137,6 +137,64 @@ describe("validateThemeBundle", () => {
     expect(schemaError).toMatchObject({ code: "THEME_SCHEMA_INVALID" });
   });
 
+  it("preserves public theme schema error codes", () => {
+    expect(() => validateThemeBundle({
+      ...baseTheme,
+      schemaVersion: 99,
+    }, new Map([
+      ["assets/background.webp", webp()],
+    ]))).toThrow(expect.objectContaining({
+      code: "THEME_SCHEMA_VERSION_UNSUPPORTED",
+    }));
+  });
+
+  it("reports a missing display font with the public display-font code", () => {
+    const migrated = validateThemeBundle(baseTheme, new Map([
+      ["assets/background.webp", webp()],
+    ])).theme;
+    const withDisplayFont = {
+      ...migrated,
+      assets: {
+        ...migrated.assets,
+        fonts: { display: "fonts/display.woff2" },
+      },
+      typography: {
+        ...migrated.typography,
+        displayFontAssetKey: "display",
+      },
+    };
+
+    expect(() => validateThemeBundle(withDisplayFont, new Map([
+      ["assets/background.webp", webp()],
+    ]))).toThrow(expect.objectContaining({
+      code: "THEME_DISPLAY_FONT_MISSING",
+    }));
+  });
+
+  it("reports an invalid display font signature with the public display-font code", () => {
+    const migrated = validateThemeBundle(baseTheme, new Map([
+      ["assets/background.webp", webp()],
+    ])).theme;
+    const withDisplayFont = {
+      ...migrated,
+      assets: {
+        ...migrated.assets,
+        fonts: { display: "fonts/display.woff2" },
+      },
+      typography: {
+        ...migrated.typography,
+        displayFontAssetKey: "display",
+      },
+    };
+
+    expect(() => validateThemeBundle(withDisplayFont, new Map([
+      ["assets/background.webp", webp()],
+      ["fonts/display.woff2", new TextEncoder().encode("not woff2")],
+    ]))).toThrow(expect.objectContaining({
+      code: "THEME_DISPLAY_FONT_MISSING",
+    }));
+  });
+
   it("rejects missing, undeclared, disguised, and colliding files", () => {
     expect(() => validateThemeBundle(baseTheme, new Map())).toThrow(/missing/i);
     expect(() => validateThemeBundle(baseTheme, new Map([

@@ -19,7 +19,7 @@ This guide covers two supported customization paths:
 | AI-packaged `.ocskin` | Git/CLI users, batch generation, precise configuration | Reusable, reviewable, PR-friendly | Local paths, rights, visual direction |
 | Theme Studio UI | Visual iteration and immediate preview | Fast, validated, no handwritten JSON | No schema knowledge required |
 
-Both workflows produce the same Theme Schema v3 data and can import/export each other. A practical approach is to find the desired look in Theme Studio, export it, and use AI packaging only for automation or batch work.
+Both workflows produce the same Theme Schema v4 data and can import/export each other. A practical approach is to find the desired look in Theme Studio, export it, and use AI packaging only for automation or batch work.
 
 ## Customizable areas
 
@@ -64,7 +64,7 @@ Attach your local assets to Codex or another coding agent, open the OpenChatGPTS
 
 ```text
 You are working inside the OpenChatGPTSkin repository. Package my supplied local assets as a safe,
-validated Theme Schema v3 theme and .ocskin file. Do not modify Runtime, Theme Studio, or unrelated code.
+validated Theme Schema v4 theme and .ocskin file. Do not modify Runtime, Theme Studio, or unrelated code.
 
 Theme requirements:
 - Name: <theme name>
@@ -84,7 +84,7 @@ Constraints:
 2. Create theme.json, assets/, and an optional preview.webp in a new theme directory.
 3. Use only local PNG/JPEG/WebP/WOFF2 assets I explicitly supplied. Do not download remote assets.
 4. Do not add JavaScript, HTML, CSS, executables, arbitrary DOM selectors, or hidden fallbacks.
-5. Configure the complete Theme Schema v3 semantic color set. Primary, input, and code text
+5. Configure the complete Theme Schema v4 semantic color set. Primary, input, and code text
    must pass Theme Studio's contrast gate.
 6. Derive positionX/positionY, safeArea, overlay, brightness, and surface values from the artwork,
    keeping menus, settings, history, tasks, terminals, and composers readable in real Codex.

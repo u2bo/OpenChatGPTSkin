@@ -1,6 +1,7 @@
 import { RuntimeThemeError } from "./errors.js";
 import {
   applyExpression,
+  preflightExpression,
   PROBE_EXPRESSION,
   REMOVE_EXPRESSION,
   VERIFY_EXPRESSION,
@@ -8,6 +9,7 @@ import {
 } from "./scripts.js";
 import type {
   AdapterProbe,
+  AdapterPreflight,
   AdapterVerification,
   CdpRuntimeClient,
   CompiledTheme,
@@ -21,9 +23,7 @@ const CONTROLLED_IMAGE_DATA_URL =
 
 function assertControlledImageDataUrls(theme: CompiledTheme): void {
   if (!CONTROLLED_IMAGE_DATA_URL.test(theme.backgroundDataUrl) ||
-    theme.decorations.some((decoration) =>
-      decoration.dataUrl !== undefined && !CONTROLLED_IMAGE_DATA_URL.test(decoration.dataUrl)
-    ) || theme.interfaceImagery.dataUrls.some((url) =>
+    theme.assetDataUrls.some((url) =>
       !CONTROLLED_IMAGE_DATA_URL.test(url)
     )) {
     throw new RuntimeThemeError("THEME_APPLY_FAILED", "compiled image data URL is invalid");
@@ -80,8 +80,29 @@ export class CurrentCodexAdapter implements RuntimeThemeAdapter {
     const verification = await this.verify();
     if (!verification.valid) {
       await this.remove();
+      if (!verification.welcomeValid) {
+        throw new RuntimeThemeError(
+          "THEME_HOME_WELCOME_UNSUPPORTED",
+          JSON.stringify(verification),
+        );
+      }
+      if (!verification.requiredLayersResolved) {
+        throw new RuntimeThemeError(
+          "THEME_REQUIRED_LAYER_UNRESOLVED",
+          JSON.stringify(verification),
+        );
+      }
       throw new RuntimeThemeError("THEME_VERIFY_FAILED", JSON.stringify(verification));
     }
+  }
+
+  async preflight(theme: CompiledTheme): Promise<AdapterPreflight> {
+    assertControlledImageDataUrls(theme);
+    const probe = await this.probe();
+    if (!probe.compatible) {
+      throw new RuntimeThemeError("ADAPTER_INCOMPATIBLE", probe.missing.join(", "));
+    }
+    return this.client.evaluate<AdapterPreflight>(preflightExpression(theme));
   }
 
   async verify(): Promise<AdapterVerification> {
@@ -91,6 +112,8 @@ export class CurrentCodexAdapter implements RuntimeThemeAdapter {
     return {
       ...result,
       valid: result.themeMarkers === 1 &&
+        result.welcomeValid &&
+        result.requiredLayersResolved &&
         result.fontMarkers <= 1 &&
         result.decorationMarkers === 1 &&
         result.backgroundReady &&

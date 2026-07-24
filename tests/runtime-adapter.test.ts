@@ -33,7 +33,7 @@ function clientFor(
       pointerEvents: node.style.pointerEvents,
       backgroundColor: node.style.backgroundColor || "rgba(0, 0, 0, 0)",
       backgroundImage: node.style.backgroundImage || "none",
-      fontSize: node.tagName === "H1" ? "32px" : "14px",
+      fontSize: node.dataset.fontSize ?? (node.tagName === "H1" ? "32px" : "14px"),
     }),
   });
   class TestImage {
@@ -77,11 +77,11 @@ function clientFor(
     },
   });
   for (const node of document.querySelectorAll<HTMLElement>("[data-rect]")) {
-    const [left, top, width, height] = (node.dataset.rect ?? "0,0,0,0")
-      .split(",")
-      .map(Number);
     Object.defineProperty(node, "getBoundingClientRect", {
       value: () => {
+        const [left, top, width, height] = (node.dataset.rect ?? "0,0,0,0")
+          .split(",")
+          .map(Number);
         const relief = Number.parseFloat(document.documentElement.style
           .getPropertyValue("--ocs-home-overlap-relief")) || 0;
         const adjustedTop = node.id === "native-suggestions" ? top - relief : top;
@@ -116,8 +116,8 @@ function compiledTheme() {
     backgroundDataUrl: "data:image/webp;base64,AA==",
     themeCss: ":root{--ocs-accent:#4f8f78}body{background-image:var(--ocs-background-image)}",
     fontCss: "",
+    assetDataUrls: [],
     interfaceImagery: {
-      dataUrls: [],
       profileAvatar: {
         asset: "background" as const,
         positionXPercent: 50,
@@ -154,11 +154,549 @@ function compiledTheme() {
       scale: 1,
       placement: "background" as const,
     }],
+    compositionLayers: [],
     totalBytes: 100,
   };
 }
 
+function compiledWelcomeTheme() {
+  return {
+    ...compiledTheme(),
+    welcome: {
+      localized: {
+        "zh-CN": [
+          [
+            { kind: "text" as const, value: "在「" },
+            { kind: "projectName" as const },
+            { kind: "text" as const, value: "」中，" },
+          ],
+          [{ kind: "text" as const, value: "你想一起打造什么呢？" }],
+        ],
+      },
+      displayFamily: "Noto Serif SC",
+      displaySizePx: 42,
+      displayWeight: 500,
+      displayLineHeight: 1.45,
+      displayLetterSpacingEm: 0.04,
+      layout: {
+        anchor: "top-left" as const,
+        positionXPercent: 6,
+        positionYPercent: 46,
+        widthPercent: 76,
+        textAlign: "left" as const,
+      },
+    },
+  };
+}
+
+function compiledInterfaceTheme() {
+  const base = compiledTheme();
+  return {
+    ...base,
+    assetDataUrls: [
+      "data:image/webp;base64,AQ==",
+      "data:image/webp;base64,Ag==",
+      "data:image/webp;base64,Aw==",
+      "data:image/webp;base64,BA==",
+    ],
+    interfaceImagery: {
+      profileAvatar: {
+        ...base.interfaceImagery.profileAvatar,
+        sizePx: 24,
+      },
+      suggestionIcons: Object.fromEntries(Object.entries(base.interfaceImagery.suggestionIcons)
+        .map(([slot, image], index) => [slot, {
+          ...image,
+          asset: index,
+          sizePx: 36,
+        }])),
+      projectIcons: [0, 1, 2, 3].map((asset) => ({
+        asset,
+        positionXPercent: 50,
+        positionYPercent: 50,
+        sizePx: 20,
+      })),
+    },
+  };
+}
+
+function compiledLayerTheme() {
+  return {
+    ...compiledWelcomeTheme(),
+    assetDataUrls: ["data:image/webp;base64,AA=="],
+    compositionLayers: [{
+      id: "hero-signature",
+      asset: 0,
+      surface: "home-hero" as const,
+      anchor: "top-left" as const,
+      positionXPercent: 10,
+      positionYPercent: 8,
+      widthPercent: 22,
+      opacity: 1,
+      rotationDeg: -3,
+      required: true,
+    }],
+  };
+}
+
 describe("CurrentCodexAdapter", () => {
+  it("uses the visible application language when html lang is stale", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="en">')
+      .replace("Tasks", "新建任务")
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+
+    await expect(client.evaluate(
+      'document.querySelector(\'[data-open-chatgpt-skin="welcome"]\')?.textContent ?? null',
+    )).resolves.toBe("在「DataMate」中，你想一起打造什么呢？");
+  });
+
+  it("renders localized welcome with the real project name", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+
+    await expect(client.evaluate(`(() => ({
+      welcome: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.textContent ?? null,
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+      left: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.left ?? null,
+      top: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.top ?? null,
+      width: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.width ?? null,
+      textAlign: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.style.textAlign ?? null,
+    }))()`)).resolves.toEqual({
+      welcome: "在「DataMate」中，你想一起打造什么呢？",
+      nativeVisibility: "hidden",
+      left: "428px",
+      top: "182.8px",
+      width: "608px",
+      textAlign: "left",
+    });
+  });
+
+  it("supports the current nested home title without semantic heading tags", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace(
+        '<h1 data-rect="500,180,560,48">What should we build?</h1>',
+        '<div class="heading-xl" data-font-size="28px" data-rect="500,180,560,48">' +
+          '<span class="group/title" data-font-size="28px" ' +
+            'data-rect="500,180,560,48">What should we build in ' +
+            '<button data-font-size="28px" data-rect="720,180,120,48">DataMate</button>?</span>' +
+        '</div>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await expect(adapter.preflight(compiledWelcomeTheme())).resolves.toEqual({
+      valid: true,
+      welcomeSupported: true,
+      requiredLayersResolved: true,
+    });
+    await adapter.apply(compiledWelcomeTheme());
+
+    await expect(client.evaluate(`(() => ({
+      welcome: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.textContent ?? null,
+      nativeVisibility: document.querySelector('.heading-xl')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual({
+      welcome: "在「DataMate」中，你想一起打造什么呢？",
+      nativeVisibility: "hidden",
+    });
+  });
+
+  it("keeps the native heading when the project name is unavailable", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+
+    await expect(client.evaluate(`(() => ({
+      welcome: document.querySelector('[data-open-chatgpt-skin="welcome"]'),
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual({
+      welcome: null,
+      nativeVisibility: "",
+    });
+  });
+
+  it("renders one non-interactive exact layer after repeated reconciliation", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex", html, { mutationController });
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledLayerTheme());
+    mutationController.flush?.();
+    mutationController.flush?.();
+    await client.evaluate(`(() => {
+      document.querySelector('#native-hero').dataset.rect = "410,120,760,180";
+      window.dispatchEvent(new window.Event("resize"));
+    })()`);
+
+    await expect(client.evaluate(`(() => {
+      const host = document.querySelector('[data-open-chatgpt-skin="composition-layer"]');
+      const layer = host?.querySelector('[data-open-chatgpt-skin-layer-id="hero-signature"]');
+      return {
+        hosts: document.querySelectorAll('[data-open-chatgpt-skin="composition-layer"]').length,
+        layers: document.querySelectorAll('[data-open-chatgpt-skin-layer-id]').length,
+        owner: host?.dataset.openChatgptSkinOwner ?? null,
+        hostPointerEvents: host?.style.pointerEvents ?? null,
+        layerPointerEvents: layer?.style.pointerEvents ?? null,
+        ariaHidden: layer?.getAttribute('aria-hidden') ?? null,
+        tabIndex: layer?.tabIndex ?? null,
+        width: layer?.style.width ?? null,
+        transform: layer?.style.transform ?? null,
+        hostLeft: host?.style.left ?? null,
+        hostTop: host?.style.top ?? null,
+      };
+    })()`)).resolves.toEqual({
+      hosts: 1,
+      layers: 1,
+      owner: "mountain-mist",
+      hostPointerEvents: "none",
+      layerPointerEvents: "none",
+      ariaHidden: "true",
+      tabIndex: -1,
+      width: "22%",
+      transform: "translate(0%, 0%) rotate(-3deg)",
+      hostLeft: "410px",
+      hostTop: "120px",
+    });
+  });
+
+  it("verifies the managed welcome and required exact layers", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const adapter = new CurrentCodexAdapter(clientFor("https://chatgpt.com/codex", html));
+
+    await adapter.apply(compiledLayerTheme());
+
+    await expect(adapter.verify()).resolves.toMatchObject({
+      valid: true,
+      welcomeValid: true,
+      requiredLayersResolved: true,
+      managedLayerCount: 1,
+    });
+  });
+
+  it("repairs managed welcome text drift before verification", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+    await client.evaluate(`document.querySelector(
+      '[data-open-chatgpt-skin="welcome"] > div'
+    ).textContent = "tampered"`);
+
+    await expect(adapter.verify()).resolves.toMatchObject({
+      valid: true,
+      welcomeValid: true,
+    });
+    await expect(client.evaluate(
+      'document.querySelector("[data-open-chatgpt-skin=welcome]")?.textContent',
+    )).resolves.toBe("在「DataMate」中，你想一起打造什么呢？");
+  });
+
+  it("removes welcome and exact layers while restoring the native heading", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledLayerTheme());
+    await adapter.remove();
+
+    await expect(client.evaluate(`(() => ({
+      managedContent: document.querySelectorAll(
+        '[data-open-chatgpt-skin="welcome"], [data-open-chatgpt-skin="composition-layer"]'
+      ).length,
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual({
+      managedContent: 0,
+      nativeVisibility: "",
+    });
+  });
+
+  it("preflights a candidate without mutating the active theme", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledTheme());
+    const before = await client.evaluate(`(() => ({
+      managed: document.querySelectorAll('[data-open-chatgpt-skin]').length,
+      owner: document.querySelector('[data-open-chatgpt-skin="theme"]')
+        ?.dataset.openChatgptSkinOwner ?? null,
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`);
+
+    await expect(adapter.preflight(compiledLayerTheme())).resolves.toEqual({
+      valid: true,
+      welcomeSupported: true,
+      requiredLayersResolved: true,
+    });
+    await expect(client.evaluate(`(() => ({
+      managed: document.querySelectorAll('[data-open-chatgpt-skin]').length,
+      owner: document.querySelector('[data-open-chatgpt-skin="theme"]')
+        ?.dataset.openChatgptSkinOwner ?? null,
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual(before);
+  });
+
+  it("reports an unsupported welcome when the active home heading is ambiguous", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace(
+        '<h1 data-rect="500,180,560,48">What should we build?</h1>',
+        '<h1 data-rect="500,180,560,48">What should we build?</h1>' +
+          '<h2 data-rect="500,230,560,40">Another home heading</h2>',
+      )
+      .replace("Example workspace", "DataMate");
+    const adapter = new CurrentCodexAdapter(clientFor("https://chatgpt.com/codex", html));
+
+    await expect(adapter.preflight(compiledWelcomeTheme())).resolves.toEqual({
+      valid: false,
+      welcomeSupported: false,
+      requiredLayersResolved: true,
+    });
+  });
+
+  it("reports an unresolved required layer on an applicable missing surface", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace(/<section id="native-suggestions"[\s\S]*?<\/section>/, "")
+      .replace("Example workspace", "DataMate");
+    const adapter = new CurrentCodexAdapter(clientFor("https://chatgpt.com/codex", html));
+    const theme = {
+      ...compiledLayerTheme(),
+      compositionLayers: [{
+        ...compiledLayerTheme().compositionLayers[0],
+        surface: "suggestions" as const,
+      }],
+    };
+
+    await expect(adapter.preflight(theme)).resolves.toEqual({
+      valid: false,
+      welcomeSupported: true,
+      requiredLayersResolved: false,
+    });
+  });
+
+  it("rejects and cleans a candidate whose required layer cannot be verified", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace(/<section id="native-suggestions"[\s\S]*?<\/section>/, "")
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+    const theme = {
+      ...compiledLayerTheme(),
+      compositionLayers: [{
+        ...compiledLayerTheme().compositionLayers[0],
+        surface: "suggestions" as const,
+      }],
+    };
+
+    await expect(adapter.apply(theme)).rejects.toMatchObject({
+      code: "THEME_REQUIRED_LAYER_UNRESOLVED",
+    });
+    await expect(client.evaluate(
+      'document.querySelectorAll("[data-open-chatgpt-skin]").length',
+    )).resolves.toBe(0);
+  });
+
+  it("rejects and cleans a candidate when the active home welcome is ambiguous", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace(
+        '<h1 data-rect="500,180,560,48">What should we build?</h1>',
+        '<h1 data-rect="500,180,560,48">What should we build?</h1>' +
+          '<h1 data-rect="500,230,560,40">Another home heading</h1>',
+      )
+      .replace("Example workspace", "DataMate");
+    const client = clientFor("https://chatgpt.com/codex", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await expect(adapter.apply(compiledWelcomeTheme())).rejects.toMatchObject({
+      code: "THEME_HOME_WELCOME_UNSUPPORTED",
+    });
+    await expect(client.evaluate(
+      'document.querySelectorAll("[data-open-chatgpt-skin]").length',
+    )).resolves.toBe(0);
+  });
+
+  it("updates the managed welcome after a project switch without duplicating it", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex", html, { mutationController });
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+    await client.evaluate(`(() => {
+      document.querySelector('[aria-label="Switch project"]').textContent = "Atlas";
+    })()`);
+    mutationController.flush?.();
+
+    await expect(client.evaluate(`(() => ({
+      count: document.querySelectorAll('[data-open-chatgpt-skin="welcome"]').length,
+      text: document.querySelector('[data-open-chatgpt-skin="welcome"]')?.textContent ?? null,
+    }))()`)).resolves.toEqual({
+      count: 1,
+      text: "在「Atlas」中，你想一起打造什么呢？",
+    });
+  });
+
+  it("keeps unchanged managed welcome nodes stable during reconciliation", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex", html, { mutationController });
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledWelcomeTheme());
+    await client.evaluate(`(() => {
+      document.querySelector('[data-open-chatgpt-skin="welcome"] > div')
+        .setAttribute('data-welcome-node-stable', 'true');
+    })()`);
+    mutationController.flush?.();
+
+    await expect(client.evaluate(`(() => ({
+      count: document.querySelectorAll('[data-open-chatgpt-skin="welcome"]').length,
+      stable: document.querySelector(
+        '[data-open-chatgpt-skin="welcome"] > div'
+      )?.getAttribute('data-welcome-node-stable') ?? null,
+    }))()`)).resolves.toEqual({ count: 1, stable: "true" });
+  });
+
+  it("removes home-only content on task navigation and restores it on return", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace("<html>", '<html lang="zh-CN">')
+      .replace(
+        '<section id="native-content" data-rect="360,80,840,620">',
+        '<section id="native-content" data-rect="360,80,840,620">' +
+          '<span data-testid="home-icon" data-rect="360,80,20,20"></span>',
+      )
+      .replace("Example workspace", "DataMate");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex", html, { mutationController });
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledLayerTheme());
+    await client.evaluate('window.location.href = "https://chatgpt.com/codex/tasks/123"');
+    mutationController.flush?.();
+    await expect(client.evaluate(`(() => ({
+      welcome: document.querySelectorAll('[data-open-chatgpt-skin="welcome"]').length,
+      layers: document.querySelectorAll('[data-open-chatgpt-skin="composition-layer"]').length,
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual({ welcome: 0, layers: 0, nativeVisibility: "" });
+
+    await client.evaluate('window.location.href = "https://chatgpt.com/codex"');
+    mutationController.flush?.();
+    await expect(client.evaluate(`(() => ({
+      welcome: document.querySelectorAll('[data-open-chatgpt-skin="welcome"]').length,
+      layers: document.querySelectorAll('[data-open-chatgpt-skin="composition-layer"]').length,
+      nativeVisibility: document.querySelector('#native-hero h1')?.style.visibility ?? null,
+    }))()`)).resolves.toEqual({ welcome: 1, layers: 1, nativeVisibility: "hidden" });
+  });
+
   it("applies unique non-interactive markers and removes only its own nodes", async () => {
     const html = await readFile("tests/fixtures/runtime/codex-page.html", "utf8");
     const client = clientFor("https://chatgpt.com/codex", html);
@@ -223,6 +761,106 @@ describe("CurrentCodexAdapter", () => {
     expect(await client.evaluate<number>(
       'document.querySelectorAll("[data-open-chatgpt-skin-interface-image],[data-open-chatgpt-skin-native-icon],[data-open-chatgpt-skin-interface-host]").length',
     )).toBe(0);
+  });
+
+  it("themes the current quota banner without mistaking it for the project picker", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace(
+        '<div id="native-project-picker-stack" class="z-0 relative -mb-2" data-rect="430,530,700,43">',
+        '<aside id="current-quota-banner" class="bg-token-main-surface-primary" ' +
+          'style="background-color: rgb(31, 31, 31)" data-rect="430,470,700,48">' +
+          '<h3 data-rect="450,480,420,20">你已达到工作空间额度上限</h3>' +
+          '<button data-rect="980,480,100,24">通知所有者</button>' +
+        '</aside>' +
+        '<div id="native-project-picker-stack" class="z-0 relative -mb-2" data-rect="430,530,700,43">',
+      );
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledTheme());
+
+    await expect(client.evaluate(`(() => ({
+      banner: document.querySelector('#current-quota-banner')
+        ?.getAttribute('data-open-chatgpt-skin-surface') ?? null,
+      picker: document.querySelector('#native-project-picker')
+        ?.getAttribute('data-open-chatgpt-skin-surface') ?? null,
+    }))()`)).resolves.toEqual({ banner: "status-banner", picker: "project-picker" });
+  });
+
+  it("uses the visible footer account avatar instead of an offscreen semantic match", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace(
+        '<button id="native-account-button" aria-label="Account menu" data-rect="12,708,250,40">',
+        '<button id="offscreen-account-button" aria-label="个人设置" data-rect="12,1600,250,40">' +
+          '<svg data-rect="20,1608,24,24" aria-hidden="true"></svg>Hidden user' +
+        '</button>' +
+        '<button id="current-account-button" aria-label="打开个人资料菜单" data-rect="12,708,250,40">' +
+          '<span id="current-account-avatar" class="rounded-full" data-rect="20,716,18,18">J</span>',
+      )
+      .replace(
+        /<span id="native-account-avatar"[\s\S]*?<\/span>/,
+        '<span data-rect="48,714,120,24">JYSoft</span>',
+      );
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledInterfaceTheme());
+
+    await expect(client.evaluate(`(() => ({
+      actualHost: document.querySelector('#current-account-button')
+        ?.getAttribute('data-open-chatgpt-skin-interface-host') ?? null,
+      offscreenHost: document.querySelector('#offscreen-account-button')
+        ?.getAttribute('data-open-chatgpt-skin-interface-host') ?? null,
+      nativeHidden: document.querySelector('#current-account-avatar')
+        ?.getAttribute('data-open-chatgpt-skin-native-icon') ?? null,
+      avatarSize: document.querySelector('[data-open-chatgpt-skin-surface="profile-avatar"]')
+        ?.style.width ?? null,
+    }))()`)).resolves.toEqual({
+      actualHost: "profile-avatar",
+      offscreenHost: null,
+      nativeHidden: "profile-avatar",
+      avatarSize: "24px",
+    });
+  });
+
+  it("replaces visible project folder icons and enlarges suggestion imagery", async () => {
+    const projectRows = ["OpenChatGPTSkin", "DataMate", "Demo Lab", "Theme Test"]
+      .map((name, index) =>
+        `<div class="sidebar-item folder-row" role="button" aria-label="${name}" ` +
+          `data-rect="12,${100 + index * 36},250,30">` +
+          `<span id="project-icon-host-${index + 1}" data-rect="16,${100 + index * 36},30,30">` +
+            `<svg id="project-native-icon-${index + 1}" ` +
+              `data-rect="23,${107 + index * 36},16,16"></svg>` +
+          `</span><span data-rect="50,${104 + index * 36},160,22">${name}</span>` +
+        `</div>`,
+      ).join("");
+    const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
+      .replace(
+        '<button id="native-account-button"',
+        `${projectRows}<button id="native-account-button"`,
+      );
+    const client = clientFor("app://-/index.html", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledInterfaceTheme());
+
+    await expect(client.evaluate(`(() => ({
+      projectImages: document.querySelectorAll(
+        '[data-open-chatgpt-skin-surface^="project-icon-"]'
+      ).length,
+      firstProjectNative: document.querySelector('#project-native-icon-1')
+        ?.getAttribute('data-open-chatgpt-skin-native-icon') ?? null,
+      firstProjectSize: document.querySelector('[data-open-chatgpt-skin-surface="project-icon-1"]')
+        ?.style.width ?? null,
+      suggestionSizes: Array.from(document.querySelectorAll(
+        '[data-open-chatgpt-skin-surface^="suggestion-icon-"]'
+      )).map((node) => node.style.width),
+    }))()`)).resolves.toEqual({
+      projectImages: 4,
+      firstProjectNative: "project-icon-1",
+      firstProjectSize: "20px",
+      suggestionSizes: ["36px", "36px", "36px", "36px"],
+    });
   });
 
   it("re-marks Codex surfaces after React replaces the rendered subtree", async () => {
@@ -399,6 +1037,18 @@ describe("CurrentCodexAdapter", () => {
     const client = clientFor("app://-/index.html", html);
     const adapter = new CurrentCodexAdapter(client);
 
+    const landingTheme = {
+      ...compiledLayerTheme(),
+      compositionLayers: [{
+        ...compiledLayerTheme().compositionLayers[0],
+        surface: "suggestions" as const,
+      }],
+    };
+    await expect(adapter.preflight(landingTheme)).resolves.toMatchObject({
+      valid: false,
+      requiredLayersResolved: false,
+    });
+
     await adapter.apply(compiledTheme());
 
     await expect(client.evaluate<Record<string, string | null | number>>(`(() => {
@@ -418,7 +1068,7 @@ describe("CurrentCodexAdapter", () => {
         searchShell: surface("#search-dialog-shell"),
       };
     })()`)).resolves.toEqual({
-      landing: null,
+      landing: "home-route",
       composer: "composer",
       composerInput: "composer-input",
       composerChromeCount: 0,
@@ -830,6 +1480,10 @@ describe("CurrentCodexAdapter", () => {
     await expect(adapter.apply({
       ...compiledTheme(),
       backgroundDataUrl: "javascript:alert(1)",
+    })).rejects.toMatchObject({ code: "THEME_APPLY_FAILED" });
+    await expect(adapter.apply({
+      ...compiledTheme(),
+      assetDataUrls: ["javascript:alert(1)"],
     })).rejects.toMatchObject({ code: "THEME_APPLY_FAILED" });
     expect(await client.evaluate<number>(
       "document.querySelectorAll('[data-open-chatgpt-skin]').length",

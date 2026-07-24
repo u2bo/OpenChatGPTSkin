@@ -32,6 +32,7 @@ export interface LaunchReadinessOptions {
 
 const DEFAULT_PORT_READY_TIMEOUT_MS = 10_000;
 const DEFAULT_WINDOW_ACTIVATION_TIMEOUT_MS = 20_000;
+const DIRECT_LAUNCH_WINDOW_GRACE_MS = 5_000;
 
 function readinessBounds(
   options: LaunchReadinessOptions,
@@ -98,6 +99,63 @@ function isTrustedActivationRoot(
   const startedAt = Date.parse(root.startedAt);
   return Number.isFinite(launchedAt) && Number.isFinite(startedAt) &&
     startedAt >= launchedAt - 1_000;
+}
+
+type ActivationInspection =
+  | { readonly ready: false }
+  | { readonly ready: true; readonly receipt: LaunchReceipt };
+
+async function inspectActivation(
+  provider: DesktopRuntimeProvider,
+  receipt: LaunchReceipt,
+): Promise<ActivationInspection> {
+  const roots = await provider.listCodexRoots();
+  if (roots.some((root) => !isTrustedActivationRoot(receipt, root, provider.platform))) {
+    throw new RuntimeError(
+      "CODEX_WINDOW_ACTIVATION_FAILED",
+      "Application activation created an untrusted Codex root",
+    );
+  }
+  if (roots.length !== 1) return { ready: false };
+
+  const activatedReceipt = withManagedRoot(receipt, roots[0]!, provider.platform);
+  const windows = await provider.inspectManagedWindows(
+    activatedReceipt.root.pid,
+    activatedReceipt.root.startedAt,
+  );
+  if (!windows.rootExists) {
+    throw new RuntimeError(
+      "CODEX_WINDOW_ACTIVATION_FAILED",
+      "Managed Codex root exited during application activation",
+    );
+  }
+  return windows.activationReady
+    ? { ready: true, receipt: activatedReceipt }
+    : { ready: false };
+}
+
+async function waitForActivationReadiness(
+  provider: DesktopRuntimeProvider,
+  receipt: LaunchReceipt,
+  timeoutMs: number,
+  intervalMs: number,
+): Promise<LaunchReceipt | null> {
+  const deadline = Date.now() + timeoutMs;
+  let inspectionError: RuntimeError | null = null;
+  do {
+    try {
+      const activation = await inspectActivation(provider, receipt);
+      inspectionError = null;
+      if (activation.ready) return activation.receipt;
+    } catch (error) {
+      if (!isTransientProcessInspectionError(error)) throw error;
+      inspectionError = error;
+    }
+    if (Date.now() >= deadline) break;
+    await delay(intervalMs);
+  } while (Date.now() < deadline);
+  if (inspectionError) throw inspectionError;
+  return null;
 }
 
 export async function launchManagedCodex(
@@ -173,57 +231,28 @@ export async function activateManagedCodexWindow(
     options,
     DEFAULT_WINDOW_ACTIVATION_TIMEOUT_MS,
   );
-  await provider.activateCodexApplication();
-  const deadline = Date.now() + timeoutMs;
-  let inspectionError: RuntimeError | null = null;
-  while (Date.now() < deadline) {
-    let roots: readonly ProcessIdentity[];
-    try {
-      roots = await provider.listCodexRoots();
-    } catch (error) {
-      if (!isTransientProcessInspectionError(error)) throw error;
-      inspectionError = error;
-      await delay(intervalMs);
-      continue;
-    }
-    inspectionError = null;
-    if (roots.some((root) => !isTrustedActivationRoot(receipt, root, provider.platform))) {
-      throw new RuntimeError(
-        "CODEX_WINDOW_ACTIVATION_FAILED",
-        "Application activation created an untrusted Codex root",
-      );
-    }
-    if (roots.length !== 1) {
-      await delay(intervalMs);
-      continue;
-    }
-    const activatedReceipt = withManagedRoot(receipt, roots[0]!, provider.platform);
-    let windows: Awaited<ReturnType<DesktopRuntimeProvider["inspectManagedWindows"]>>;
-    try {
-      windows = await provider.inspectManagedWindows(
-        activatedReceipt.root.pid,
-        activatedReceipt.root.startedAt,
-      );
-    } catch (error) {
-      if (!isTransientProcessInspectionError(error)) throw error;
-      inspectionError = error;
-      await delay(intervalMs);
-      continue;
-    }
-    inspectionError = null;
-    if (!windows.rootExists) {
-      throw new RuntimeError(
-        "CODEX_WINDOW_ACTIVATION_FAILED",
-        "Managed Codex root exited during application activation",
-      );
-    }
-    if (windows.activationReady) {
-      await waitForManagedPort(provider, activatedReceipt, { timeoutMs, intervalMs });
-      return activatedReceipt;
-    }
-    await delay(intervalMs);
+  const directlyLaunched = await waitForActivationReadiness(
+    provider,
+    receipt,
+    Math.min(timeoutMs, DIRECT_LAUNCH_WINDOW_GRACE_MS),
+    intervalMs,
+  );
+  if (directlyLaunched) {
+    await waitForManagedPort(provider, directlyLaunched, { timeoutMs, intervalMs });
+    return directlyLaunched;
   }
-  if (inspectionError) throw inspectionError;
+
+  await provider.activateCodexApplication();
+  const activated = await waitForActivationReadiness(
+    provider,
+    receipt,
+    timeoutMs,
+    intervalMs,
+  );
+  if (activated) {
+    await waitForManagedPort(provider, activated, { timeoutMs, intervalMs });
+    return activated;
+  }
   throw new RuntimeError(
     "CODEX_WINDOW_ACTIVATION_FAILED",
     "Managed Codex application activation did not become ready",

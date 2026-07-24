@@ -48,7 +48,7 @@ describe("project documentation", () => {
     expect(readme).not.toContain("初音未来或迪丽热巴");
     expect(readme).toContain("npm run runtime:probe -- --record-evidence");
     expect(readme).toContain("npm run runtime:probe -- --finalize");
-    expect(readme).toContain("不会强制结束已有 Codex");
+    expect(readme).toContain("不会强制结束已有 ChatGPT");
   });
 
   it("documents the Windows compatibility gate without overstating runtime availability", async () => {
@@ -139,7 +139,6 @@ describe("project documentation", () => {
       "docs/assets/screenshots/theme-studio.webp",
       "docs/assets/screenshots/index1.webp",
       "docs/assets/screenshots/index2.webp",
-      "docs/assets/concepts/yua-mikami.png",
       "docs/assets/concepts/ichigo-hoshimiya.png",
       "docs/assets/concepts/super-saiyan-goku.png",
       "CONTRIBUTING.md",
@@ -172,7 +171,10 @@ describe("project documentation", () => {
     expect(macRuntime).toContain("尚未在真实 Mac 上完成 Codex 视觉闭环验收");
     expect(macRuntimeEn).toContain("real Mac");
     expect(macRuntimeEn).toContain("RUNTIME_ENVIRONMENT_INVALID");
-    expect(readme).toContain("OpenChatGPTSkin_0.1.0_windows_x64_Setup.exe");
+    expect(readme).toContain("OpenChatGPTSkin_0.2.0_windows_x64_Setup.exe");
+    expect(readme).toContain("docs/releases/v0.2.0.md");
+    expect(readme).not.toContain("docs/assets/concepts/yua-mikami.png");
+    expect(readmeEn).not.toContain("docs/assets/concepts/yua-mikami.png");
     expect(readme).toContain("checksums.txt");
     expect(readme).toContain("SmartScreen");
     expect(readme).toContain("默认保留个人主题");
@@ -227,12 +229,12 @@ describe("project documentation", () => {
       readFile("README.en.md", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"),
       readFile("docs/runtime-macos.en.md", "utf8"),
-      readFile("docs/releases/v0.1.0.md", "utf8"),
+      readFile("docs/releases/v0.2.0.md", "utf8"),
       readFile("CONTRIBUTING.md", "utf8"),
     ]);
     for (const name of [
-      "OpenChatGPTSkin_0.1.0_macos_arm64.dmg",
-      "OpenChatGPTSkin_0.1.0_macos_x64.dmg",
+      "OpenChatGPTSkin_0.2.0_macos_arm64.dmg",
+      "OpenChatGPTSkin_0.2.0_macos_x64.dmg",
     ]) {
       expect(readme).toContain(name);
       expect(notes).toContain(name);
@@ -246,7 +248,7 @@ describe("project documentation", () => {
     expect(runtimeEn).toContain("Control-click");
     expect(contributing).toContain("workflow_dispatch");
     expect(notes).toContain("Intel x64");
-    expect(notes).toContain("尚未完成真实 Codex 视觉闭环验收");
+    expect(notes).toContain("macOS 真实 ChatGPT 视觉闭环仍待实机验收");
     expect(readme).toContain(
       "Windows x64、macOS ARM64 和 macOS x64",
     );
@@ -256,9 +258,7 @@ describe("project documentation", () => {
     expect(contributing).toContain(
       "手动 `workflow_dispatch` 构建并上传 Windows 和两套 macOS 测试产物",
     );
-    expect(notes).toContain(
-      "手动 `workflow_dispatch` 生成全平台测试产物",
-    );
+    expect(notes).toContain("手动 `workflow_dispatch` 只生成全平台测试产物");
     expect(`${readme}\n${readmeEn}\n${runtime}\n${runtimeEn}\n${notes}`)
       .not.toContain("macOS x64/ARM64 只生成 CI contract artifact");
     expect(`${readme}\n${readmeEn}\n${runtime}\n${runtimeEn}\n${notes}`)

@@ -33,6 +33,7 @@
     "release:checksums": "tsx scripts/release/write-checksums.ts",
     "release:version": "tsx scripts/release/verify-version.ts",
     "release:node": "tsx scripts/release/fetch-node-runtime.ts",
+    "release:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release/build-windows-local.ps1",
     "release:macos": "tsx scripts/release/build-macos-distribution.ts",
     "release:acceptance:macos": "tsx scripts/release/accept-macos-distribution.ts",
     "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",

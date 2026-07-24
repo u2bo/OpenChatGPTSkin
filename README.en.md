@@ -164,9 +164,9 @@ A dark navy, glacial cyan, and aurora-violet theme for low-light environments an
 
 ### Yua Mikami Starlight `yua-mikami-starlight`
 
-A dark immersive theme built from soft-pink neon, starlight, and an authorized portrait background. It uses Theme Schema v4 localized dynamic welcome text, real project-name interpolation, four independent suggestion icons, a profile avatar, and four non-interactive visual layers. Its display typography uses lightweight `Arial` plus normal system glyph fallback instead of bundling an oversized font.
+A dark immersive theme built from soft-pink neon, starlight, and an authorized portrait background. It uses Theme Schema v4 localized dynamic welcome text, real project-name interpolation, four independent suggestion icons, project icons, a profile avatar, and four non-interactive visual layers. Its display typography uses the bundled ZCOOL XiaoWei font under the SIL Open Font License 1.1 with system-font fallback.
 
-![Yua Mikami Starlight theme concept](docs/assets/concepts/yua-mikami.png)
+![Yua Mikami Starlight theme applied in ChatGPT](docs/assets/screenshots/yua-mikami-starlight.webp)
 
 Portrait and decoration assets carry separate authorization identifiers and source hashes. Read the generated theme `LICENSE.md`; do not treat these assets as MIT-licensed.
 
@@ -230,6 +230,16 @@ npm run verify:foundation
 ```
 
 `verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all five built-in themes. Source-mode commands run from the repository root.
+
+### One-command local Windows build
+
+Windows developers can generate the same portable ZIP, per-user Setup, and SHA-256 checksum layout used by CI with one command from the repository root:
+
+```powershell
+npm run release:windows
+```
+
+The first run only requires Node.js 22, npm, and Git. If Inno Setup 6 is missing, the script downloads a pinned version from the official GitHub Release, verifies its pinned SHA-256, and uses it in portable mode from the temporary build directory without administrator access or a permanent installation. It validates and reuses complete existing dependencies, incrementally repairs missing or inconsistent dependencies from `package-lock.json`, then runs the full verification and Theme Studio build, fetches the official bundled Node.js Runtime, validates the staged payload, and packages the release. Final files are written to `artifacts/windows-x64/`. Failed builds retain and print their temporary directory for diagnosis; successful builds clean it automatically. The command intentionally skips the CI installer lifecycle test that manipulates local installation registration and the personal data directory.
 
 When upgrading from the pre-rename development build, the first CLI or Theme Studio start atomically adopts the previous personal themes, drafts, and Runtime state only when the new-brand data directory does not exist. If both directories exist, the new directory wins and neither side is merged or overwritten.
 

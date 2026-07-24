@@ -191,6 +191,7 @@ describe("project documentation", () => {
       "rose-carpet-star.webp",
       "mountain-mist.webp",
       "glacier-aurora.webp",
+      "yua-mikami-starlight.webp",
       "surface-chatgpt-work.webp",
       "surface-plugins.webp",
       "surface-settings.webp",

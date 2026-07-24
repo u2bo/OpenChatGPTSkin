@@ -54,11 +54,30 @@ func ValidateDocument(contents []byte) error {
 	return err
 }
 
+// ValidateDraftDocument permits a temporarily incomplete draft (for example a
+// background slot intentionally cleared in the editor) but keeps all schema,
+// asset-path and composition safety checks in force. Saving an archive/theme
+// still calls ValidateDocument and therefore requires a background.
+func ValidateDraftDocument(contents []byte) error {
+	_, _, err := normalizeDraftDocument(contents)
+	return err
+}
+
 // NormalizeDocument returns the canonical Schema v4 encoding together with
 // its identity. Workspace persistence uses this exact normalisation boundary
 // so Go-written draft records remain consumable by the v0.2 Node rollback host.
 func NormalizeDocument(contents []byte) ([]byte, Ref, error) {
 	normalized, header, err := normalizeDocument(contents)
+	if err != nil {
+		return nil, Ref{}, err
+	}
+	return normalized, Ref{ID: header.ID, Version: header.Version}, nil
+}
+
+// NormalizeDraftDocument mirrors the Node draft parser: it produces canonical
+// Schema v4 JSON while allowing a missing background until explicit save.
+func NormalizeDraftDocument(contents []byte) ([]byte, Ref, error) {
+	normalized, header, err := normalizeDraftDocument(contents)
 	if err != nil {
 		return nil, Ref{}, err
 	}
@@ -520,6 +539,14 @@ func writeAtomicFile(path string, contents []byte) error {
 }
 
 func normalizeDocument(contents []byte) ([]byte, themeHeader, error) {
+	return normalizeDocumentWithOptions(contents, true)
+}
+
+func normalizeDraftDocument(contents []byte) ([]byte, themeHeader, error) {
+	return normalizeDocumentWithOptions(contents, false)
+}
+
+func normalizeDocumentWithOptions(contents []byte, requireBackground bool) ([]byte, themeHeader, error) {
 	decoder := json.NewDecoder(bytes.NewReader(contents))
 	decoder.UseNumber()
 	var document map[string]any
@@ -532,9 +559,11 @@ func normalizeDocument(contents []byte) ([]byte, themeHeader, error) {
 	}
 	if version < 4 {
 		migrateToV4(document, version)
+	} else {
+		ensureV4Defaults(document)
 	}
 	document["schemaVersion"] = 4
-	if err := validateDocumentShape(document); err != nil {
+	if err := validateDocumentShape(document, requireBackground); err != nil {
 		return nil, themeHeader{}, err
 	}
 	normalized, err := json.MarshalIndent(document, "", "  ")
@@ -558,7 +587,7 @@ func schemaVersion(document map[string]any) (int, error) {
 	return int(version), err
 }
 
-func validateDocumentShape(document map[string]any) error {
+func validateDocumentShape(document map[string]any, requireBackground bool) error {
 	for name := range document {
 		switch name {
 		case "schemaVersion", "kind", "appearance", "id", "name", "description", "version", "author", "metadata", "assets", "colors", "typography", "background", "surfaces", "decorations", "layout", "rights", "interfaceImages", "home", "welcome", "composition":
@@ -579,12 +608,147 @@ func validateDocumentShape(document map[string]any) error {
 	if !ok {
 		return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme assets are invalid"}
 	}
-	if kind == "theme" {
+	if kind == "theme" && requireBackground {
 		if background, exists := assets["background"].(string); !exists || !safeThemePath(background) {
 			return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme requires a valid background asset"}
 		}
 	}
+	return validateAssetRelationships(document, assets)
+}
+
+// validateAssetRelationships is intentionally kept beside archive validation:
+// these relationships must be identical for imported, saved and exported
+// themes rather than reimplemented by each Studio route.
+func validateAssetRelationships(document, assets map[string]any) error {
+	decorations, err := stringMap(assets["decorations"], "theme decoration assets")
+	if err != nil {
+		return err
+	}
+	fonts, err := stringMap(assets["fonts"], "theme font assets")
+	if err != nil {
+		return err
+	}
+	if icons, err := stringMap(assets["suggestionIcons"], "suggestion icons"); err != nil {
+		return err
+	} else {
+		for key := range icons {
+			if key != "card1" && key != "card2" && key != "card3" && key != "card4" {
+				return Error{Code: "THEME_SCHEMA_INVALID", Message: "Suggestion icon slot is invalid"}
+			}
+		}
+	}
+	if projects, exists := assets["projectIcons"]; exists {
+		entries, ok := projects.([]any)
+		if !ok || len(entries) < 1 || len(entries) > 12 {
+			return Error{Code: "THEME_SCHEMA_INVALID", Message: "Project icons are invalid"}
+		}
+	}
+	if typography, exists := document["typography"]; exists {
+		value, ok := typography.(map[string]any)
+		if !ok {
+			return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme typography is invalid"}
+		}
+		for _, field := range []string{"uiFontAssetKey", "codeFontAssetKey", "displayFontAssetKey"} {
+			if key, exists := value[field]; exists {
+				name, ok := key.(string)
+				if !ok || fonts[name] == "" {
+					return Error{Code: "THEME_DISPLAY_FONT_MISSING", Message: "Theme font key is not declared"}
+				}
+			}
+		}
+	}
+	entries, ok := document["decorations"].([]any)
+	if !ok || len(entries) > 16 {
+		return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme decorations are invalid"}
+	}
+	for _, entry := range entries {
+		item, ok := entry.(map[string]any)
+		if !ok {
+			return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme decoration is invalid"}
+		}
+		if item["type"] == "image" {
+			key, ok := item["assetKey"].(string)
+			if !ok || decorations[key] == "" {
+				return Error{Code: "THEME_SCHEMA_INVALID", Message: "Image decoration asset is not declared"}
+			}
+		}
+	}
+	composition, ok := document["composition"].(map[string]any)
+	if !ok {
+		return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition is invalid"}
+	}
+	layers, ok := composition["layers"].([]any)
+	if !ok || len(layers) > 24 {
+		return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition layer count is invalid"}
+	}
+	seen := map[string]struct{}{}
+	for _, entry := range layers {
+		layer, ok := entry.(map[string]any)
+		if !ok {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition layer is invalid"}
+		}
+		id, ok := layer["id"].(string)
+		if !ok || id == "" || len(id) > 40 || !themeIDPattern.MatchString(id) {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition layer ID is invalid"}
+		}
+		if _, exists := seen[id]; exists {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition layer ID is duplicated"}
+		}
+		seen[id] = struct{}{}
+		asset, ok := layer["asset"].(map[string]any)
+		if !ok {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition asset is invalid"}
+		}
+		kind, ok := asset["kind"].(string)
+		if !ok || kind != "portrait" && kind != "decoration" {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition asset kind is invalid"}
+		}
+		if kind == "portrait" {
+			if portrait, ok := assets["portrait"].(string); !ok || portrait == "" {
+				return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition portrait is not declared"}
+			}
+		} else {
+			key, ok := asset["assetKey"].(string)
+			if !ok || decorations[key] == "" {
+				return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition decoration is not declared"}
+			}
+		}
+		if surface, ok := layer["surface"].(string); !ok || !validCompositionSurface(surface) {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition surface is invalid"}
+		}
+		if _, ok := layer["required"].(bool); !ok {
+			return Error{Code: "THEME_COMPOSITION_INVALID", Message: "Theme composition required flag is invalid"}
+		}
+	}
 	return nil
+}
+
+func stringMap(value any, label string) (map[string]string, error) {
+	if value == nil {
+		return map[string]string{}, nil
+	}
+	raw, ok := value.(map[string]any)
+	if !ok {
+		return nil, Error{Code: "THEME_SCHEMA_INVALID", Message: label + " are invalid"}
+	}
+	result := make(map[string]string, len(raw))
+	for key, value := range raw {
+		path, ok := value.(string)
+		if !ok || !safeThemePath(path) {
+			return nil, Error{Code: "THEME_SCHEMA_INVALID", Message: label + " contain an invalid path"}
+		}
+		result[key] = path
+	}
+	return result, nil
+}
+
+func validCompositionSurface(value string) bool {
+	for _, allowed := range []string{"viewport", "home-hero", "task-background", "content-layer", "sidebar", "composer"} {
+		if value == allowed {
+			return true
+		}
+	}
+	return false
 }
 
 func migrateToV4(document map[string]any, version int) {
@@ -599,6 +763,11 @@ func migrateToV4(document map[string]any, version int) {
 			}
 		}
 	}
+	ensureV4Defaults(document)
+	_ = version
+}
+
+func ensureV4Defaults(document map[string]any) {
 	if _, exists := document["surfaces"]; !exists {
 		document["surfaces"] = map[string]any{"baseOpacity": 0.68, "elevatedOpacity": 0.92, "terminalOpacity": 0.82, "blur": 0}
 	}
@@ -634,7 +803,6 @@ func migrateToV4(document map[string]any, version int) {
 	if _, exists := document["composition"]; !exists {
 		document["composition"] = map[string]any{"layers": []any{}}
 	}
-	_ = version
 }
 
 func headerFromDocument(contents []byte) (themeHeader, error) {

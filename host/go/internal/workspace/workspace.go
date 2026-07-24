@@ -6,6 +6,8 @@ package workspace
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -19,12 +21,14 @@ import (
 	"sync"
 	"time"
 
+	imagepipeline "github.com/u2bo/OpenChatGPTSkin/host/go/internal/image"
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
 
 const historyLimit = 50
 
 var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+var assetKeyPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 type Error struct {
 	Code       string
@@ -71,6 +75,23 @@ type CreateInput struct {
 	ThemeID            string
 	Name               string
 	ConflictResolution string
+}
+
+type UploadInput struct {
+	DraftID          string
+	ExpectedRevision int
+	Slot             string
+	AssetKey         string
+	FileName         string
+	MIMEType         string
+	Bytes            []byte
+}
+
+type ClearAssetInput struct {
+	DraftID          string
+	ExpectedRevision int
+	Slot             string
+	AssetKey         string
 }
 
 type record struct {
@@ -129,6 +150,26 @@ func (workspace *Workspace) Create(input CreateInput) (Draft, error) {
 	if err != nil {
 		return Draft{}, err
 	}
+	return workspace.createFromBundleLocked(input, bundle)
+}
+
+func (workspace *Workspace) Import(contents []byte) (Draft, error) {
+	workspace.mu.Lock()
+	defer workspace.mu.Unlock()
+	ref, err := workspace.repository.ImportArchive(contents)
+	if err != nil {
+		return Draft{}, Error{Code: "STUDIO_IMPORT_INVALID", Message: err.Error()}
+	}
+	bundle, err := workspace.repository.Read("personal", ref)
+	if err != nil {
+		return Draft{}, Error{Code: "STUDIO_IMPORT_INVALID", Message: err.Error()}
+	}
+	return workspace.createFromBundleLocked(CreateInput{
+		Source: "personal", Ref: ref, ThemeID: ref.ID, ConflictResolution: "overwrite-existing",
+	}, bundle)
+}
+
+func (workspace *Workspace) createFromBundleLocked(input CreateInput, bundle themerepo.Bundle) (Draft, error) {
 	theme, ref, err := workspace.prepareSourceTheme(bundle.Document, input)
 	if err != nil {
 		return Draft{}, err
@@ -205,7 +246,7 @@ func (workspace *Workspace) Update(draftID string, expectedRevision int, theme j
 	if err := assertRevision(record, expectedRevision); err != nil {
 		return Draft{}, err
 	}
-	normalized, ref, err := themerepo.NormalizeDocument(theme)
+	normalized, ref, err := themerepo.NormalizeDraftDocument(theme)
 	if err != nil {
 		return Draft{}, Error{Code: "STUDIO_DRAFT_INVALID", Message: err.Error()}
 	}
@@ -214,6 +255,71 @@ func (workspace *Workspace) Update(draftID string, expectedRevision int, theme j
 	}
 	if record.Theme != nil && bytes.Equal(normalized, record.Theme) {
 		return workspace.view(record)
+	}
+	next := mutateHistory(record, normalized)
+	if err := workspace.writeRecord(next); err != nil {
+		return Draft{}, err
+	}
+	return workspace.view(next)
+}
+
+// Upload processes an asset completely before the draft is mutated. This
+// preserves the one-upload/one-revision invariant and leaves the old draft
+// untouched if decoding, limits, or a filesystem write fails.
+func (workspace *Workspace) Upload(input UploadInput) (Draft, error) {
+	workspace.mu.Lock()
+	defer workspace.mu.Unlock()
+	record, err := workspace.readRecord(input.DraftID)
+	if err != nil {
+		return Draft{}, err
+	}
+	if err := assertRevision(record, input.ExpectedRevision); err != nil {
+		return Draft{}, err
+	}
+	path, contents, err := normalizeAsset(input)
+	if err != nil {
+		return Draft{}, err
+	}
+	nextTheme, err := attachAsset(record.Theme, input, path)
+	if err != nil {
+		return Draft{}, err
+	}
+	normalized, _, err := themerepo.NormalizeDraftDocument(nextTheme)
+	if err != nil {
+		return Draft{}, Error{Code: "STUDIO_ASSET_INVALID", Message: err.Error()}
+	}
+	target := workspace.assetPath(input.DraftID, path)
+	_, existed := os.Stat(target)
+	if err := workspace.writeAsset(input.DraftID, path, contents); err != nil {
+		return Draft{}, err
+	}
+	next := mutateHistory(record, normalized)
+	if err := workspace.writeRecord(next); err != nil {
+		if errors.Is(existed, os.ErrNotExist) {
+			_ = os.Remove(target)
+		}
+		return Draft{}, err
+	}
+	return workspace.view(next)
+}
+
+func (workspace *Workspace) ClearAsset(input ClearAssetInput) (Draft, error) {
+	workspace.mu.Lock()
+	defer workspace.mu.Unlock()
+	record, err := workspace.readRecord(input.DraftID)
+	if err != nil {
+		return Draft{}, err
+	}
+	if err := assertRevision(record, input.ExpectedRevision); err != nil {
+		return Draft{}, err
+	}
+	nextTheme, err := detachAsset(record.Theme, input)
+	if err != nil {
+		return Draft{}, err
+	}
+	normalized, _, err := themerepo.NormalizeDraftDocument(nextTheme)
+	if err != nil {
+		return Draft{}, Error{Code: "STUDIO_ASSET_INVALID", Message: err.Error()}
 	}
 	next := mutateHistory(record, normalized)
 	if err := workspace.writeRecord(next); err != nil {
@@ -324,6 +430,17 @@ func (workspace *Workspace) Save(draftID string, expectedRevision int) (Draft, t
 	if err != nil {
 		return Draft{}, themerepo.Ref{}, Error{Code: "STUDIO_SAVE_FAILED", Message: err.Error()}
 	}
+	background, err := backgroundAsset(versioned)
+	if err != nil {
+		return Draft{}, themerepo.Ref{}, err
+	}
+	preview, err := imagepipeline.Process(files[background], imagepipeline.Options{
+		Width: 640, Height: 400, Quality: 84, Fit: imagepipeline.FitCover, MaxInputBytes: 16 * 1024 * 1024,
+	})
+	if err != nil {
+		return Draft{}, themerepo.Ref{}, Error{Code: "STUDIO_SAVE_FAILED", Message: err.Error()}
+	}
+	files["preview.webp"] = preview
 	saved, err := workspace.repository.InstallPersonal(themerepo.Bundle{Ref: themerepo.Ref{ID: ref.ID, Version: version}, Document: versioned, Files: files})
 	if err != nil {
 		return Draft{}, themerepo.Ref{}, err
@@ -349,6 +466,38 @@ func (workspace *Workspace) DeletePersonal(id string, version *string) error {
 
 func (workspace *Workspace) Export(ref themerepo.Ref) ([]byte, error) {
 	return workspace.repository.Export("personal", ref)
+}
+
+func (workspace *Workspace) ReadAsset(draftID, path string) (themerepo.Asset, error) {
+	workspace.mu.Lock()
+	defer workspace.mu.Unlock()
+	record, err := workspace.readRecord(draftID)
+	if err != nil {
+		return themerepo.Asset{}, err
+	}
+	paths, err := themerepo.AssetPaths(record.Theme)
+	if err != nil {
+		return themerepo.Asset{}, Error{Code: "STUDIO_ASSET_INVALID", Message: err.Error()}
+	}
+	found := false
+	for _, candidate := range paths {
+		if candidate == path {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return themerepo.Asset{}, Error{Code: "STUDIO_ASSET_INVALID", Message: "Draft asset is not declared"}
+	}
+	contents, err := os.ReadFile(workspace.assetPath(draftID, path))
+	if err != nil {
+		return themerepo.Asset{}, err
+	}
+	mimeType := "image/webp"
+	if strings.HasSuffix(strings.ToLower(path), ".woff2") {
+		mimeType = "font/woff2"
+	}
+	return themerepo.Asset{Bytes: contents, MIMEType: mimeType}, nil
 }
 
 func (workspace *Workspace) prepareSourceTheme(contents []byte, input CreateInput) (json.RawMessage, themerepo.Ref, error) {
@@ -398,8 +547,363 @@ func setThemeFields(document []byte, id, name, version string) (json.RawMessage,
 	if err != nil {
 		return nil, themerepo.Ref{}, err
 	}
-	normalized, ref, err := themerepo.NormalizeDocument(encoded)
+	normalized, ref, err := themerepo.NormalizeDraftDocument(encoded)
 	return json.RawMessage(normalized), ref, err
+}
+
+func backgroundAsset(document []byte) (string, error) {
+	value, _, err := themeObject(document)
+	if err != nil {
+		return "", err
+	}
+	assets, _ := value["assets"].(map[string]any)
+	background, ok := assets["background"].(string)
+	if !ok || background == "" {
+		return "", Error{Code: "STUDIO_DRAFT_INVALID", Message: "Background image is required"}
+	}
+	return background, nil
+}
+
+func normalizeAsset(input UploadInput) (string, []byte, error) {
+	if !validSlot(input.Slot) || strings.TrimSpace(input.FileName) == "" || len(input.FileName) > 160 {
+		return "", nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Asset upload metadata is invalid"}
+	}
+	if isFontSlot(input.Slot) {
+		if len(input.Bytes) == 0 || len(input.Bytes) > 5*1024*1024 || strings.ToLower(filepath.Ext(input.FileName)) != ".woff2" || !validWOFF2(input.Bytes) {
+			return "", nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Font must be a valid WOFF2 file up to 5 MB"}
+		}
+		key, err := requiredAssetKey(input.Slot, input.AssetKey)
+		if err != nil {
+			return "", nil, err
+		}
+		return "fonts/" + key + "-" + digest(input.Bytes) + ".woff2", append([]byte(nil), input.Bytes...), nil
+	}
+	if len(input.Bytes) == 0 || len(input.Bytes) > 50*1024*1024 || !validImageType(input.FileName, input.MIMEType) {
+		return "", nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Image must be a PNG, JPEG, or WebP file up to 50 MB"}
+	}
+	options := imagepipeline.Options{Quality: 80, Fit: imagepipeline.FitInside, NoUpscale: true, MaxInputBytes: 50 * 1024 * 1024}
+	switch input.Slot {
+	case "background":
+		options.Width, options.Height = 2400, 1350
+	case "profile-avatar":
+		options.Width, options.Height, options.Fit, options.NoUpscale = 256, 256, imagepipeline.FitCover, false
+	case "suggestion-card1", "suggestion-card2", "suggestion-card3", "suggestion-card4", "project-icon1", "project-icon2", "project-icon3", "project-icon4":
+		options.Width, options.Height, options.Fit, options.NoUpscale = 192, 192, imagepipeline.FitCover, false
+	default:
+		options.Width, options.Height = 1400, 1400
+	}
+	processed, err := imagepipeline.Process(input.Bytes, options)
+	if err != nil {
+		return "", nil, Error{Code: "STUDIO_ASSET_INVALID", Message: err.Error()}
+	}
+	name := "decoration"
+	switch input.Slot {
+	case "background":
+		name = "background"
+	case "portrait":
+		name = "portrait"
+	case "profile-avatar":
+		name = "profile-avatar"
+	case "suggestion-card1", "suggestion-card2", "suggestion-card3", "suggestion-card4", "project-icon1", "project-icon2", "project-icon3", "project-icon4":
+		name = input.Slot
+	case "decoration", "composition-layer":
+		key, keyErr := requiredAssetKey(input.Slot, input.AssetKey)
+		if keyErr != nil {
+			return "", nil, keyErr
+		}
+		name += "-" + key
+	}
+	return "assets/" + name + "-" + digest(processed) + ".webp", processed, nil
+}
+
+func attachAsset(document []byte, input UploadInput, assetPath string) ([]byte, error) {
+	value, assets, err := themeObject(document)
+	if err != nil {
+		return nil, err
+	}
+	switch input.Slot {
+	case "background", "portrait", "profile-avatar":
+		field := map[string]string{"background": "background", "portrait": "portrait", "profile-avatar": "profileAvatar"}[input.Slot]
+		assets[field] = assetPath
+	case "suggestion-card1", "suggestion-card2", "suggestion-card3", "suggestion-card4":
+		icons := objectField(assets, "suggestionIcons")
+		icons[strings.TrimPrefix(input.Slot, "suggestion-")] = assetPath
+	case "project-icon1", "project-icon2", "project-icon3", "project-icon4":
+		index := int(input.Slot[len(input.Slot)-1] - '1')
+		icons, err := stringSliceField(assets, "projectIcons")
+		if err != nil {
+			return nil, err
+		}
+		for len(icons) <= index {
+			icons = append(icons, assetPath)
+		}
+		icons[index] = assetPath
+		assets["projectIcons"] = stringsToAny(icons)
+	case "decoration", "composition-layer":
+		key, err := requiredAssetKey(input.Slot, input.AssetKey)
+		if err != nil {
+			return nil, err
+		}
+		decorations := objectField(assets, "decorations")
+		decorations[key] = assetPath
+		if input.Slot == "decoration" {
+			entries, err := anySliceField(value, "decorations")
+			if err != nil {
+				return nil, err
+			}
+			entry := map[string]any{"type": "image", "enabled": true, "intensity": 0.6, "assetKey": key, "placement": "corners", "opacity": 0.75, "scale": 1}
+			replaced := false
+			for index, candidate := range entries {
+				if item, ok := candidate.(map[string]any); ok && item["assetKey"] == key {
+					entries[index], replaced = entry, true
+					break
+				}
+			}
+			if !replaced {
+				if len(entries) >= 16 {
+					return nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "A theme can contain at most 16 decorations"}
+				}
+				entries = append(entries, entry)
+			}
+			value["decorations"] = entries
+		} else if err := upsertCompositionLayer(value, key); err != nil {
+			return nil, err
+		}
+	case "ui-font", "code-font", "display-font":
+		key, err := requiredAssetKey(input.Slot, input.AssetKey)
+		if err != nil {
+			return nil, err
+		}
+		fonts := objectField(assets, "fonts")
+		fonts[key] = assetPath
+		typography := objectField(value, "typography")
+		field := map[string]string{"ui-font": "uiFontAssetKey", "code-font": "codeFontAssetKey", "display-font": "displayFontAssetKey"}[input.Slot]
+		typography[field] = key
+		family := map[string]string{"ui-font": "uiFamily", "code-font": "codeFamily", "display-font": "displayFamily"}[input.Slot]
+		typography[family] = "ocs-" + key
+	default:
+		return nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Asset slot is unavailable"}
+	}
+	return json.Marshal(value)
+}
+
+func detachAsset(document []byte, input ClearAssetInput) ([]byte, error) {
+	if !validSlot(input.Slot) {
+		return nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Asset slot is unavailable"}
+	}
+	value, assets, err := themeObject(document)
+	if err != nil {
+		return nil, err
+	}
+	switch input.Slot {
+	case "background", "portrait", "profile-avatar":
+		delete(assets, map[string]string{"background": "background", "portrait": "portrait", "profile-avatar": "profileAvatar"}[input.Slot])
+	case "suggestion-card1", "suggestion-card2", "suggestion-card3", "suggestion-card4":
+		delete(objectField(assets, "suggestionIcons"), strings.TrimPrefix(input.Slot, "suggestion-"))
+	case "project-icon1", "project-icon2", "project-icon3", "project-icon4":
+		icons, err := stringSliceField(assets, "projectIcons")
+		if err != nil {
+			return nil, err
+		}
+		index := int(input.Slot[len(input.Slot)-1] - '1')
+		if index < len(icons) {
+			icons = append(icons[:index], icons[index+1:]...)
+		}
+		if len(icons) == 0 {
+			delete(assets, "projectIcons")
+		} else {
+			assets["projectIcons"] = stringsToAny(icons)
+		}
+	case "decoration", "composition-layer":
+		key, err := requiredAssetKey(input.Slot, input.AssetKey)
+		if err != nil {
+			return nil, err
+		}
+		delete(objectField(assets, "decorations"), key)
+		entries, sliceErr := anySliceField(value, "decorations")
+		if sliceErr != nil {
+			return nil, sliceErr
+		}
+		value["decorations"] = filterAssetKey(entries, key)
+		if composition, ok := value["composition"].(map[string]any); ok {
+			if layers, ok := composition["layers"].([]any); ok {
+				composition["layers"] = filterCompositionKey(layers, key)
+			}
+		}
+	case "ui-font", "code-font", "display-font":
+		key, err := requiredAssetKey(input.Slot, input.AssetKey)
+		if err != nil {
+			return nil, err
+		}
+		delete(objectField(assets, "fonts"), key)
+		typography := objectField(value, "typography")
+		delete(typography, map[string]string{"ui-font": "uiFontAssetKey", "code-font": "codeFontAssetKey", "display-font": "displayFontAssetKey"}[input.Slot])
+	}
+	return json.Marshal(value)
+}
+
+func themeObject(document []byte) (map[string]any, map[string]any, error) {
+	decoder := json.NewDecoder(bytes.NewReader(document))
+	decoder.UseNumber()
+	value := map[string]any{}
+	if err := decoder.Decode(&value); err != nil {
+		return nil, nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Theme draft is invalid"}
+	}
+	assets, ok := value["assets"].(map[string]any)
+	if !ok {
+		return nil, nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Theme assets are invalid"}
+	}
+	return value, assets, nil
+}
+
+func objectField(parent map[string]any, key string) map[string]any {
+	if value, ok := parent[key].(map[string]any); ok {
+		return value
+	}
+	value := map[string]any{}
+	parent[key] = value
+	return value
+}
+
+func anySliceField(parent map[string]any, key string) ([]any, error) {
+	if value, exists := parent[key]; exists {
+		entries, ok := value.([]any)
+		if !ok {
+			return nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Theme asset collection is invalid"}
+		}
+		return append([]any(nil), entries...), nil
+	}
+	return []any{}, nil
+}
+
+func stringSliceField(parent map[string]any, key string) ([]string, error) {
+	entries, err := anySliceField(parent, key)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		value, ok := entry.(string)
+		if !ok {
+			return nil, Error{Code: "STUDIO_ASSET_INVALID", Message: "Theme icon collection is invalid"}
+		}
+		result = append(result, value)
+	}
+	return result, nil
+}
+
+func upsertCompositionLayer(theme map[string]any, key string) error {
+	composition := objectField(theme, "composition")
+	layers, err := anySliceField(composition, "layers")
+	if err != nil {
+		return err
+	}
+	layer := map[string]any{
+		"id": key, "asset": map[string]any{"kind": "decoration", "assetKey": key}, "surface": "home-hero",
+		"anchor": "top-left", "positionX": 0.1, "positionY": 0.1, "width": 0.2, "opacity": 1, "rotation": 0, "required": false,
+	}
+	for index, candidate := range layers {
+		if entry, ok := candidate.(map[string]any); ok && entry["id"] == key {
+			layers[index] = layer
+			composition["layers"] = layers
+			return nil
+		}
+	}
+	if len(layers) >= 24 {
+		return Error{Code: "STUDIO_ASSET_INVALID", Message: "A theme can contain at most 24 composition layers"}
+	}
+	composition["layers"] = append(layers, layer)
+	return nil
+}
+
+func filterAssetKey(entries []any, key string) []any {
+	result := make([]any, 0, len(entries))
+	for _, entry := range entries {
+		if value, ok := entry.(map[string]any); ok && value["assetKey"] == key {
+			continue
+		}
+		result = append(result, entry)
+	}
+	return result
+}
+
+func filterCompositionKey(entries []any, key string) []any {
+	result := make([]any, 0, len(entries))
+	for _, entry := range entries {
+		value, ok := entry.(map[string]any)
+		if !ok {
+			result = append(result, entry)
+			continue
+		}
+		asset, _ := value["asset"].(map[string]any)
+		if asset["assetKey"] == key || value["id"] == key {
+			continue
+		}
+		result = append(result, entry)
+	}
+	return result
+}
+
+func validSlot(slot string) bool {
+	switch slot {
+	case "background", "portrait", "decoration", "ui-font", "code-font", "display-font", "composition-layer", "profile-avatar", "suggestion-card1", "suggestion-card2", "suggestion-card3", "suggestion-card4", "project-icon1", "project-icon2", "project-icon3", "project-icon4":
+		return true
+	default:
+		return false
+	}
+}
+
+func isFontSlot(slot string) bool {
+	return slot == "ui-font" || slot == "code-font" || slot == "display-font"
+}
+
+func requiredAssetKey(slot, value string) (string, error) {
+	if value == "" {
+		switch slot {
+		case "ui-font", "code-font", "display-font":
+			value = slot
+		default:
+			return "", Error{Code: "STUDIO_ASSET_INVALID", Message: "Asset key is required"}
+		}
+	}
+	if len(value) > 40 || !assetKeyPattern.MatchString(value) {
+		return "", Error{Code: "STUDIO_ASSET_INVALID", Message: "Asset key is invalid"}
+	}
+	return value, nil
+}
+
+func validImageType(fileName, mimeType string) bool {
+	extension := strings.ToLower(filepath.Ext(fileName))
+	switch extension {
+	case ".png":
+		return mimeType == "image/png"
+	case ".jpg", ".jpeg":
+		return mimeType == "image/jpeg"
+	case ".webp":
+		return mimeType == "image/webp"
+	default:
+		return false
+	}
+}
+
+func validWOFF2(contents []byte) bool {
+	if len(contents) < 48 || string(contents[:4]) != "wOF2" || int(binary.BigEndian.Uint32(contents[8:12])) != len(contents) || binary.BigEndian.Uint16(contents[12:14]) == 0 || binary.BigEndian.Uint32(contents[16:20]) == 0 {
+		return false
+	}
+	return true
+}
+
+func digest(contents []byte) string {
+	sum := sha256.Sum256(contents)
+	return hex.EncodeToString(sum[:])[:12]
+}
+
+func stringsToAny(values []string) []any {
+	result := make([]any, len(values))
+	for index, value := range values {
+		result[index] = value
+	}
+	return result
 }
 
 func (workspace *Workspace) view(record record) (Draft, error) {
@@ -420,6 +924,8 @@ func (workspace *Workspace) view(record record) (Draft, error) {
 }
 
 func validationIssues(theme json.RawMessage) []Issue {
+	// A draft may be edited while incomplete, but the inspector must still
+	// surface anything that would block its explicit immutable save.
 	if err := themerepo.ValidateDocument(theme); err != nil {
 		return []Issue{{Code: themerepo.ErrorCodeFrom(err), Path: "theme", Message: err.Error(), Severity: "error"}}
 	}
@@ -555,7 +1061,7 @@ func (workspace *Workspace) findByGroup(group string) (*record, error) {
 	}
 	var latest *record
 	for index := range records {
-		_, ref, err := themerepo.NormalizeDocument(records[index].Theme)
+		_, ref, err := themerepo.NormalizeDraftDocument(records[index].Theme)
 		if err != nil || workspace.groupKey(ref.ID) != group {
 			continue
 		}
@@ -577,7 +1083,7 @@ func (workspace *Workspace) removeDuplicateDrafts() error {
 	})
 	seen := map[string]bool{}
 	for _, record := range records {
-		_, ref, err := themerepo.NormalizeDocument(record.Theme)
+		_, ref, err := themerepo.NormalizeDraftDocument(record.Theme)
 		if err != nil {
 			return err
 		}
@@ -663,11 +1169,11 @@ func validateRecord(record record) error {
 	if record.SchemaVersion != 1 || !safeDraftID(record.DraftID) || record.Revision < 0 || record.UpdatedAt == "" || len(record.Past) > historyLimit || len(record.Future) > historyLimit {
 		return errors.New("draft record envelope is invalid")
 	}
-	if _, _, err := themerepo.NormalizeDocument(record.Theme); err != nil {
+	if _, _, err := themerepo.NormalizeDraftDocument(record.Theme); err != nil {
 		return err
 	}
 	for _, snapshot := range append(append([]json.RawMessage{}, record.Past...), record.Future...) {
-		if _, _, err := themerepo.NormalizeDocument(snapshot); err != nil {
+		if _, _, err := themerepo.NormalizeDraftDocument(snapshot); err != nil {
 			return err
 		}
 	}

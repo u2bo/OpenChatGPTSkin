@@ -27,8 +27,17 @@ type Options struct {
 	Height        int
 	Quality       int
 	Lossless      bool
+	Fit           Fit
+	NoUpscale     bool
 	MaxInputBytes int
 }
+
+type Fit string
+
+const (
+	FitCover  Fit = "cover"
+	FitInside Fit = "inside"
+)
 
 type pipelineError struct {
 	code string
@@ -133,7 +142,7 @@ func orient(source stdimage.Image, orientation int) stdimage.Image {
 	return dst
 }
 
-func cropAndResize(source stdimage.Image, width, height int) (stdimage.Image, error) {
+func cropAndResize(source stdimage.Image, width, height int, fit Fit, noUpscale bool) (stdimage.Image, error) {
 	if width == 0 && height == 0 {
 		return source, nil
 	}
@@ -142,6 +151,23 @@ func cropAndResize(source stdimage.Image, width, height int) (stdimage.Image, er
 	}
 	bounds := source.Bounds()
 	sw, sh := bounds.Dx(), bounds.Dy()
+	if fit == "" {
+		fit = FitCover
+	}
+	if fit != FitCover && fit != FitInside {
+		return nil, fail("IMAGE_DIMENSIONS_INVALID", "image fit is invalid")
+	}
+	if fit == FitInside {
+		scale := min(float64(width)/float64(sw), float64(height)/float64(sh))
+		if noUpscale && scale > 1 {
+			scale = 1
+		}
+		outputWidth := max(1, int(float64(sw)*scale+0.5))
+		outputHeight := max(1, int(float64(sh)*scale+0.5))
+		destination := stdimage.NewNRGBA(stdimage.Rect(0, 0, outputWidth, outputHeight))
+		xdraw.CatmullRom.Scale(destination, destination.Bounds(), source, bounds, draw.Over, nil)
+		return destination, nil
+	}
 	targetAspect := float64(width) / float64(height)
 	sourceAspect := float64(sw) / float64(sh)
 	crop := bounds
@@ -168,7 +194,7 @@ func Process(contents []byte, options Options) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	processed, err := cropAndResize(decoded, options.Width, options.Height)
+	processed, err := cropAndResize(decoded, options.Width, options.Height, options.Fit, options.NoUpscale)
 	if err != nil {
 		return nil, err
 	}

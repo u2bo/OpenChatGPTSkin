@@ -1,7 +1,12 @@
 package workspace
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
+	stdimage "image"
+	"image/color"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,7 +28,7 @@ func writeBuiltin(t *testing.T, root string) {
 	if err := os.WriteFile(filepath.Join(directory, "theme.json"), []byte(theme), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(directory, "assets", "background.webp"), []byte("RIFF0000WEBP"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(directory, "assets", "background.webp"), uploadPNG(t), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(directory, "preview.webp"), []byte("RIFF0000WEBP"), 0o600); err != nil {
@@ -124,8 +129,12 @@ func TestWorkspaceSaveCreatesImmutablePersonalVersionAndExports(t *testing.T) {
 	if err != nil || len(archive) == 0 {
 		t.Fatalf("export bytes=%d error=%v", len(archive), err)
 	}
-	if _, err := repository.Read("personal", ref); err != nil {
+	bundle, err := repository.Read("personal", ref)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if preview := bundle.Files["preview.webp"]; len(preview) < 12 || string(preview[:4]) != "RIFF" || string(preview[8:12]) != "WEBP" {
+		t.Fatal("saved personal theme has no generated WebP preview")
 	}
 	idempotent, sameRef, err := workspace.Save(saved.DraftID, saved.Revision)
 	if err != nil || sameRef != ref || idempotent.Revision != saved.Revision {
@@ -149,5 +158,99 @@ func TestWorkspaceRejectsMalformedDraftAndPreservesEvidence(t *testing.T) {
 	evidence, err := os.ReadDir(filepath.Join(root, "invalid-evidence"))
 	if err != nil || len(evidence) != 1 {
 		t.Fatalf("invalid evidence = %v error=%v", evidence, err)
+	}
+}
+
+func uploadPNG(t *testing.T) []byte {
+	t.Helper()
+	image := stdimage.NewNRGBA(stdimage.Rect(0, 0, 8, 4))
+	image.SetNRGBA(1, 1, color.NRGBA{R: 255, G: 80, B: 160, A: 150})
+	var output bytes.Buffer
+	if err := png.Encode(&output, image); err != nil {
+		t.Fatal(err)
+	}
+	return output.Bytes()
+}
+
+func TestWorkspaceProcessesSlotAssetsOnceAndClearKeepsDraftHistory(t *testing.T) {
+	workspace, _, root := newWorkspace(t)
+	draft, err := workspace.Create(CreateInput{Source: "builtin", Ref: themerepo.Ref{ID: "mountain-mist", Version: "1.3.0"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated, err := workspace.Upload(UploadInput{
+		DraftID: draft.DraftID, ExpectedRevision: draft.Revision, Slot: "profile-avatar",
+		FileName: "avatar.png", MIMEType: "image/png", Bytes: uploadPNG(t),
+	})
+	if err != nil || updated.Revision != draft.Revision+1 || len(updated.AssetURLs) != 2 {
+		t.Fatalf("upload draft=%+v error=%v", updated, err)
+	}
+	var theme struct {
+		Assets struct {
+			ProfileAvatar string `json:"profileAvatar"`
+		} `json:"assets"`
+	}
+	if err := json.Unmarshal(updated.Theme, &theme); err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(filepath.Join(root, draft.DraftID, filepath.FromSlash(theme.Assets.ProfileAvatar)))
+	if err != nil || len(contents) < 12 || string(contents[:4]) != "RIFF" || string(contents[8:12]) != "WEBP" {
+		t.Fatalf("processed avatar bytes=%d error=%v", len(contents), err)
+	}
+	if _, err := workspace.Upload(UploadInput{
+		DraftID: draft.DraftID, ExpectedRevision: updated.Revision, Slot: "profile-avatar",
+		FileName: "bad.txt", MIMEType: "text/plain", Bytes: []byte("bad"),
+	}); ErrorCode(err) != "STUDIO_ASSET_INVALID" {
+		t.Fatalf("invalid upload error = %v", err)
+	}
+	afterInvalid, err := workspace.Open(draft.DraftID)
+	if err != nil || afterInvalid.Revision != updated.Revision {
+		t.Fatalf("invalid upload changed draft=%+v error=%v", afterInvalid, err)
+	}
+	cleared, err := workspace.ClearAsset(ClearAssetInput{DraftID: draft.DraftID, ExpectedRevision: updated.Revision, Slot: "background"})
+	if err != nil || cleared.Revision != updated.Revision+1 || len(cleared.Issues) != 1 {
+		t.Fatalf("cleared draft=%+v error=%v", cleared, err)
+	}
+	if _, _, err := workspace.Save(cleared.DraftID, cleared.Revision); ErrorCode(err) != "STUDIO_DRAFT_INVALID" {
+		t.Fatalf("saved incomplete draft error = %v", err)
+	}
+}
+
+func TestWorkspaceAcceptsBoundedWOFF2Slots(t *testing.T) {
+	font := make([]byte, 48)
+	copy(font, "wOF2")
+	binary.BigEndian.PutUint32(font[8:12], uint32(len(font)))
+	binary.BigEndian.PutUint16(font[12:14], 1)
+	binary.BigEndian.PutUint32(font[16:20], 1)
+	if !validWOFF2(font) {
+		t.Fatal("well-formed bounded WOFF2 header was rejected")
+	}
+	if validWOFF2(font[:20]) {
+		t.Fatal("truncated WOFF2 header was accepted")
+	}
+}
+
+func TestWorkspaceImportsArchiveIntoOnePersonalDraft(t *testing.T) {
+	first, _, _ := newWorkspace(t)
+	draft, err := first.Create(CreateInput{Source: "builtin", Ref: themerepo.Ref{ID: "mountain-mist", Version: "1.3.0"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, ref, err := first.Save(draft.DraftID, draft.Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive, err := first.Export(ref)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, _, _ := newWorkspace(t)
+	imported, err := second.Import(archive)
+	if err != nil || imported.SavedRef == nil || *imported.SavedRef != ref || imported.Dirty {
+		t.Fatalf("imported draft=%+v error=%v", imported, err)
+	}
+	loaded, err := second.Create(CreateInput{Source: "personal", Ref: ref, ThemeID: ref.ID, ConflictResolution: "load-existing"})
+	if err != nil || loaded.DraftID != imported.DraftID {
+		t.Fatalf("loaded draft=%+v error=%v", loaded, err)
 	}
 }

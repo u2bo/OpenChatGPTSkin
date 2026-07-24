@@ -383,6 +383,30 @@ func (state *handlerState) dispatch(response http.ResponseWriter, request *http.
 		response.WriteHeader(http.StatusOK)
 		_, _ = response.Write(archive)
 		return nil
+	case request.URL.Path == "/api/draft-asset" && request.Method == http.MethodGet:
+		asset, err := state.workspace.ReadAsset(request.URL.Query().Get("draftId"), request.URL.Query().Get("path"))
+		if err != nil {
+			return err
+		}
+		state.writeBytes(response, http.StatusOK, asset)
+		return nil
+	case request.URL.Path == "/api/import" && request.Method == http.MethodPost:
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		if request.Header.Get("Content-Type") != "application/vnd.open-chatgpt-skin+zip" {
+			return studioError{code: "STUDIO_IMPORT_INVALID", message: "Theme import requires an .ocskin archive", statusCode: http.StatusUnsupportedMediaType}
+		}
+		contents, err := readBoundedBytes(request.Body, 32*1024*1024)
+		if err != nil {
+			return err
+		}
+		draft, err := state.workspace.Import(contents)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusCreated, draft)
+		return nil
 	case strings.HasPrefix(request.URL.Path, "/api/themes/") && request.Method == http.MethodDelete:
 		if err := state.requireOrigin(request); err != nil {
 			return err
@@ -425,6 +449,50 @@ func (state *handlerState) dispatchDraft(response http.ResponseWriter, request *
 	}
 	if action == "" && request.Method == http.MethodGet {
 		draft, err := state.workspace.Open(draftID)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	}
+	if action == "assets" && request.Method == http.MethodPost {
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		expectedRevision, err := nonNegativeQueryInt(request, "revision")
+		if err != nil {
+			return err
+		}
+		fileName, err := url.QueryUnescape(request.Header.Get("X-File-Name"))
+		if err != nil {
+			return studioError{code: "STUDIO_REQUEST_INVALID", message: "Asset file name is invalid", statusCode: http.StatusBadRequest}
+		}
+		contents, err := readBoundedBytes(request.Body, 50*1024*1024)
+		if err != nil {
+			return err
+		}
+		draft, err := state.workspace.Upload(workspace.UploadInput{
+			DraftID: draftID, ExpectedRevision: expectedRevision, Slot: request.URL.Query().Get("slot"),
+			AssetKey: request.URL.Query().Get("assetKey"), FileName: fileName,
+			MIMEType: request.Header.Get("Content-Type"), Bytes: contents,
+		})
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, draft)
+		return nil
+	}
+	if action == "assets" && request.Method == http.MethodDelete {
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		expectedRevision, err := nonNegativeQueryInt(request, "revision")
+		if err != nil {
+			return err
+		}
+		draft, err := state.workspace.ClearAsset(workspace.ClearAssetInput{
+			DraftID: draftID, ExpectedRevision: expectedRevision, Slot: request.URL.Query().Get("slot"), AssetKey: request.URL.Query().Get("assetKey"),
+		})
 		if err != nil {
 			return err
 		}
@@ -492,6 +560,15 @@ func (state *handlerState) dispatchDraft(response http.ResponseWriter, request *
 	return studioError{code: "STUDIO_REQUEST_INVALID", message: "Draft route is unavailable", statusCode: http.StatusNotFound}
 }
 
+func nonNegativeQueryInt(request *http.Request, name string) (int, error) {
+	value := request.URL.Query().Get(name)
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 0 || value == "" {
+		return 0, studioError{code: "STUDIO_REQUEST_INVALID", message: name + " is invalid", statusCode: http.StatusBadRequest}
+	}
+	return parsed, nil
+}
+
 func (state *handlerState) securityHeaders(response http.ResponseWriter) {
 	for name, value := range state.securityHeaderValues() {
 		response.Header().Set(name, value)
@@ -534,6 +611,18 @@ func decodeBoundedJSON(body io.ReadCloser, limit int64, output any) error {
 		return studioError{code: "STUDIO_REQUEST_INVALID", message: "Request has trailing JSON", statusCode: http.StatusBadRequest}
 	}
 	return nil
+}
+
+func readBoundedBytes(body io.ReadCloser, limit int64) ([]byte, error) {
+	defer body.Close()
+	contents, err := io.ReadAll(io.LimitReader(body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(contents)) > limit {
+		return nil, studioError{code: "STUDIO_REQUEST_TOO_LARGE", message: "Binary request exceeds its limit", statusCode: http.StatusRequestEntityTooLarge}
+	}
+	return contents, nil
 }
 
 func newViteProxy(origin, nonce string) (*httputil.ReverseProxy, error) {

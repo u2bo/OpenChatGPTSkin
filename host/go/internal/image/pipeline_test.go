@@ -49,6 +49,20 @@ func TestPipelinePreservesAlphaCropsResizesAndEncodesWebP(t *testing.T) {
 	}
 }
 
+func TestPipelineSupportsInsideWithoutUpscaling(t *testing.T) {
+	output, err := Process(sourcePNG(t), Options{Width: 2400, Height: 1350, Fit: FitInside, NoUpscale: true, Lossless: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := webp.Decode(bytes.NewReader(output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Bounds().Dx() != 4 || decoded.Bounds().Dy() != 2 {
+		t.Fatalf("inside image was enlarged: %v", decoded.Bounds())
+	}
+}
+
 func TestPipelineAppliesJPEGExifOrientation(t *testing.T) {
 	value := stdimage.NewNRGBA(stdimage.Rect(0, 0, 2, 1))
 	value.Set(0, 0, color.RGBA{R: 255, A: 255})

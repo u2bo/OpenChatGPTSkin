@@ -1,8 +1,12 @@
 package studio
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	stdimage "image"
+	"image/color"
+	"image/png"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -36,13 +40,24 @@ func studioFixture(t *testing.T) Config {
 	if err := os.MkdirAll(filepath.Join(themeDirectory, "assets"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(themeDirectory, "assets", "background.webp"), []byte("RIFF0000WEBP"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(themeDirectory, "assets", "background.webp"), fixturePNG(t), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return Config{
 		IndexHTML: []byte(`<html><head><meta property="csp-nonce" nonce="__OPEN_CHATGPT_SKIN_CSP_NONCE__"></head><body><script nonce="__OPEN_CHATGPT_SKIN_CSP_NONCE__"></script></body></html>`),
 		ThemeRoot: filepath.Join(root, "themes"), PersonalRoot: filepath.Join(root, "theme-store"), DraftRoot: filepath.Join(root, "theme-studio-drafts"), StudioVersion: "0.2.0",
 	}
+}
+
+func fixturePNG(t *testing.T) []byte {
+	t.Helper()
+	image := stdimage.NewNRGBA(stdimage.Rect(0, 0, 8, 4))
+	image.SetNRGBA(1, 1, color.NRGBA{R: 80, G: 120, B: 255, A: 255})
+	var output bytes.Buffer
+	if err := png.Encode(&output, image); err != nil {
+		t.Fatal(err)
+	}
+	return output.Bytes()
 }
 
 func sessionClient(t *testing.T, server *RunningServer) *http.Client {

@@ -46,10 +46,12 @@ func startStudio(ctx context.Context, viteOrigin, configuredDataRoot string) (*R
 		}
 	}
 	running, err := studio.Start(ctx, studio.Config{
-		IndexHTML:     indexHTML,
-		ThemeRoot:     filepath.Join(installRoot, "themes"),
-		PersonalRoot:  filepath.Join(dataRoot, "theme-store"),
-		DraftRoot:     filepath.Join(dataRoot, "theme-studio-drafts"),
+		IndexHTML:    indexHTML,
+		ThemeRoot:    filepath.Join(installRoot, "themes"),
+		PersonalRoot: filepath.Join(dataRoot, "theme-store"),
+		// Keep the v0.2 Node path exactly: Go and Node must share one draft
+		// history during the provisional cutover and rollback window.
+		DraftRoot:     filepath.Join(dataRoot, "theme-studio", "drafts"),
 		StudioVersion: goHostVersion,
 		RepositoryURL: &repositoryURL,
 		ViteOrigin:    viteOrigin,

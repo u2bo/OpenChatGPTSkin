@@ -178,19 +178,15 @@ func (model *controllerModel) result() control.Result {
 	result := control.Result{"status": model.status, "themeId": model.themeID, "themeVersion": model.version}
 	if model.themeID == "" {
 		result["selectedTheme"] = nil
-		result["appliedTheme"] = nil
-		result["skinApplied"] = false
 	} else {
 		ref := map[string]string{"id": model.themeID, "version": model.version}
 		result["selectedTheme"] = ref
-		if model.status == "active" || model.status == "paused" {
-			result["appliedTheme"] = ref
-			result["skinApplied"] = true
-		} else {
-			result["appliedTheme"] = nil
-			result["skinApplied"] = false
-		}
 	}
+	// A controller transition alone is not a visual application. The platform
+	// CDP adapter must verify the exact renderer before it can set these fields.
+	result["appliedTheme"] = nil
+	result["skinApplied"] = false
+	result["nextAction"] = "A verified platform adapter must apply and confirm the theme."
 	return result
 }
 

@@ -86,7 +86,7 @@ function studioThemeError(
   );
 }
 
-const DraftRecordSchema = z.object({
+export const DraftRecordSchema = z.object({
   schemaVersion: z.literal(1),
   draftId: z.string().uuid(),
   theme: ThemeDraftDocumentSchema,
@@ -103,7 +103,7 @@ const DraftRecordSchema = z.object({
 
 type DraftRecord = z.infer<typeof DraftRecordSchema>;
 
-const PersistedDraftRecordSchema = DraftRecordSchema.omit({
+export const PersistedDraftRecordSchema = DraftRecordSchema.omit({
   theme: true,
   past: true,
   future: true,

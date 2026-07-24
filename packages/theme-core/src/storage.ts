@@ -13,12 +13,12 @@ import { validateThemeBundle } from "./assets.js";
 import { ThemeValidationError } from "./errors.js";
 import type { ValidatedThemeBundle } from "./types.js";
 
-const ThemeRefSchema = z.object({
+export const ThemeRefSchema = z.object({
   id: ThemeIdSchema,
   version: ThemeVersionSchema,
 }).strict();
 
-const ThemeStateSchema = z.object({
+export const ThemeStateSchema = z.object({
   schemaVersion: z.literal(1),
   active: ThemeRefSchema.nullable(),
   previous: ThemeRefSchema.nullable(),

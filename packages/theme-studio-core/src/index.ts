@@ -1,5 +1,6 @@
 export * from "./contracts.js";
 export * from "./errors.js";
+export * from "./http-contract.js";
 export * from "./personal-theme.js";
 export * from "./project.js";
 export * from "./security.js";

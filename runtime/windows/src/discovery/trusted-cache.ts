@@ -12,7 +12,7 @@ import {
   MACOS_CODEX_TEAM_ID,
 } from "../macos/identity.js";
 
-const TrustedWindowsCodexInstallSchema = z.object({
+export const TrustedWindowsCodexInstallSchema = z.object({
   schemaVersion: z.literal(1),
   packageRoot: z.string().min(1),
   entryPath: z.string().min(1),
@@ -32,7 +32,7 @@ const TrustedWindowsCodexInstallSchema = z.object({
   verifiedAt: z.string().datetime(),
 }).strict();
 
-const TrustedMacOsCodexInstallSchema = z.object({
+export const TrustedMacOsCodexInstallSchema = z.object({
   schemaVersion: z.literal(1),
   packageRoot: z.string().endsWith("/Codex.app"),
   entryPath: z.string().min(1),
@@ -52,7 +52,7 @@ const TrustedMacOsCodexInstallSchema = z.object({
   verifiedAt: z.string().datetime(),
 }).strict();
 
-const TrustedCodexInstallSchema = z.union([
+export const TrustedCodexInstallSchema = z.union([
   TrustedWindowsCodexInstallSchema,
   TrustedMacOsCodexInstallSchema,
 ]);

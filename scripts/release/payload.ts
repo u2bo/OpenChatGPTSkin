@@ -11,6 +11,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { z } from "zod";
 import { PRODUCT_VERSION_PATTERN } from
   "../../packages/theme-studio-core/src/security.js";
 
@@ -56,30 +57,26 @@ interface ThemeManifest {
   }>>;
 }
 
-export interface ReleaseManifest {
-  readonly schemaVersion: 1;
-  readonly product: typeof PRODUCT;
-  readonly version: string;
-  readonly target: {
-    readonly platform: ReleasePlatform;
-    readonly arch: ReleaseArch;
-  };
-  readonly runtime: {
-    readonly nodeVersion: string;
-  };
-  readonly build: {
-    readonly commit: string;
-  };
-  readonly themeCatalog: {
-    readonly schemaVersion: number;
-  };
-  readonly entry: "OpenChatGPTSkin.cmd" | "OpenChatGPTSkin";
-  readonly themes: readonly string[];
-  readonly files: Readonly<Record<string, {
-    readonly bytes: number;
-    readonly sha256: string;
-  }>>;
-}
+export const ReleaseManifestSchema = z.object({
+  schemaVersion: z.literal(1),
+  product: z.literal(PRODUCT),
+  version: z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/),
+  target: z.object({
+    platform: z.enum(["win32", "darwin"]),
+    arch: z.enum(["x64", "arm64"]),
+  }).strict(),
+  runtime: z.object({ nodeVersion: z.string().regex(/^\d+\.\d+\.\d+$/) }).strict(),
+  build: z.object({ commit: z.string().regex(/^[0-9a-f]{40}$/i) }).strict(),
+  themeCatalog: z.object({ schemaVersion: z.number().int().positive() }).strict(),
+  entry: z.enum(["OpenChatGPTSkin.cmd", "OpenChatGPTSkin"]),
+  themes: z.array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)).min(1),
+  files: z.record(z.object({
+    bytes: z.number().int().nonnegative(),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/i),
+  }).strict()),
+}).strict();
+
+export type ReleaseManifest = z.infer<typeof ReleaseManifestSchema>;
 
 export interface StageReleasePayloadOptions {
   readonly workspaceRoot: string;
@@ -577,5 +574,5 @@ export async function readReleaseManifest(
       throw new Error(`Release manifest file metadata is invalid: ${path}`);
     }
   }
-  return manifest as unknown as ReleaseManifest;
+  return ReleaseManifestSchema.parse(manifest);
 }

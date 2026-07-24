@@ -5,7 +5,9 @@ import {
   ThemeVersionSchema,
 } from "@open-chatgpt-skin/theme-schema";
 import { RuntimeBuiltinThemeIdSchema } from "../themes/ids.js";
-import { CONTROL_PROTOCOL_VERSION } from "./result.js";
+import { CONTROL_COMMANDS, CONTROL_PROTOCOL_VERSION } from "./result.js";
+import { CONTROL_MAX_FRAME_BYTES } from "./framing.js";
+import { RUNTIME_ERROR_CODES } from "../errors.js";
 
 export {
   CONTROL_PROTOCOL_VERSION,
@@ -78,6 +80,32 @@ export const ControlRequestSchema = z.discriminatedUnion("command", [
 
 export type ControlRequest = z.infer<typeof ControlRequestSchema>;
 export type ControlCommand = ControlRequest["command"];
+
+export const RUNTIME_CONTROL_CONTRACT = {
+  protocolVersion: CONTROL_PROTOCOL_VERSION,
+  frame: {
+    encoding: "json" as const,
+    byteOrder: "little-endian" as const,
+    lengthPrefixBytes: 4,
+    maxPayloadBytes: CONTROL_MAX_FRAME_BYTES,
+  },
+  commands: CONTROL_COMMANDS,
+  readOnlyCommands: ["status"],
+  mutationConcurrency: "serialized" as const,
+  statusConcurrency: "parallel-with-mutation" as const,
+  requestIdSemantics: "same-id-same-command-replays; same-id-different-command-rejected" as const,
+  afterResponseCommands: ["launch", "restore"],
+  errors: RUNTIME_ERROR_CODES,
+} as const;
+
+export const RUNTIME_CONTROL_SEMANTIC_CASES = [
+  { name: "status during mutation", valid: true, command: "status", expectedConcurrency: "parallel-with-mutation" },
+  { name: "duplicate request replay", valid: true, command: "switch", expectedBehavior: "replay-stored-response" },
+  { name: "request ID reused for another command", valid: false, command: "pause", expectedErrorCode: "RUNTIME_INVALID_STATE", expectedPath: "/requestId" },
+  { name: "oversized frame", valid: false, expectedErrorCode: "RUNTIME_CONTROL_UNAVAILABLE", expectedPath: "/frame/length" },
+  { name: "restore callback after response", valid: true, command: "restore", expectedBehavior: "after-response" },
+  { name: "personal theme without version", valid: false, command: "launch", expectedErrorCode: "THEME_NOT_FOUND", expectedPath: "/params/themeVersion" },
+] as const;
 
 export function pipeNameForSid(sid: string): string {
   const digest = createHash("sha256").update(sid, "utf8").digest("hex").slice(0, 24);

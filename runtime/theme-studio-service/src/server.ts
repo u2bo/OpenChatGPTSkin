@@ -6,20 +6,25 @@ import {
 } from "node:http";
 import {
   STUDIO_PROTOCOL_VERSION,
+  STUDIO_BODY_LIMITS,
+  STUDIO_RESPONSE_POLICIES,
   StudioBootstrapSchema,
   StudioCreateDraftInputSchema,
   StudioDeleteThemeInputSchema,
   StudioDraftCommandInputSchema,
   StudioError,
+  STUDIO_ERROR_HTTP_STATUS,
+  isStudioRoute,
   StudioEventSchema,
   StudioImportThemeInputSchema,
+  StudioSessionExchangeSchema,
   StudioThemeRefSchema,
   StudioUpdateDraftInputSchema,
   StudioUploadAssetInputSchema,
   type StudioErrorCode,
   type StudioRuntimeStatus,
 } from "@open-chatgpt-skin/theme-studio-core";
-import { z, ZodError } from "zod";
+import { ZodError } from "zod";
 import {
   assertExactOrigin,
   readBoundedBytes,
@@ -33,15 +38,7 @@ import {
 } from "./session.js";
 import type { ThemeStudioWorkspace } from "./workspace.js";
 
-const SessionExchangeSchema = z.object({
-  token: z.string().regex(/^[0-9a-f]{64}$/),
-}).strict();
-
 const RUNTIME_EVENT_INTERVAL_MS = 5_000;
-const SESSION_JSON_LIMIT_BYTES = 16 * 1024;
-const IMAGE_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
-const ARCHIVE_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
-
 export interface ThemeStudioServerDependencies {
   readonly studioVersion: string;
   readonly repositoryUrl?: string | null;
@@ -65,34 +62,7 @@ export interface RunningThemeStudioServer {
 
 function statusFor(error: unknown): number {
   if (error instanceof ZodError) return 400;
-  if (!(error instanceof StudioError)) return 500;
-  switch (error.code) {
-    case "STUDIO_ORIGIN_REJECTED":
-      return 403;
-    case "STUDIO_SESSION_INVALID":
-      return 401;
-    case "STUDIO_REQUEST_TOO_LARGE":
-      return 413;
-    case "STUDIO_REQUEST_INVALID":
-      return 400;
-    case "STUDIO_DRAFT_NOT_FOUND":
-      return 404;
-    case "STUDIO_DRAFT_CONFLICT":
-      return 409;
-    case "STUDIO_DRAFT_INVALID":
-    case "STUDIO_ASSET_INVALID":
-    case "STUDIO_IMPORT_INVALID":
-    case "STUDIO_EXPORT_INVALID":
-    case "STUDIO_SAVE_FAILED":
-    case "STUDIO_DELETE_FAILED":
-      return 422;
-    case "STUDIO_APPLY_FAILED":
-      return 409;
-    case "RUNTIME_STATUS_UNAVAILABLE":
-      return 503;
-    default:
-      return 500;
-  }
+  return error instanceof StudioError ? STUDIO_ERROR_HTTP_STATUS[error.code] : 500;
 }
 
 function requireWorkspace(
@@ -121,8 +91,9 @@ function serveIndex(
   indexHtml: string,
 ): void {
   response.writeHead(200, {
-    "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "no-store",
+    "Content-Type": STUDIO_RESPONSE_POLICIES.html.contentType,
+    "Cache-Control": STUDIO_RESPONSE_POLICIES.html.cacheControl,
+    "X-Content-Type-Options": STUDIO_RESPONSE_POLICIES.html.contentTypeOptions,
   });
   response.end(indexHtml);
 }
@@ -163,10 +134,10 @@ export async function startThemeStudioServer(
       }
 
       const url = new URL(request.url ?? "/", origin);
-      if (request.method === "POST" && url.pathname === "/api/session") {
+      if (isStudioRoute("session", request.method, url.pathname)) {
         assertExactOrigin(request, origin);
-        const body = SessionExchangeSchema.parse(
-          await readBoundedJson(request, SESSION_JSON_LIMIT_BYTES),
+        const body = StudioSessionExchangeSchema.parse(
+          await readBoundedJson(request, STUDIO_BODY_LIMITS.sessionJsonBytes),
         );
         const cookie = session.exchange(body.token);
         response.writeHead(204, {
@@ -185,7 +156,7 @@ export async function startThemeStudioServer(
         );
       }
 
-      if (request.method === "GET" && url.pathname === "/api/bootstrap") {
+      if (isStudioRoute("bootstrap", request.method, url.pathname)) {
         writeJson(response, 200, StudioBootstrapSchema.parse({
           protocolVersion: STUDIO_PROTOCOL_VERSION,
           studioVersion: dependencies.studioVersion,
@@ -208,12 +179,12 @@ export async function startThemeStudioServer(
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/themes") {
+      if (isStudioRoute("themes", request.method, url.pathname)) {
         writeJson(response, 200, await requireWorkspace(dependencies.workspace).listThemes());
         return;
       }
 
-      if (request.method === "POST" && url.pathname === "/api/themes/apply") {
+      if (isStudioRoute("applySavedTheme", request.method, url.pathname)) {
         assertExactOrigin(request, origin);
         const ref = StudioThemeRefSchema.parse(await readBoundedJson(request));
         writeJson(
@@ -239,14 +210,14 @@ export async function startThemeStudioServer(
         return;
       }
 
-      if (request.method === "POST" && url.pathname === "/api/drafts") {
+      if (isStudioRoute("createDraft", request.method, url.pathname)) {
         assertExactOrigin(request, origin);
         const input = StudioCreateDraftInputSchema.parse(await readBoundedJson(request));
         writeJson(response, 201, await requireWorkspace(dependencies.workspace).createDraft(input));
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/drafts/latest") {
+      if (isStudioRoute("latestDraft", request.method, url.pathname)) {
         writeJson(
           response,
           200,
@@ -290,7 +261,7 @@ export async function startThemeStudioServer(
         }
         if (request.method === "POST" && action === "assets") {
           assertExactOrigin(request, origin);
-          const bytes = await readBoundedBytes(request, IMAGE_UPLOAD_LIMIT_BYTES);
+          const bytes = await readBoundedBytes(request, STUDIO_BODY_LIMITS.imageBytes);
           const input = StudioUploadAssetInputSchema.parse({
             draftId,
             expectedRevision: Number(url.searchParams.get("revision")),
@@ -305,9 +276,9 @@ export async function startThemeStudioServer(
         }
       }
 
-      if (request.method === "POST" && url.pathname === "/api/import") {
+      if (isStudioRoute("importTheme", request.method, url.pathname)) {
         assertExactOrigin(request, origin);
-        const bytes = await readBoundedBytes(request, ARCHIVE_UPLOAD_LIMIT_BYTES);
+        const bytes = await readBoundedBytes(request, STUDIO_BODY_LIMITS.archiveBytes);
         const input = StudioImportThemeInputSchema.parse({
           fileName: headerValue(request.headers["x-file-name"]),
           bytes,
@@ -316,7 +287,7 @@ export async function startThemeStudioServer(
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/export") {
+      if (isStudioRoute("exportTheme", request.method, url.pathname)) {
         const ref = StudioThemeRefSchema.parse({
           id: url.searchParams.get("id"),
           version: url.searchParams.get("version"),
@@ -328,18 +299,18 @@ export async function startThemeStudioServer(
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/runtime") {
+      if (isStudioRoute("runtime", request.method, url.pathname)) {
         writeJson(response, 200, await requireWorkspace(dependencies.workspace).getRuntimeStatus());
         return;
       }
 
-      if (request.method === "POST" && url.pathname === "/api/runtime/restore") {
+      if (isStudioRoute("restoreRuntime", request.method, url.pathname)) {
         assertExactOrigin(request, origin);
         writeJson(response, 200, await requireWorkspace(dependencies.workspace).restoreRuntime());
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/draft-asset") {
+      if (isStudioRoute("draftAsset", request.method, url.pathname)) {
         const asset = await requireWorkspace(dependencies.workspace).readDraftAsset(
           url.searchParams.get("draftId") ?? "",
           url.searchParams.get("path") ?? "",
@@ -348,7 +319,7 @@ export async function startThemeStudioServer(
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/theme-preview") {
+      if (isStudioRoute("themePreview", request.method, url.pathname)) {
         const source = url.searchParams.get("source");
         if (source !== "builtin" && source !== "personal") {
           throw new StudioError("STUDIO_REQUEST_INVALID", "Theme preview source is invalid");
@@ -362,13 +333,13 @@ export async function startThemeStudioServer(
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/api/events") {
+      if (isStudioRoute("events", request.method, url.pathname)) {
         const firstRuntime = await dependencies.runtimeStatus();
         response.writeHead(200, {
-          "Content-Type": "text/event-stream; charset=utf-8",
-          "Cache-Control": "no-store",
+          "Content-Type": STUDIO_RESPONSE_POLICIES.sse.contentType,
+          "Cache-Control": STUDIO_RESPONSE_POLICIES.sse.cacheControl,
           Connection: "keep-alive",
-          "X-Content-Type-Options": "nosniff",
+          "X-Content-Type-Options": STUDIO_RESPONSE_POLICIES.sse.contentTypeOptions,
         });
 
         let closed = false;
@@ -413,7 +384,7 @@ export async function startThemeStudioServer(
       if (dependencies.fallback && await dependencies.fallback(request, response)) {
         return;
       }
-      if (request.method === "GET" && url.pathname === "/") {
+      if (isStudioRoute("home", request.method, url.pathname)) {
         serveIndex(response, dependencies.indexHtml);
         return;
       }

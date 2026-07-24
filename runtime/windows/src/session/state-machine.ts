@@ -5,7 +5,7 @@ import {
   type RuntimeStatus,
 } from "../state.js";
 
-const ALLOWED: Readonly<Record<RuntimeStatus, readonly RuntimeStatus[]>> = {
+export const RUNTIME_STATE_TRANSITIONS: Readonly<Record<RuntimeStatus, readonly RuntimeStatus[]>> = {
   launching: ["launching", "active", "recovery-required", "restored-awaiting-exit"],
   active: ["active", "paused", "paused-incompatible", "recovery-required", "restoring"],
   paused: ["paused", "active", "paused-incompatible", "recovery-required", "restoring"],
@@ -26,7 +26,7 @@ export function transitionRuntimeState(
   current: RuntimeSessionState,
   next: RuntimeSessionState,
 ): RuntimeSessionState {
-  if (!ALLOWED[current.status].includes(next.status)) {
+  if (!RUNTIME_STATE_TRANSITIONS[current.status].includes(next.status)) {
     throw new RuntimeError(
       "RUNTIME_INVALID_STATE",
       `Illegal Runtime transition: ${current.status} -> ${next.status}`,

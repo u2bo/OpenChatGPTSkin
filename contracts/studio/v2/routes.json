@@ -1,0 +1,253 @@
+{
+  "bodyLimits": {
+    "archiveBytes": 33554432,
+    "imageBytes": 52428800,
+    "jsonBytes": 262144,
+    "sessionJsonBytes": 16384
+  },
+  "errorStatus": {
+    "INTERNAL": 500,
+    "RUNTIME_STATUS_UNAVAILABLE": 503,
+    "STUDIO_APPLY_FAILED": 409,
+    "STUDIO_ASSET_INVALID": 422,
+    "STUDIO_DELETE_FAILED": 422,
+    "STUDIO_DRAFT_CONFLICT": 409,
+    "STUDIO_DRAFT_INVALID": 422,
+    "STUDIO_DRAFT_NOT_FOUND": 404,
+    "STUDIO_EXPORT_INVALID": 422,
+    "STUDIO_IMPORT_INVALID": 422,
+    "STUDIO_ORIGIN_REJECTED": 403,
+    "STUDIO_REQUEST_INVALID": 400,
+    "STUDIO_REQUEST_TOO_LARGE": 413,
+    "STUDIO_SAVE_FAILED": 422,
+    "STUDIO_SESSION_INVALID": 401
+  },
+  "protocolVersion": 2,
+  "responsePolicies": {
+    "binary": {
+      "cacheControl": "no-store",
+      "contentType": "route-defined",
+      "contentTypeOptions": "nosniff"
+    },
+    "html": {
+      "cacheControl": "no-store",
+      "contentType": "text/html; charset=utf-8",
+      "contentTypeOptions": "nosniff"
+    },
+    "json": {
+      "cacheControl": "no-store",
+      "contentType": "application/json; charset=utf-8",
+      "contentTypeOptions": "nosniff"
+    },
+    "sse": {
+      "cacheControl": "no-store",
+      "contentType": "text/event-stream; charset=utf-8",
+      "contentTypeOptions": "nosniff"
+    }
+  },
+  "routes": [
+    {
+      "id": "home",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/",
+      "response": "html",
+      "successStatus": 200
+    },
+    {
+      "id": "session",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/session",
+      "request": "sessionExchange",
+      "response": "none",
+      "successStatus": 204
+    },
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/bootstrap",
+      "response": "bootstrap",
+      "successStatus": 200
+    },
+    {
+      "id": "themes",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/themes",
+      "response": "themeLibrary",
+      "successStatus": 200
+    },
+    {
+      "id": "applySavedTheme",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/themes/apply",
+      "request": "themeRef",
+      "response": "applyResult",
+      "successStatus": 200
+    },
+    {
+      "id": "deleteTheme",
+      "method": "DELETE",
+      "originRequired": true,
+      "path": "/api/themes/{id}",
+      "request": "deleteTheme",
+      "response": "themeLibrary",
+      "successStatus": 200
+    },
+    {
+      "id": "createDraft",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts",
+      "request": "createDraft",
+      "response": "draft",
+      "successStatus": 201
+    },
+    {
+      "id": "latestDraft",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/drafts/latest",
+      "response": "nullableDraft",
+      "successStatus": 200
+    },
+    {
+      "id": "draft",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/drafts/{draftId}",
+      "response": "draft",
+      "successStatus": 200
+    },
+    {
+      "id": "updateDraft",
+      "method": "PUT",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}",
+      "request": "updateDraft",
+      "response": "draft",
+      "successStatus": 200
+    },
+    {
+      "id": "undoDraft",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}/undo",
+      "request": "draftCommand",
+      "response": "draft",
+      "successStatus": 200
+    },
+    {
+      "id": "redoDraft",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}/redo",
+      "request": "draftCommand",
+      "response": "draft",
+      "successStatus": 200
+    },
+    {
+      "id": "validateDraft",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}/validate",
+      "response": "draft",
+      "successStatus": 200
+    },
+    {
+      "id": "saveDraft",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}/save",
+      "request": "draftCommand",
+      "response": "saveResult",
+      "successStatus": 200
+    },
+    {
+      "id": "applyDraft",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}/apply",
+      "request": "draftCommand",
+      "response": "applyResult",
+      "successStatus": 200
+    },
+    {
+      "id": "uploadAsset",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/drafts/{draftId}/assets",
+      "request": "binaryAsset",
+      "response": "draft",
+      "successStatus": 200
+    },
+    {
+      "id": "importTheme",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/import",
+      "request": "binaryArchive",
+      "response": "draft",
+      "successStatus": 201
+    },
+    {
+      "id": "exportTheme",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/export",
+      "request": "themeRefQuery",
+      "response": "binaryArchive",
+      "successStatus": 200
+    },
+    {
+      "id": "runtime",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/runtime",
+      "response": "runtimeStatus",
+      "successStatus": 200
+    },
+    {
+      "id": "restoreRuntime",
+      "method": "POST",
+      "originRequired": true,
+      "path": "/api/runtime/restore",
+      "response": "runtimeStatus",
+      "successStatus": 200
+    },
+    {
+      "id": "draftAsset",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/draft-asset",
+      "response": "binaryAsset",
+      "successStatus": 200
+    },
+    {
+      "id": "themePreview",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/theme-preview",
+      "response": "binaryImage",
+      "successStatus": 200
+    },
+    {
+      "id": "events",
+      "method": "GET",
+      "originRequired": false,
+      "path": "/api/events",
+      "response": "sseRuntimeStatus",
+      "successStatus": 200
+    }
+  ],
+  "securityHeaders": [
+    "Content-Security-Policy",
+    "Cross-Origin-Opener-Policy",
+    "Referrer-Policy",
+    "X-Content-Type-Options",
+    "X-Frame-Options"
+  ]
+}

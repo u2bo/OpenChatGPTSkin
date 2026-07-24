@@ -3,7 +3,7 @@ import { open, readFile, rename, unlink } from "node:fs/promises";
 import { z } from "zod";
 import { RuntimeError } from "../errors.js";
 
-const ControllerLockRecordSchema = z.object({
+export const ControllerLockRecordSchema = z.object({
   schemaVersion: z.literal(1),
   pid: z.number().int().positive(),
   startedAt: z.string().datetime(),

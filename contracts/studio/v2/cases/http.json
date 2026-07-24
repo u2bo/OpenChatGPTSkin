@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "expectedStatus": 200,
+      "name": "authenticated bootstrap",
+      "valid": true
+    },
+    {
+      "expectedStatus": 204,
+      "name": "one-time session exchange",
+      "valid": true
+    },
+    {
+      "expectedErrorCode": "STUDIO_SESSION_INVALID",
+      "expectedPath": "/api/session",
+      "expectedStatus": 401,
+      "name": "reused bootstrap token",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "STUDIO_ORIGIN_REJECTED",
+      "expectedPath": "/headers/origin",
+      "expectedStatus": 403,
+      "name": "cross-origin mutation",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "STUDIO_REQUEST_TOO_LARGE",
+      "expectedPath": "/body",
+      "expectedStatus": 413,
+      "name": "oversized binary upload",
+      "valid": false
+    },
+    {
+      "expectedStatus": 200,
+      "name": "binary export",
+      "responseKind": "binary",
+      "valid": true
+    },
+    {
+      "expectedStatus": 200,
+      "name": "runtime status stream",
+      "responseKind": "sse",
+      "valid": true
+    }
+  ],
+  "protocolVersion": 2
+}

@@ -24,6 +24,15 @@ export interface RecoverRuntimeControllerDependencies extends RuntimeControllerD
   readonly discoverCodexInstall?: typeof discoverCodexInstall;
 }
 
+export const RUNTIME_RECOVERY_SEMANTIC_CASES = [
+  { name: "stable active appearance", valid: true, sourceStatus: "active", expectedStatus: "active" },
+  { name: "stable paused appearance", valid: true, sourceStatus: "paused", expectedStatus: "paused" },
+  { name: "interrupted launch restores official appearance", valid: true, operation: "launch", expectedStatus: "restored-awaiting-exit" },
+  { name: "interrupted restore retries official appearance", valid: true, operation: "restore", expectedStatus: "restored-awaiting-exit" },
+  { name: "failed cleanup marks appearance unknown", valid: true, cleanupSucceeded: false, expectedStatus: "recovery-required" },
+  { name: "managed process identity changed", valid: false, expectedErrorCode: "RUNTIME_SESSION_STALE", expectedPath: "/codex/startedAt" },
+] as const;
+
 interface RecoveredAppearance {
   readonly state: RuntimeSessionState;
   readonly keepPage: boolean;

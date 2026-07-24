@@ -8,6 +8,10 @@ import { PRODUCT_VERSION_PATTERN } from "./security.js";
 
 export const STUDIO_PROTOCOL_VERSION = 2 as const;
 
+export const StudioSessionExchangeSchema = z.object({
+  token: z.string().regex(/^[0-9a-f]{64}$/),
+}).strict();
+
 export const StudioThemeRefSchema = z.object({
   id: ThemeIdSchema,
   version: ThemeVersionSchema,

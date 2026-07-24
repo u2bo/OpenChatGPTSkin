@@ -19,6 +19,17 @@ import type { ValidatedThemeBundle } from "./types.js";
 export const OCSKIN_MAX_ARCHIVE_BYTES = 32 * 1024 * 1024;
 export const OCSKIN_MAX_EXPANDED_BYTES = 32 * 1024 * 1024;
 
+export const OCSKIN_ARCHIVE_SEMANTIC_CASES = [
+  { name: "valid archive", valid: true },
+  { name: "unsafe traversal entry", valid: false, expectedErrorCode: "ARCHIVE_ENTRY_UNSAFE", expectedPath: "/entries/../secret" },
+  { name: "case-folded duplicate entry", valid: false, expectedErrorCode: "ARCHIVE_ENTRY_DUPLICATE", expectedPath: "/entries" },
+  { name: "unsupported entry", valid: false, expectedErrorCode: "ARCHIVE_ENTRY_UNSUPPORTED", expectedPath: "/entries/run.js" },
+  { name: "expanded size limit", valid: false, expectedErrorCode: "PACKAGE_EXPANDED_TOO_LARGE", expectedPath: "/expandedBytes" },
+  { name: "missing required files", valid: false, expectedErrorCode: "ARCHIVE_REQUIRED_FILE_MISSING", expectedPath: "/entries/theme.json" },
+  { name: "manifest mismatch", valid: false, expectedErrorCode: "ARCHIVE_MANIFEST_MISMATCH", expectedPath: "/manifest/files" },
+  { name: "hash mismatch", valid: false, expectedErrorCode: "ARCHIVE_HASH_MISMATCH", expectedPath: "/manifest/files/sha256" },
+] as const;
+
 export interface OcskinManifest {
   readonly schemaVersion: 1;
   readonly themeId: string;
@@ -29,7 +40,7 @@ export interface OcskinManifest {
   }>>;
 }
 
-const ManifestSchema = z.object({
+export const OcskinManifestSchema = z.object({
   schemaVersion: z.literal(1),
   themeId: ThemeIdSchema,
   themeVersion: ThemeVersionSchema,
@@ -230,7 +241,7 @@ export async function unpackTheme(bytes: Uint8Array): Promise<ValidatedThemeBund
 
   let manifest: OcskinManifest;
   try {
-    manifest = ManifestSchema.parse(
+    manifest = OcskinManifestSchema.parse(
       JSON.parse(strFromU8(manifestBytes)),
     ) as OcskinManifest;
   } catch (error) {

@@ -1,7 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { StudioError } from "@open-chatgpt-skin/theme-studio-core";
+import {
+  STUDIO_BODY_LIMITS,
+  STUDIO_RESPONSE_POLICIES,
+  StudioError,
+} from "@open-chatgpt-skin/theme-studio-core";
 
-export const STUDIO_JSON_LIMIT_BYTES = 256 * 1024;
+export const STUDIO_JSON_LIMIT_BYTES = STUDIO_BODY_LIMITS.jsonBytes;
 
 export async function readBoundedJson(
   request: IncomingMessage,
@@ -72,9 +76,9 @@ export function writeJson(
   body: unknown,
 ): void {
   response.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff",
+    "Content-Type": STUDIO_RESPONSE_POLICIES.json.contentType,
+    "Cache-Control": STUDIO_RESPONSE_POLICIES.json.cacheControl,
+    "X-Content-Type-Options": STUDIO_RESPONSE_POLICIES.json.contentTypeOptions,
   });
   response.end(`${JSON.stringify(body)}\n`);
 }
@@ -89,8 +93,8 @@ export function writeBytes(
   response.writeHead(status, {
     "Content-Type": contentType,
     "Content-Length": String(body.length),
-    "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": STUDIO_RESPONSE_POLICIES.binary.cacheControl,
+    "X-Content-Type-Options": STUDIO_RESPONSE_POLICIES.binary.contentTypeOptions,
     ...headers,
   });
   response.end(body);

@@ -45,6 +45,42 @@ func parseControllerOptions(arguments []string) (controllerOptions, error) {
 	return options, nil
 }
 
+type studioOptions struct {
+	healthOnce bool
+	noOpen     bool
+	dev        bool
+	viteOrigin string
+}
+
+func parseStudioOptions(arguments []string) (studioOptions, error) {
+	options := studioOptions{}
+	for index := 0; index < len(arguments); index++ {
+		switch arguments[index] {
+		case "--health-once":
+			options.healthOnce = true
+		case "--no-open":
+			options.noOpen = true
+		case "--dev":
+			if options.dev {
+				return studioOptions{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--dev may be specified only once"}
+			}
+			options.dev = true
+		case "--vite-origin":
+			index++
+			if index >= len(arguments) || !options.dev || options.viteOrigin != "" {
+				return studioOptions{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--vite-origin requires --dev and a value"}
+			}
+			options.viteOrigin = arguments[index]
+		default:
+			return studioOptions{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "unknown studio option: " + arguments[index]}
+		}
+	}
+	if options.dev && options.viteOrigin == "" {
+		return studioOptions{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--dev requires --vite-origin"}
+	}
+	return options, nil
+}
+
 func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int {
 	command, err := Parse(arguments)
 	if err != nil {
@@ -53,19 +89,33 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 	}
 	switch command.Role {
 	case RoleStudio:
-		if len(command.Args) > 1 || len(command.Args) == 1 && command.Args[0] != "--health-once" && command.Args[0] != "--no-open" {
-			writeCLIError(stderr, commandError{code: "CLI_ARGUMENT_INVALID", message: "unknown studio option"})
+		options, parseErr := parseStudioOptions(command.Args)
+		if parseErr != nil {
+			writeCLIError(stderr, parseErr)
 			return 2
 		}
-		studio, startErr := StartStudio(ctx)
+		start := StartStudio
+		if options.viteOrigin != "" {
+			start = func(context context.Context) (*RunningStudio, error) {
+				return StartStudioDev(context, options.viteOrigin)
+			}
+		}
+		studio, startErr := start(ctx)
 		if startErr != nil {
 			writeCLIError(stderr, startErr)
 			return 1
 		}
-		_ = json.NewEncoder(stdout).Encode(map[string]any{"ok": true, "role": "studio", "origin": studio.Origin})
-		if has(command.Args, "--health-once") {
+		_ = json.NewEncoder(stdout).Encode(map[string]any{"ok": true, "role": "studio"})
+		if options.healthOnce {
 			_ = studio.Close()
 			return 0
+		}
+		if !options.noOpen {
+			if err := openBrowser(studio.BootstrapURL); err != nil {
+				_ = studio.Close()
+				writeCLIError(stderr, commandError{code: "STUDIO_START_FAILED", message: "Studio browser could not be opened"})
+				return 1
+			}
 		}
 		<-ctx.Done()
 		_ = studio.Close()
@@ -90,8 +140,13 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 		_ = json.NewEncoder(stdout).Encode(response)
 		return 0
 	case RoleContract:
-		writeCLIError(stderr, commandError{code: "GO_BASELINE_SUITE_NOT_IMPLEMENTED", message: "The Go feasibility spike does not claim full contract parity"})
-		return 1
+		result, contractErr := runContractBaseline(ctx, command.Args)
+		if contractErr != nil {
+			writeCLIError(stderr, contractErr)
+			return 1
+		}
+		_ = json.NewEncoder(stdout).Encode(result)
+		return 0
 	default:
 		writeCLIError(stderr, commandError{code: "CLI_ARGUMENT_INVALID", message: "unknown role"})
 		return 2

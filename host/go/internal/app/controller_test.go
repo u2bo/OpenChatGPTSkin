@@ -32,10 +32,7 @@ func TestStudioCloseDoesNotEndControllerAndControllerCleansItsLock(t *testing.T)
 		t.Fatal(err)
 	}
 
-	studio, err := StartStudio(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
+	studio := startTestStudio(t)
 	if err := studio.Close(); err != nil {
 		t.Fatal(err)
 	}

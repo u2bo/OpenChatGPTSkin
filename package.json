@@ -35,6 +35,7 @@
     "runtime:acceptance": "npm run build && node runtime/windows/dist/acceptance-cli.js",
     "studio:build": "npm run build -w @open-chatgpt-skin/theme-studio",
     "release:stage": "tsx scripts/release/stage-release.ts",
+    "studio:dev:go": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin studio --dev --vite-origin http://127.0.0.1:5173",
     "release:acceptance": "tsx scripts/release/accept-release.ts",
     "release:package": "tsx scripts/release/package-release.ts",
     "release:acceptance:archive": "tsx scripts/release/accept-portable.ts",

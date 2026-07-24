@@ -55,3 +55,7 @@ func processAlive(pid int, startedAt string) bool {
 	actual, err := processStartedAt(pid)
 	return err == nil && actual == startedAt
 }
+
+func openBrowser(url string) error {
+	return exec.Command("rundll32.exe", "url.dll,FileProtocolHandler", url).Start()
+}

@@ -44,6 +44,13 @@ type Install struct {
 	ResourceSignerCommonName string `json:"resourceSignerCommonName"`
 }
 
+type ProcessIdentity struct {
+	PID            int    `json:"pid"`
+	ParentPID      int    `json:"parentPid"`
+	StartedAt      string `json:"startedAt"`
+	ExecutablePath string `json:"executablePath"`
+}
+
 type Error struct {
 	Code    string
 	Message string
@@ -100,6 +107,46 @@ func inspect(ctx context.Context, runner PowerShellRunner) (Install, error) {
 	return install, nil
 }
 
+// ListCodexRoots returns only root ChatGPT.exe processes. Any result is an
+// unmanaged instance until it was launched and recorded by this Host, so the
+// caller must refuse rather than attach, modify, or terminate it.
+func ListCodexRoots(ctx context.Context) ([]ProcessIdentity, error) {
+	inspectionContext, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	contents, err := defaultRunner{}.Run(inspectionContext, rootsScript)
+	if err != nil {
+		return nil, err
+	}
+	return parseRoots(contents)
+}
+
+func parseRoots(contents []byte) ([]ProcessIdentity, error) {
+	var roots []ProcessIdentity
+	if len(bytes.TrimSpace(contents)) == 0 || string(bytes.TrimSpace(contents)) == "null" {
+		return []ProcessIdentity{}, nil
+	}
+	if err := json.Unmarshal(contents, &roots); err != nil {
+		return nil, Error{Code: "PROCESS_INSPECTION_DENIED", Message: "Windows process inspection returned invalid JSON"}
+	}
+	for _, root := range roots {
+		if root.PID < 1 || root.ParentPID < 0 || root.ExecutablePath == "" || !strings.HasSuffix(strings.ToLower(normalizePath(root.ExecutablePath)), "/"+strings.ToLower(expectedEntry)) || !validTimestamp(root.StartedAt) {
+			return nil, Error{Code: "PROCESS_INSPECTION_DENIED", Message: "Windows process inspection returned an invalid root"}
+		}
+	}
+	return roots, nil
+}
+
+func RefuseUnmanagedCodex(ctx context.Context) error {
+	roots, err := ListCodexRoots(ctx)
+	if err != nil {
+		return err
+	}
+	if len(roots) > 0 {
+		return Error{Code: "CODEX_ALREADY_RUNNING_UNMANAGED", Message: "A normal Codex instance is already running"}
+	}
+	return nil
+}
+
 func verify(install Install) error {
 	valid := install.PackageRoot != "" && install.EntryPath != "" &&
 		install.IdentityName == expectedIdentity && versionPattern.MatchString(install.PackageVersion) &&
@@ -118,6 +165,11 @@ func verify(install Install) error {
 
 func normalizePath(path string) string {
 	return strings.TrimRight(strings.ReplaceAll(path, "\\", "/"), "/")
+}
+
+func validTimestamp(value string) bool {
+	_, err := time.Parse(time.RFC3339Nano, value)
+	return err == nil
 }
 
 const inspectionScript = `$ErrorActionPreference = "Stop"
@@ -161,3 +213,15 @@ $resourceSig = Signature ([IO.Path]::Combine($root, "app\resources\codex.exe"))
   packageRoot = $root; entryPath = $entry; identityName = [string]$manifest.Package.Identity.Name; packageVersion = [string]$manifest.Package.Identity.Version; packagePublisher = [string]$manifest.Package.Identity.Publisher; appId = [string]$app.Id; entryRelativePath = [string]$app.Executable; entryPoint = [string]$app.EntryPoint;
   packageSignatureStatus = $packageSig.status; packageSignerCommonName = $packageSig.signer; catalogSignatureStatus = $catalogSig.status; catalogSignerCommonName = $catalogSig.signer; entryBlockMapValid = Test-BlockMap $root ([string]$app.Executable); resourceSignatureStatus = $resourceSig.status; resourceSignerCommonName = $resourceSig.signer
 } | ConvertTo-Json -Compress`
+
+const rootsScript = `$ErrorActionPreference = "Stop"
+$all = @(Get-CimInstance Win32_Process -Filter "Name='ChatGPT.exe'" | ForEach-Object {
+  [pscustomobject]@{ pid = [int]$_.ProcessId; parentPid = [int]$_.ParentProcessId; executablePath = [string]$_.ExecutablePath }
+})
+$ids = @{}
+foreach ($entry in $all) { $ids[[int]$entry.pid] = $true }
+$roots = @($all | Where-Object { -not $ids.ContainsKey([int]$_.parentPid) } | ForEach-Object {
+  $process = Get-Process -Id ([int]$_.pid) -ErrorAction Stop
+  [pscustomobject]@{ pid = [int]$_.pid; parentPid = [int]$_.parentPid; startedAt = $process.StartTime.ToUniversalTime().ToString("o"); executablePath = [string]$_.executablePath }
+})
+ConvertTo-Json -InputObject @($roots) -Compress`

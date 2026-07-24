@@ -65,6 +65,19 @@ func TestInspectionRejectsUnexpectedFields(t *testing.T) {
 	}
 }
 
+func TestRefuseUnmanagedCodexUsesTheRootProcessBoundary(t *testing.T) {
+	root := ProcessIdentity{PID: 101, ParentPID: 1, StartedAt: "2026-07-24T00:00:00Z", ExecutablePath: validInstall().EntryPath}
+	contents, err := json.Marshal([]ProcessIdentity{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The public list boundary rejects malformed identities; launch code can use
+	// only a verified root rather than an arbitrary child ChatGPT process.
+	if _, err := parseRoots(contents); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestLiveOfficialCodexInspection(t *testing.T) {
 	if os.Getenv("OPENCHATGPTSKIN_LIVE_WINDOWS_TEST") != "1" {
 		t.Skip("set OPENCHATGPTSKIN_LIVE_WINDOWS_TEST=1 on a prepared Windows device")
@@ -75,5 +88,21 @@ func TestLiveOfficialCodexInspection(t *testing.T) {
 	}
 	if install.PackageVersion != "26.721.3404.0" {
 		t.Fatalf("unexpected installed Codex version: %s", install.PackageVersion)
+	}
+}
+
+func TestLiveClosedCodexHasNoUnmanagedRoot(t *testing.T) {
+	if os.Getenv("OPENCHATGPTSKIN_LIVE_WINDOWS_TEST") != "1" {
+		t.Skip("set OPENCHATGPTSKIN_LIVE_WINDOWS_TEST=1 on a prepared Windows device")
+	}
+	roots, err := ListCodexRoots(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(roots) != 0 {
+		t.Fatalf("expected no normal Codex root after exit, found %+v", roots)
+	}
+	if err := RefuseUnmanagedCodex(context.Background()); err != nil {
+		t.Fatal(err)
 	}
 }

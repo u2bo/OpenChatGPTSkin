@@ -288,7 +288,7 @@ func TestStudioAppliesOnlySavedThemeAndReturnsRuntimeStatus(t *testing.T) {
 	}
 	defer server.Close()
 	client := sessionClient(t, server)
-	apply, err := http.NewRequest(http.MethodPost, server.Origin+"/api/themes/apply", strings.NewReader(`{"ref":{"id":"mountain-mist","version":"1.3.0"}}`))
+	apply, err := http.NewRequest(http.MethodPost, server.Origin+"/api/themes/apply", strings.NewReader(`{"id":"mountain-mist","version":"1.3.0"}`))
 	if err != nil {
 		t.Fatal(err)
 	}

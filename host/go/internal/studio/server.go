@@ -341,16 +341,14 @@ func (state *handlerState) dispatch(response http.ResponseWriter, request *http.
 		if state.applyTheme == nil {
 			return studioError{code: "RUNTIME_STATUS_UNAVAILABLE", message: "Runtime apply is unavailable", statusCode: http.StatusServiceUnavailable}
 		}
-		var input struct {
-			Ref themerepo.Ref `json:"ref"`
-		}
+		var input themerepo.Ref
 		if err := decodeBoundedJSON(request.Body, jsonLimitBytes, &input); err != nil {
 			return err
 		}
-		if _, err := state.readTheme(input.Ref); err != nil {
+		if _, err := state.readTheme(input); err != nil {
 			return err
 		}
-		runtime, err := state.applyTheme(request.Context(), input.Ref)
+		runtime, err := state.applyTheme(request.Context(), input)
 		if err != nil {
 			return err
 		}

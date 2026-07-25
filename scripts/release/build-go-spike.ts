@@ -10,6 +10,7 @@ try {
     outputDirectory: output,
     nativeInstallers: !args.includes("--portable-only"),
     nativeArtifactsOnly: args.includes("--native-only"),
+    onProgress: (message) => process.stderr.write(`[go-package] ${message}\n`),
   });
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 } catch (error) {

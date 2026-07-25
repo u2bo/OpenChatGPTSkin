@@ -101,6 +101,15 @@ export interface BuildGoSpikeOptions {
   readonly outputDirectory: string;
   readonly nativeInstallers: boolean;
   readonly nativeArtifactsOnly?: boolean;
+  readonly onProgress?: (message: string) => void;
+}
+
+interface GoSpikeBuildMetadata {
+  readonly goVersion: string;
+  readonly commit: string;
+  readonly dirty: boolean;
+  readonly contractsSha256: string;
+  readonly cdpAdapterSha256: string;
 }
 
 function portable(path: string): string {
@@ -175,6 +184,36 @@ function sha256(contents: Uint8Array): string {
   return createHash("sha256").update(contents).digest("hex");
 }
 
+async function directorySha256(root: string): Promise<string> {
+  const hash = createHash("sha256");
+  for (const path of await walkFiles(root)) {
+    hash.update(path, "utf8");
+    hash.update("\0", "utf8");
+    hash.update(await readFile(join(root, ...path.split("/"))));
+  }
+  return hash.digest("hex");
+}
+
+async function buildMetadata(workspaceRoot: string): Promise<GoSpikeBuildMetadata> {
+  const [{ stdout: goVersion }, { stdout: commit }, { stdout: status }, cdpManifest] = await Promise.all([
+    execFileAsync("go", ["env", "GOVERSION"], { cwd: join(workspaceRoot, "host", "go"), windowsHide: true }),
+    execFileAsync("git", ["rev-parse", "HEAD"], { cwd: workspaceRoot, windowsHide: true }),
+    execFileAsync("git", ["status", "--porcelain"], { cwd: workspaceRoot, windowsHide: true }),
+    readFile(join(workspaceRoot, "host", "go", "internal", "cdp", "generated", "adapter-manifest.json"), "utf8"),
+  ]);
+  const parsed = JSON.parse(cdpManifest) as { readonly sha256?: unknown };
+  if (typeof parsed.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(parsed.sha256)) {
+    throw new Error("Embedded CDP Adapter manifest hash is invalid");
+  }
+  return {
+    goVersion: goVersion.trim(),
+    commit: commit.trim(),
+    dirty: status.trim().length > 0,
+    contractsSha256: await directorySha256(join(workspaceRoot, "contracts")),
+    cdpAdapterSha256: parsed.sha256,
+  };
+}
+
 async function artifact(path: string, kind: GoSpikeArtifactReport["kind"], baselineBytes: number): Promise<GoSpikeArtifactReport> {
   const contents = await readFile(path);
   return { name: path.split(sep).at(-1)!, kind, bytes: contents.length, sha256: sha256(contents), baselineBytes };
@@ -210,6 +249,7 @@ async function stageTarget(
   workspaceRoot: string,
   outputDirectory: string,
   target: Target,
+  metadata: GoSpikeBuildMetadata,
 ): Promise<GoSpikeTargetReport> {
   const stageParent = join(outputDirectory, "stages", target.target);
   const stageRoot = join(stageParent, PRODUCT);
@@ -240,20 +280,34 @@ async function stageTarget(
     copyRuntimeThemes(workspaceRoot, join(stageRoot, "themes")),
     cp(join(workspaceRoot, "LICENSE"), join(stageRoot, "LICENSE")),
   ]);
-  await writeFile(join(stageRoot, "go-spike-manifest.json"), `${JSON.stringify({
-    schemaVersion: 1,
-    version: SPIKE_VERSION,
-    target: target.target,
-    roles: ["studio", "controller", "runtime"],
-    imageImplementation: IMAGE_IMPLEMENTATION,
-    cgo: false,
-    sidecars: [],
-  }, null, 2)}\n`, "utf8");
   const executableContents = await readFile(executablePath);
   const executableFormat = inspectExecutable(executableContents);
   if (executableFormat !== target.executableFormat) {
     throw new Error(`Go spike target format mismatch: ${target.target}`);
   }
+  await writeFile(join(stageRoot, "go-spike-manifest.json"), `${JSON.stringify({
+    schemaVersion: 1,
+    version: SPIKE_VERSION,
+    target: target.target,
+    roles: ["studio", "controller", "runtime"],
+    host: {
+      language: "go",
+      goVersion: metadata.goVersion,
+      commit: metadata.commit,
+      dirty: metadata.dirty,
+      entry: {
+        path: target.executable,
+        bytes: executableContents.length,
+        sha256: sha256(executableContents),
+      },
+    },
+    contractsSha256: metadata.contractsSha256,
+    cdpAdapterSha256: metadata.cdpAdapterSha256,
+    imageImplementation: IMAGE_IMPLEMENTATION,
+    cgo: false,
+    sidecars: [],
+  }, null, 2)}\n`, "utf8");
+  await assertNodeFreeStage(stageRoot);
   return {
     target: target.target,
     executableFormat,
@@ -261,6 +315,16 @@ async function stageTarget(
     stageBytes: await directoryBytes(stageRoot),
     baselineStageBytes: target.baselineStageBytes,
   };
+}
+
+async function assertNodeFreeStage(stageRoot: string): Promise<void> {
+  for (const path of await walkFiles(stageRoot)) {
+    const parts = path.toLowerCase().split("/");
+    const name = parts.at(-1);
+    if (parts.includes("node_modules") || name === "node" || name === "node.exe") {
+      throw new Error(`Go spike stage contains a Node Runtime entry: ${path}`);
+    }
+  }
 }
 
 async function buildPortableArtifacts(
@@ -296,11 +360,28 @@ function currentNativeTarget(): Target {
 }
 
 async function findInnoSetup(): Promise<string | null> {
-  for (const path of [
+  const candidates = [
     process.env.INNO_SETUP_COMPILER,
     "C:/Program Files (x86)/Inno Setup 6/ISCC.exe",
     "C:/Program Files/Inno Setup 6/ISCC.exe",
-  ]) {
+  ];
+  if (process.platform === "win32") {
+    for (const key of [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Inno Setup 6_is1",
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Inno Setup 6_is1",
+      "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Inno Setup 6_is1",
+    ]) {
+      try {
+        const { stdout } = await execFileAsync("reg.exe", ["query", key, "/v", "InstallLocation"], { windowsHide: true });
+        const match = /^\s*InstallLocation\s+REG_\w+\s+(.+)$/im.exec(stdout);
+        if (match?.[1]) candidates.push(join(match[1].trim(), "ISCC.exe"));
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException & { readonly code?: unknown }).code;
+        if (code !== 1) throw error;
+      }
+    }
+  }
+  for (const path of candidates) {
     if (path && await pathExists(path)) return path;
   }
   return null;
@@ -424,22 +505,30 @@ export async function buildGoSpikePackages(options: BuildGoSpikeOptions): Promis
   await mkdir(outputDirectory, { recursive: true });
   const npmExecPath = process.env.npm_execpath;
   if (!npmExecPath) throw new Error("npm_execpath is required to build the Go spike UI");
+  options.onProgress?.("Building Theme Studio UI");
   await execFileAsync(process.execPath, [npmExecPath, "run", "studio:build"], {
     cwd: workspaceRoot,
     windowsHide: true,
   });
+  const metadata = await buildMetadata(workspaceRoot);
+  const selectedTargets = options.nativeArtifactsOnly ? [currentNativeTarget()] : TARGETS;
   const targets: GoSpikeTargetReport[] = [];
-  for (const target of TARGETS) targets.push(await stageTarget(workspaceRoot, outputDirectory, target));
+  for (const target of selectedTargets) {
+    options.onProgress?.(`Building and staging ${target.target}`);
+    targets.push(await stageTarget(workspaceRoot, outputDirectory, target, metadata));
+  }
   const nativeTarget = options.nativeInstallers || options.nativeArtifactsOnly
     ? currentNativeTarget()
     : undefined;
-  const artifacts = await buildPortableArtifacts(
-    outputDirectory,
-    options.nativeArtifactsOnly ? [nativeTarget!] : TARGETS,
-  );
+  options.onProgress?.("Building portable artifacts");
+  const artifacts = await buildPortableArtifacts(outputDirectory, selectedTargets);
   if (options.nativeInstallers) {
-    if (process.platform === "win32") artifacts.push(await buildWindowsSetup(outputDirectory));
+    if (process.platform === "win32") {
+      options.onProgress?.("Building and accepting Windows Setup");
+      artifacts.push(await buildWindowsSetup(outputDirectory));
+    }
     if (process.platform === "darwin") {
+      options.onProgress?.(`Building macOS ${nativeTarget!.goarch === "arm64" ? "ARM64" : "x64"} DMG`);
       artifacts.push(await buildMacDmg(
         outputDirectory,
         nativeTarget as Extract<Target, { readonly goos: "darwin" }>,
@@ -456,6 +545,7 @@ export async function buildGoSpikePackages(options: BuildGoSpikeOptions): Promis
     artifacts,
   };
   await writeFile(join(outputDirectory, "go-spike-report.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  options.onProgress?.("Go package build complete");
   return report;
 }
 
@@ -469,7 +559,8 @@ export async function acceptGoSpikePackages(
 }> {
   const outputDirectory = resolve(outputDirectoryInput);
   const report = JSON.parse(await readFile(join(outputDirectory, "go-spike-report.json"), "utf8")) as GoSpikeReport;
-  if (report.schemaVersion !== 1 || report.targets.length !== 3) {
+  if (report.schemaVersion !== 1 || report.targets.length < 1 || report.targets.length > TARGETS.length ||
+    new Set(report.targets.map(({ target }) => target)).size !== report.targets.length) {
     throw new Error("Go spike report identity is invalid");
   }
   for (const target of report.targets) {
@@ -478,11 +569,34 @@ export async function acceptGoSpikePackages(
     }
     const definition = TARGETS.find((value) => value.target === target.target);
     if (!definition) throw new Error(`Unknown Go spike target: ${target.target}`);
-    const executable = await readFile(join(
-      outputDirectory, "stages", target.target, PRODUCT, definition.executable,
-    ));
+    const stageRoot = join(outputDirectory, "stages", target.target, PRODUCT);
+    await assertNodeFreeStage(stageRoot);
+    const executable = await readFile(join(stageRoot, definition.executable));
     if (inspectExecutable(executable) !== target.executableFormat) {
       throw new Error(`Go spike executable format changed: ${target.target}`);
+    }
+    const manifest = JSON.parse(await readFile(join(stageRoot, "go-spike-manifest.json"), "utf8")) as {
+      readonly schemaVersion?: unknown;
+      readonly target?: unknown;
+      readonly host?: {
+        readonly language?: unknown;
+        readonly goVersion?: unknown;
+        readonly commit?: unknown;
+        readonly entry?: { readonly path?: unknown; readonly bytes?: unknown; readonly sha256?: unknown };
+      };
+      readonly contractsSha256?: unknown;
+      readonly cdpAdapterSha256?: unknown;
+      readonly sidecars?: unknown;
+    };
+    if (manifest.schemaVersion !== 1 || manifest.target !== target.target || manifest.host?.language !== "go" ||
+      typeof manifest.host.goVersion !== "string" || !/^go\d+\.\d+/.test(manifest.host.goVersion) ||
+      typeof manifest.host.commit !== "string" || !/^[a-f0-9]{40}$/.test(manifest.host.commit) ||
+      manifest.host.entry?.path !== definition.executable || manifest.host.entry.bytes !== executable.length ||
+      manifest.host.entry.sha256 !== sha256(executable) ||
+      typeof manifest.contractsSha256 !== "string" || !/^[a-f0-9]{64}$/.test(manifest.contractsSha256) ||
+      typeof manifest.cdpAdapterSha256 !== "string" || !/^[a-f0-9]{64}$/.test(manifest.cdpAdapterSha256) ||
+      !Array.isArray(manifest.sidecars) || manifest.sidecars.length !== 0) {
+      throw new Error(`Go spike manifest is invalid: ${target.target}`);
     }
     for (const required of [
       "apps/theme-studio/dist/index.html",
@@ -511,7 +625,7 @@ export async function acceptGoSpikePackages(
     }
   }
   const kinds = new Set(report.artifacts.map(({ kind }) => kind));
-  const nativeEvidenceComplete = [
+  const nativeEvidenceComplete = TARGETS.every(({ target }) => report.targets.some((value) => value.target === target)) && [
     "zip-x64", "setup-x64", "tar.gz-arm64", "dmg-arm64", "tar.gz-x64", "dmg-x64",
   ].every((kind) => kinds.has(kind as GoSpikeArtifactReport["kind"]));
   if (requireAllNative && !nativeEvidenceComplete) {
@@ -530,7 +644,7 @@ export async function mergeGoSpikePackages(
   const outputDirectory = resolve(outputDirectoryInput);
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
-  const inputs = inputDirectories.map(resolve);
+  const inputs = inputDirectories.map((directory) => resolve(directory));
   const reports = await Promise.all(inputs.map(async (directory) => ({
     directory,
     report: JSON.parse(await readFile(join(directory, "go-spike-report.json"), "utf8")) as GoSpikeReport,
@@ -540,11 +654,34 @@ export async function mergeGoSpikePackages(
     report.schemaVersion !== foundation.schemaVersion ||
     report.version !== foundation.version ||
     report.imageImplementation !== foundation.imageImplementation ||
-    JSON.stringify(report.targets) !== JSON.stringify(foundation.targets)
+    report.cgo !== foundation.cgo ||
+    JSON.stringify(report.sidecars) !== JSON.stringify(foundation.sidecars)
   )) {
     throw new Error("Go spike reports do not describe the same source build");
   }
-  await cp(join(reports[0]!.directory, "stages"), join(outputDirectory, "stages"), { recursive: true });
+  const selectedTargets = new Map<Target["target"], {
+    readonly directory: string;
+    readonly target: GoSpikeTargetReport;
+  }>();
+  for (const input of reports) {
+    for (const target of input.report.targets) {
+      const existing = selectedTargets.get(target.target);
+      if (existing && JSON.stringify(existing.target) !== JSON.stringify(target)) {
+        throw new Error(`Go spike target reports conflict: ${target.target}`);
+      }
+      selectedTargets.set(target.target, { directory: input.directory, target });
+    }
+  }
+  if (!TARGETS.every(({ target }) => selectedTargets.has(target))) {
+    throw new Error("Go spike merge is missing a native target");
+  }
+  for (const [target, value] of selectedTargets) {
+    await cp(
+      join(value.directory, "stages", target),
+      join(outputDirectory, "stages", target),
+      { recursive: true },
+    );
+  }
   const selected = new Map<GoSpikeArtifactReport["kind"], {
     readonly directory: string;
     readonly artifact: GoSpikeArtifactReport;
@@ -563,7 +700,8 @@ export async function mergeGoSpikePackages(
       join(outputDirectory, value.artifact.name),
     );
   }
-  const report: GoSpikeReport = { ...foundation, artifacts };
+  const targets = TARGETS.map(({ target }) => selectedTargets.get(target)!.target);
+  const report: GoSpikeReport = { ...foundation, targets, artifacts };
   await writeFile(join(outputDirectory, "go-spike-report.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
   return report;
 }

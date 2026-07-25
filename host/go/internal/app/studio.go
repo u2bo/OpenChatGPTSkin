@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/studio"
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
 
 const goHostVersion = "0.3.0-alpha.1"
@@ -54,7 +55,14 @@ func startStudio(ctx context.Context, viteOrigin, configuredDataRoot string) (*R
 		DraftRoot:     filepath.Join(dataRoot, "theme-studio", "drafts"),
 		StudioVersion: goHostVersion,
 		RepositoryURL: &repositoryURL,
-		ViteOrigin:    viteOrigin,
+		RuntimeStatus: func() studio.RuntimeStatus { return readStudioRuntimeStatus(dataRoot) },
+		ApplyTheme: func(requestContext context.Context, ref themerepo.Ref) (studio.RuntimeStatus, error) {
+			return applyStudioTheme(requestContext, dataRoot, ref)
+		},
+		RestoreTheme: func(requestContext context.Context) (studio.RuntimeStatus, error) {
+			return restoreStudioTheme(requestContext, dataRoot)
+		},
+		ViteOrigin: viteOrigin,
 	})
 	if err != nil {
 		code := studio.ErrorCode(err)

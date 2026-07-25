@@ -57,6 +57,8 @@ type Config struct {
 	StudioVersion string
 	RepositoryURL *string
 	RuntimeStatus func() RuntimeStatus
+	ApplyTheme    func(context.Context, themerepo.Ref) (RuntimeStatus, error)
+	RestoreTheme  func(context.Context) (RuntimeStatus, error)
 	MaxSSEClients int
 	ViteOrigin    string
 }
@@ -200,7 +202,8 @@ func Start(ctx context.Context, config Config) (*RunningServer, error) {
 	state := &handlerState{
 		origin: origin, session: session, repository: repository, workspace: workspace, indexHTML: indexHTML,
 		studioVersion: config.StudioVersion, repositoryURL: config.RepositoryURL,
-		runtimeStatus: runtimeStatus, maxSSEClients: maxSSEClients, nonce: nonce, viteProxy: viteProxy,
+		runtimeStatus: runtimeStatus, applyTheme: config.ApplyTheme, restoreTheme: config.RestoreTheme,
+		maxSSEClients: maxSSEClients, nonce: nonce, viteProxy: viteProxy,
 	}
 	server := &http.Server{
 		Handler:           state,
@@ -247,6 +250,8 @@ type handlerState struct {
 	studioVersion string
 	repositoryURL *string
 	runtimeStatus func() RuntimeStatus
+	applyTheme    func(context.Context, themerepo.Ref) (RuntimeStatus, error)
+	restoreTheme  func(context.Context) (RuntimeStatus, error)
 	maxSSEClients int
 	nonce         string
 	viteProxy     *httputil.ReverseProxy
@@ -328,6 +333,41 @@ func (state *handlerState) dispatch(response http.ResponseWriter, request *http.
 			return err
 		}
 		state.writeJSON(response, http.StatusOK, library)
+		return nil
+	case request.URL.Path == "/api/themes/apply" && request.Method == http.MethodPost:
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		if state.applyTheme == nil {
+			return studioError{code: "RUNTIME_STATUS_UNAVAILABLE", message: "Runtime apply is unavailable", statusCode: http.StatusServiceUnavailable}
+		}
+		var input struct {
+			Ref themerepo.Ref `json:"ref"`
+		}
+		if err := decodeBoundedJSON(request.Body, jsonLimitBytes, &input); err != nil {
+			return err
+		}
+		if _, err := state.readTheme(input.Ref); err != nil {
+			return err
+		}
+		runtime, err := state.applyTheme(request.Context(), input.Ref)
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, runtime)
+		return nil
+	case request.URL.Path == "/api/runtime/restore" && request.Method == http.MethodPost:
+		if err := state.requireOrigin(request); err != nil {
+			return err
+		}
+		if state.restoreTheme == nil {
+			return studioError{code: "RUNTIME_STATUS_UNAVAILABLE", message: "Runtime restore is unavailable", statusCode: http.StatusServiceUnavailable}
+		}
+		runtime, err := state.restoreTheme(request.Context())
+		if err != nil {
+			return err
+		}
+		state.writeJSON(response, http.StatusOK, runtime)
 		return nil
 	case request.URL.Path == "/api/theme-preview" && request.Method == http.MethodGet:
 		asset, err := state.repository.Preview(request.URL.Query().Get("source"), themerepo.Ref{
@@ -435,6 +475,14 @@ func (state *handlerState) dispatch(response http.ResponseWriter, request *http.
 	default:
 		return studioError{code: "STUDIO_REQUEST_INVALID", message: "Studio route is unavailable", statusCode: http.StatusNotFound}
 	}
+}
+
+func (state *handlerState) readTheme(ref themerepo.Ref) (themerepo.Bundle, error) {
+	bundle, err := state.repository.Read("builtin", ref)
+	if err == nil {
+		return bundle, nil
+	}
+	return state.repository.Read("personal", ref)
 }
 
 func (state *handlerState) dispatchDraft(response http.ResponseWriter, request *http.Request) error {

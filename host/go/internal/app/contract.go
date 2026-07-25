@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/cdp"
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/control"
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
@@ -62,7 +63,11 @@ func runRuntimeBaseline(ctx context.Context) (map[string]any, error) {
 	defer cancel()
 	done := make(chan error, 1)
 	go func() {
-		done <- runController(controllerContext, controllerOptions{startupID: startupID, startupFile: startupFile, dataRoot: dataRoot})
+		done <- runController(controllerContext, controllerOptions{
+			startupID: startupID, startupFile: startupFile, dataRoot: dataRoot,
+			factory: func(context.Context) (managedThemeSession, error) { return baselineThemeSession{}, nil },
+			load:    baselineThemeLoader,
+		})
 	}()
 	handshakeContext, cancelHandshake := context.WithTimeout(ctx, 5*time.Second)
 	defer cancelHandshake()
@@ -118,6 +123,18 @@ func runRuntimeBaseline(ctx context.Context) (map[string]any, error) {
 		"replayed":                  bytes.Equal(replayed.Result, launched.Result),
 		"conflictingRequestCode":    conflictCode,
 	}, nil
+}
+
+type baselineThemeSession struct{}
+
+func (baselineThemeSession) Apply(context.Context, cdp.ThemePayload) error { return nil }
+func (baselineThemeSession) Restore(context.Context) error                 { return nil }
+func (baselineThemeSession) WaitForExit(context.Context) error             { return nil }
+func (baselineThemeSession) Close() error                                  { return nil }
+
+func baselineThemeLoader(ref themerepo.Ref) (cdp.ThemePayload, error) {
+	document := []byte(`{"schemaVersion":4,"id":"` + ref.ID + `","version":"` + ref.Version + `"}`)
+	return cdp.ThemePayload{Document: document, Files: map[string][]byte{}, TotalBytes: len(document)}, nil
 }
 
 func runtimeStatusFromResponse(response control.Response) string {

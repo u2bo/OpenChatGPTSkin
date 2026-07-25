@@ -269,3 +269,54 @@ func TestStudioDraftRoutesPersistAndExportPersonalVersion(t *testing.T) {
 		t.Fatalf("export status=%d bytes=%d type=%q", response.StatusCode, len(archive), response.Header.Get("Content-Type"))
 	}
 }
+
+func TestStudioAppliesOnlySavedThemeAndReturnsRuntimeStatus(t *testing.T) {
+	config := studioFixture(t)
+	applied := themerepo.Ref{}
+	config.ApplyTheme = func(_ context.Context, ref themerepo.Ref) (RuntimeStatus, error) {
+		applied = ref
+		active := true
+		return RuntimeStatus{Status: "active", ControllerAvailable: true, SelectedTheme: &ref, AppliedTheme: &ref, SkinApplied: &active, NextAction: "Theme is active."}, nil
+	}
+	config.RestoreTheme = func(context.Context) (RuntimeStatus, error) {
+		active := false
+		return RuntimeStatus{Status: "restored-awaiting-exit", ControllerAvailable: true, SkinApplied: &active, NextAction: "Waiting for normal exit."}, nil
+	}
+	server, err := Start(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	client := sessionClient(t, server)
+	apply, err := http.NewRequest(http.MethodPost, server.Origin+"/api/themes/apply", strings.NewReader(`{"ref":{"id":"mountain-mist","version":"1.3.0"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	apply.Header.Set("Origin", server.Origin)
+	apply.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(apply)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK || applied != (themerepo.Ref{ID: "mountain-mist", Version: "1.3.0"}) {
+		t.Fatalf("apply status=%d ref=%+v", response.StatusCode, applied)
+	}
+	var runtime RuntimeStatus
+	if err := json.NewDecoder(response.Body).Decode(&runtime); err != nil || runtime.Status != "active" || runtime.SkinApplied == nil || !*runtime.SkinApplied {
+		t.Fatalf("runtime=%+v error=%v", runtime, err)
+	}
+	restore, err := http.NewRequest(http.MethodPost, server.Origin+"/api/runtime/restore", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restore.Header.Set("Origin", server.Origin)
+	response, err = client.Do(restore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("restore status=%d", response.StatusCode)
+	}
+}

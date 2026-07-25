@@ -43,3 +43,13 @@ func TestWindowsProcessIdentityIncludesCreationTime(t *testing.T) {
 		t.Fatal("PID-only match accepted a changed creation time")
 	}
 }
+
+func TestWindowsStartupHandshakeRetriesOnlySharingViolations(t *testing.T) {
+	sharing := &os.PathError{Op: "open", Path: "startup.json", Err: windowsSharingViolation}
+	if !transientStartupReadError(sharing) {
+		t.Fatal("sharing violation was not treated as transient")
+	}
+	if transientStartupReadError(os.ErrPermission) {
+		t.Fatal("permission denial was treated as transient")
+	}
+}

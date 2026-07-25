@@ -1,0 +1,673 @@
+{
+  "schemas": {
+    "error": {
+      "$ref": "#/definitions/error",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "definitions": {
+        "error": {
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "enum": [
+                "CODEX_NOT_INSTALLED",
+                "CODEX_DISCOVERY_REQUIRES_BOOTSTRAP",
+                "CODEX_IDENTITY_INVALID",
+                "CODEX_ALREADY_RUNNING_UNMANAGED",
+                "CODEX_LAUNCH_FAILED",
+                "CODEX_WINDOW_ACTIVATION_FAILED",
+                "PROCESS_INSPECTION_DENIED",
+                "CDP_NOT_READY",
+                "CDP_ENDPOINT_UNSAFE",
+                "CDP_PROCESS_MISMATCH",
+                "CDP_TARGET_NOT_FOUND",
+                "CDP_TARGET_AMBIGUOUS",
+                "ADAPTER_INCOMPATIBLE",
+                "THEME_APPLY_FAILED",
+                "THEME_VERIFY_FAILED",
+                "THEME_CLEANUP_FAILED",
+                "THEME_SWITCH_FAILED",
+                "THEME_ROLLBACK_FAILED",
+                "THEME_RUNTIME_TOO_LARGE",
+                "THEME_SCHEMA_VERSION_UNSUPPORTED",
+                "THEME_WELCOME_INVALID",
+                "THEME_DISPLAY_FONT_MISSING",
+                "THEME_COMPOSITION_INVALID",
+                "THEME_HOME_WELCOME_UNSUPPORTED",
+                "THEME_REQUIRED_LAYER_UNRESOLVED",
+                "THEME_NOT_FOUND",
+                "THEME_NOT_READY",
+                "RUNTIME_SESSION_STALE",
+                "RUNTIME_INVALID_STATE",
+                "RUNTIME_BUSY",
+                "RUNTIME_ENVIRONMENT_INVALID",
+                "RUNTIME_CONTROL_UNAVAILABLE",
+                "RESTORE_AWAITING_EXIT",
+                "PROBE_EXIT_PENDING",
+                "PROBE_FINALIZE_REQUIRED",
+                "PROBE_PENDING_SESSION_INVALID",
+                "INTERNAL"
+              ],
+              "type": "string"
+            },
+            "message": {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            "nextAction": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "request": {
+      "$ref": "#/definitions/request",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "definitions": {
+        "request": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "command": {
+                  "const": "launch",
+                  "type": "string"
+                },
+                "params": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "themeId": {
+                      "maxLength": 80,
+                      "minLength": 3,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "type": "string"
+                    },
+                    "themeVersion": {
+                      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "themeId"
+                  ],
+                  "type": "object"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "command",
+                "params"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "command": {
+                  "const": "status",
+                  "type": "string"
+                },
+                "params": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "command",
+                "params"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "command": {
+                  "const": "switch",
+                  "type": "string"
+                },
+                "params": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "themeId": {
+                      "maxLength": 80,
+                      "minLength": 3,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "type": "string"
+                    },
+                    "themeVersion": {
+                      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "themeId"
+                  ],
+                  "type": "object"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "command",
+                "params"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "command": {
+                  "const": "pause",
+                  "type": "string"
+                },
+                "params": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "command",
+                "params"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "command": {
+                  "const": "resume",
+                  "type": "string"
+                },
+                "params": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "command",
+                "params"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "command": {
+                  "const": "restore",
+                  "type": "string"
+                },
+                "params": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "command",
+                "params"
+              ],
+              "type": "object"
+            }
+          ]
+        }
+      }
+    },
+    "response": {
+      "$ref": "#/definitions/response",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "definitions": {
+        "response": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "ok": {
+                  "const": true,
+                  "type": "boolean"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "result": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "appliedTheme": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "maxLength": 80,
+                              "minLength": 3,
+                              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                              "type": "string"
+                            },
+                            "version": {
+                              "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "version"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "controllerAvailable": {
+                      "type": "boolean"
+                    },
+                    "nextAction": {
+                      "maxLength": 500,
+                      "type": "string"
+                    },
+                    "operation": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "launch",
+                            "switch",
+                            "pause",
+                            "resume",
+                            "restore"
+                          ],
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "packageVersion": {
+                      "anyOf": [
+                        {
+                          "maxLength": 40,
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "selectedTheme": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "maxLength": 80,
+                              "minLength": 3,
+                              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                              "type": "string"
+                            },
+                            "version": {
+                              "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "version"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "skinApplied": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "launching",
+                            "active",
+                            "paused",
+                            "paused-incompatible",
+                            "recovery-required",
+                            "restoring",
+                            "restored-awaiting-exit",
+                            "restored-cleanup-required"
+                          ],
+                          "type": "string"
+                        },
+                        {
+                          "const": "stopped",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "controllerAvailable",
+                    "selectedTheme",
+                    "appliedTheme",
+                    "skinApplied",
+                    "packageVersion",
+                    "operation",
+                    "nextAction"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "ok",
+                "result"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "error": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "CODEX_NOT_INSTALLED",
+                        "CODEX_DISCOVERY_REQUIRES_BOOTSTRAP",
+                        "CODEX_IDENTITY_INVALID",
+                        "CODEX_ALREADY_RUNNING_UNMANAGED",
+                        "CODEX_LAUNCH_FAILED",
+                        "CODEX_WINDOW_ACTIVATION_FAILED",
+                        "PROCESS_INSPECTION_DENIED",
+                        "CDP_NOT_READY",
+                        "CDP_ENDPOINT_UNSAFE",
+                        "CDP_PROCESS_MISMATCH",
+                        "CDP_TARGET_NOT_FOUND",
+                        "CDP_TARGET_AMBIGUOUS",
+                        "ADAPTER_INCOMPATIBLE",
+                        "THEME_APPLY_FAILED",
+                        "THEME_VERIFY_FAILED",
+                        "THEME_CLEANUP_FAILED",
+                        "THEME_SWITCH_FAILED",
+                        "THEME_ROLLBACK_FAILED",
+                        "THEME_RUNTIME_TOO_LARGE",
+                        "THEME_SCHEMA_VERSION_UNSUPPORTED",
+                        "THEME_WELCOME_INVALID",
+                        "THEME_DISPLAY_FONT_MISSING",
+                        "THEME_COMPOSITION_INVALID",
+                        "THEME_HOME_WELCOME_UNSUPPORTED",
+                        "THEME_REQUIRED_LAYER_UNRESOLVED",
+                        "THEME_NOT_FOUND",
+                        "THEME_NOT_READY",
+                        "RUNTIME_SESSION_STALE",
+                        "RUNTIME_INVALID_STATE",
+                        "RUNTIME_BUSY",
+                        "RUNTIME_ENVIRONMENT_INVALID",
+                        "RUNTIME_CONTROL_UNAVAILABLE",
+                        "RESTORE_AWAITING_EXIT",
+                        "PROBE_EXIT_PENDING",
+                        "PROBE_FINALIZE_REQUIRED",
+                        "PROBE_PENDING_SESSION_INVALID",
+                        "INTERNAL"
+                      ],
+                      "type": "string"
+                    },
+                    "message": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "nextAction": {
+                      "maxLength": 500,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "type": "object"
+                },
+                "ok": {
+                  "const": false,
+                  "type": "boolean"
+                },
+                "protocolVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "requestId": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "protocolVersion",
+                "requestId",
+                "ok",
+                "error"
+              ],
+              "type": "object"
+            }
+          ]
+        }
+      }
+    },
+    "status": {
+      "$ref": "#/definitions/status",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "definitions": {
+        "status": {
+          "additionalProperties": false,
+          "properties": {
+            "appliedTheme": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "maxLength": 80,
+                      "minLength": 3,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "type": "string"
+                    },
+                    "version": {
+                      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "controllerAvailable": {
+              "type": "boolean"
+            },
+            "nextAction": {
+              "maxLength": 500,
+              "type": "string"
+            },
+            "operation": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "launch",
+                    "switch",
+                    "pause",
+                    "resume",
+                    "restore"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "packageVersion": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "selectedTheme": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "maxLength": 80,
+                      "minLength": 3,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "type": "string"
+                    },
+                    "version": {
+                      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "skinApplied": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "status": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "launching",
+                    "active",
+                    "paused",
+                    "paused-incompatible",
+                    "recovery-required",
+                    "restoring",
+                    "restored-awaiting-exit",
+                    "restored-cleanup-required"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "stopped",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "controllerAvailable",
+            "selectedTheme",
+            "appliedTheme",
+            "skinApplied",
+            "packageVersion",
+            "operation",
+            "nextAction"
+          ],
+          "type": "object"
+        }
+      }
+    }
+  },
+  "schemaVersion": 1
+}

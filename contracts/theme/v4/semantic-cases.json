@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "expectedSchemaVersion": 4,
+      "name": "complete v4 theme",
+      "valid": true
+    },
+    {
+      "expectedSchemaVersion": 4,
+      "name": "v1 semantic color migration",
+      "sourceVersion": 1,
+      "valid": true
+    },
+    {
+      "expectedSchemaVersion": 4,
+      "name": "v2 migration",
+      "sourceVersion": 2,
+      "valid": true
+    },
+    {
+      "expectedSchemaVersion": 4,
+      "name": "v3 migration",
+      "sourceVersion": 3,
+      "valid": true
+    },
+    {
+      "expectedErrorCode": "THEME_SCHEMA_VERSION_UNSUPPORTED",
+      "expectedPath": "/schemaVersion",
+      "name": "future schema version",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "THEME_WELCOME_INVALID",
+      "expectedPath": "/home/welcome",
+      "name": "unsafe welcome placeholder",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "THEME_DISPLAY_FONT_MISSING",
+      "expectedPath": "/typography/displayFontAssetKey",
+      "name": "missing display font",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "THEME_COMPOSITION_INVALID",
+      "expectedPath": "/composition/layers/0/asset",
+      "name": "undeclared composition asset",
+      "valid": false
+    },
+    {
+      "documentKind": "draft",
+      "name": "draft may omit background",
+      "valid": true
+    },
+    {
+      "documentKind": "theme",
+      "expectedErrorCode": "THEME_SCHEMA_INVALID",
+      "expectedPath": "/assets/background",
+      "name": "saved theme requires background",
+      "valid": false
+    }
+  ],
+  "schemaVersion": 4
+}

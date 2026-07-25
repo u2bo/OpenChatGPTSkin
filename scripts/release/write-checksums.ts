@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { requiredReleaseOption } from "./options.js";
-import { writeReleaseChecksums } from "./package-portable.js";
+import { writeReleaseChecksums } from "./checksums.js";
 
 const args = process.argv.slice(2);
 const output = requiredReleaseOption(args, "--output");

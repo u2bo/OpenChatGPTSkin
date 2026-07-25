@@ -1,0 +1,83 @@
+{
+  "cases": [
+    {
+      "name": "draft v1",
+      "schema": "draftRecord",
+      "valid": true,
+      "version": 1
+    },
+    {
+      "name": "theme store v1",
+      "schema": "themeStore",
+      "valid": true,
+      "version": 1
+    },
+    {
+      "name": "runtime state v2",
+      "schema": "runtimeState",
+      "valid": true,
+      "version": 2
+    },
+    {
+      "name": "trusted install cache v1",
+      "schema": "trustedInstall",
+      "valid": true,
+      "version": 1
+    },
+    {
+      "name": "controller lock v1",
+      "schema": "controllerLock",
+      "valid": true,
+      "version": 1
+    },
+    {
+      "name": "release manifest v2",
+      "schema": "releaseManifest",
+      "valid": true,
+      "version": 2
+    },
+    {
+      "expectedErrorCode": "DATA_SCHEMA_INVALID",
+      "expectedPath": "/schemaVersion",
+      "name": "unknown draft version",
+      "schema": "draftRecord",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "DATA_SCHEMA_INVALID",
+      "expectedPath": "/past",
+      "name": "dirty draft without history",
+      "schema": "draftRecord",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "RUNTIME_INVALID_STATE",
+      "expectedPath": "/recentRequests/0/requestId",
+      "name": "runtime request ID mismatch",
+      "schema": "runtimeState",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "CODEX_IDENTITY_INVALID",
+      "expectedPath": "/packagePublisher",
+      "name": "trusted cache identity mismatch",
+      "schema": "trustedInstall",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "RUNTIME_SESSION_STALE",
+      "expectedPath": "/startedAt",
+      "name": "lock without process identity",
+      "schema": "controllerLock",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "RELEASE_MANIFEST_INVALID",
+      "expectedPath": "/files/0/sha256",
+      "name": "release file hash malformed",
+      "schema": "releaseManifest",
+      "valid": false
+    }
+  ],
+  "schemaVersion": 1
+}

@@ -1,0 +1,109 @@
+{
+  "cases": [
+    {
+      "name": "valid archive",
+      "valid": true
+    },
+    {
+      "expectedErrorCode": "ARCHIVE_ENTRY_UNSAFE",
+      "expectedPath": "/entries/../secret",
+      "name": "unsafe traversal entry",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "ARCHIVE_ENTRY_DUPLICATE",
+      "expectedPath": "/entries",
+      "name": "case-folded duplicate entry",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "ARCHIVE_ENTRY_UNSUPPORTED",
+      "expectedPath": "/entries/run.js",
+      "name": "unsupported entry",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "PACKAGE_EXPANDED_TOO_LARGE",
+      "expectedPath": "/expandedBytes",
+      "name": "expanded size limit",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "ARCHIVE_REQUIRED_FILE_MISSING",
+      "expectedPath": "/entries/theme.json",
+      "name": "missing required files",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "ARCHIVE_MANIFEST_MISMATCH",
+      "expectedPath": "/manifest/files",
+      "name": "manifest mismatch",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "ARCHIVE_HASH_MISMATCH",
+      "expectedPath": "/manifest/files/sha256",
+      "name": "hash mismatch",
+      "valid": false
+    }
+  ],
+  "limits": {
+    "archiveBytes": 33554432,
+    "expandedBytes": 33554432
+  },
+  "manifestSchema": {
+    "$ref": "#/definitions/OcskinManifest",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+      "OcskinManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "files": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "properties": {
+                "bytes": {
+                  "maximum": 33554432,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "bytes",
+                "sha256"
+              ],
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "schemaVersion": {
+            "const": 1,
+            "type": "number"
+          },
+          "themeId": {
+            "maxLength": 80,
+            "minLength": 3,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "type": "string"
+          },
+          "themeVersion": {
+            "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "themeId",
+          "themeVersion",
+          "files"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "schemaVersion": 1
+}

@@ -62,12 +62,15 @@ const httpsUrl = z.string().url().max(500).refine(
 
 export const ThemeLocaleSchema = z.enum(["zh-CN", "en"]);
 
-export type ThemeSchemaErrorCode =
-  | "THEME_SCHEMA_VERSION_UNSUPPORTED"
-  | "THEME_WELCOME_INVALID"
-  | "THEME_DISPLAY_FONT_MISSING"
-  | "THEME_COMPOSITION_INVALID"
-  | "THEME_SCHEMA_INVALID";
+export const THEME_SCHEMA_ERROR_CODES = [
+  "THEME_SCHEMA_VERSION_UNSUPPORTED",
+  "THEME_WELCOME_INVALID",
+  "THEME_DISPLAY_FONT_MISSING",
+  "THEME_COMPOSITION_INVALID",
+  "THEME_SCHEMA_INVALID",
+] as const;
+
+export type ThemeSchemaErrorCode = typeof THEME_SCHEMA_ERROR_CODES[number];
 
 export class ThemeSchemaError extends Error {
   constructor(
@@ -336,7 +339,7 @@ const ThemeTypographyV4Schema = ThemeTypographyV3Schema.extend({
   displayLetterSpacing: z.number().min(-0.05).max(0.2),
 }).strict();
 
-const ThemeDocumentV3FieldsSchema = z.object({
+export const ThemeDocumentV3FieldsSchema = z.object({
   schemaVersion: z.literal(3),
   kind: z.enum(["theme", "recipe"]),
   appearance: z.enum(["auto", "light", "dark"]).default("auto"),
@@ -384,7 +387,7 @@ const ThemeDocumentV3FieldsSchema = z.object({
   }).strict(),
 }).strict();
 
-const ThemeDocumentV4InputFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
+export const ThemeDocumentV4InputFieldsSchema = ThemeDocumentV3FieldsSchema.extend({
   schemaVersion: z.literal(4),
   typography: ThemeTypographyV4InputSchema,
   interfaceImages: ThemeInterfaceImagesSchema.optional(),
@@ -470,12 +473,12 @@ export const ThemeDocumentSchema = ThemeDocumentFieldsSchema.superRefine(
   (theme, context) => validateThemeRelationships(theme, context, true),
 );
 
-const ThemeDocumentV2Schema = ThemeDocumentV3FieldsSchema.extend({
+export const ThemeDocumentV2Schema = ThemeDocumentV3FieldsSchema.extend({
   schemaVersion: z.literal(2),
   assets: ThemeAssetsV2Schema,
 }).strict();
 
-const LegacyThemeDocumentSchema = ThemeDocumentV2Schema.extend({
+export const LegacyThemeDocumentSchema = ThemeDocumentV2Schema.extend({
   schemaVersion: z.literal(1),
   colors: ThemeColorsV1Schema,
 }).strict();

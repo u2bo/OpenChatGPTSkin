@@ -13,6 +13,15 @@
       ],
       "@open-chatgpt-skin/theme-core": [
         "./packages/theme-core/src/index.ts"
+      ],
+      "@open-chatgpt-skin/theme-studio-core": [
+        "./packages/theme-studio-core/src/index.ts"
+      ],
+      "@open-chatgpt-skin/cdp-adapter": [
+        "./packages/cdp-adapter/src/index.ts"
+      ],
+      "@open-chatgpt-skin/runtime-contract": [
+        "./packages/runtime-contract/src/index.ts"
       ]
     }
   },

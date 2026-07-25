@@ -209,8 +209,8 @@ export const PROBE_EXPRESSION = `(() => {
   };
 })()`;
 
-export function preflightExpression(theme: CompiledTheme): string {
-  const payload = JSON.stringify(theme);
+export function preflightExpression(theme: CompiledTheme, themeReference?: string): string {
+  const payload = themeReference ?? JSON.stringify(theme);
   const nativeSelectors = JSON.stringify(NATIVE_CODEX_SURFACE_SELECTORS);
   return `(() => {
     const theme = ${payload};
@@ -319,8 +319,8 @@ export function preflightExpression(theme: CompiledTheme): string {
   })()`;
 }
 
-export function applyExpression(theme: CompiledTheme): string {
-  const payload = JSON.stringify(theme);
+export function applyExpression(theme: CompiledTheme, themeReference?: string): string {
+  const payload = themeReference ?? JSON.stringify(theme);
   const nativeSelectors = JSON.stringify(NATIVE_CODEX_SURFACE_SELECTORS);
   return `(async () => {
     const theme = ${payload};

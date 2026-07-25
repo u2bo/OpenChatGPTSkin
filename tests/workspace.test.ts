@@ -6,43 +6,36 @@ import { THEME_SCHEMA_VERSION } from "@open-chatgpt-skin/theme-schema";
 describe("workspace packages", () => {
   it("exports stable foundation versions", () => {
     expect(THEME_SCHEMA_VERSION).toBe(4);
-    expect(THEME_CORE_VERSION).toBe("0.2.0");
+    expect(THEME_CORE_VERSION).toBe("0.3.0-alpha.1");
   });
 
-  it("declares the Runtime CLI and its built executable", async () => {
-    const [rootPackage, runtimePackage, studioPackage, studioServicePackage] = await Promise.all([
+  it("keeps Go as the only business host and TypeScript as authoring packages", async () => {
+    const [rootPackage, runtimeContractPackage, studioPackage, goModule] = await Promise.all([
       readFile("package.json", "utf8").then(JSON.parse),
-      readFile("runtime/windows/package.json", "utf8").then(JSON.parse),
+      readFile("packages/runtime-contract/package.json", "utf8").then(JSON.parse),
       readFile("apps/theme-studio/package.json", "utf8").then(JSON.parse),
-      readFile("runtime/theme-studio-service/package.json", "utf8").then(JSON.parse),
+      readFile("host/go/go.mod", "utf8"),
     ]);
 
-    expect(rootPackage.workspaces).toEqual(["apps/*", "packages/*", "runtime/*"]);
+    expect(rootPackage.workspaces).toEqual(["apps/*", "packages/*"]);
     expect(rootPackage.name).toBe("open-chatgpt-skin");
-    expect(runtimePackage.name).toBe("@open-chatgpt-skin/windows-runtime");
+    expect(runtimeContractPackage.name).toBe("@open-chatgpt-skin/runtime-contract");
     expect(studioPackage.name).toBe("@open-chatgpt-skin/theme-studio");
-    expect(studioServicePackage.name).toBe("@open-chatgpt-skin/theme-studio-service");
+    expect(goModule).toContain("module github.com/u2bo/OpenChatGPTSkin/host/go");
     expect(rootPackage.scripts).toMatchObject({
-      runtime: "npm run build && node runtime/windows/dist/cli.js",
-      "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",
+      runtime: "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin runtime",
+      "studio:dev": "tsx scripts/dev/start-go-studio.ts",
       "studio:build": "npm run build -w @open-chatgpt-skin/theme-studio",
-      verify: "npm run build && npm run test && npm run typecheck",
-      "verify:runtime": "npm run build && npm run test && npm run typecheck",
+      verify: "npm run contracts:verify && npm run build && npm run test && npm run typecheck && npm run go:verify",
       "verify:foundation": "npm run themes:build && npm run build && npm run test && npm run typecheck && node packages/theme-core/dist/cli.js catalog --root themes",
     });
-    expect(runtimePackage.bin).toMatchObject({
-      "open-chatgpt-skin-runtime": "./dist/cli.js",
-    });
-    expect(runtimePackage.dependencies).toHaveProperty(
+    expect(runtimeContractPackage.dependencies).toHaveProperty(
       "@open-chatgpt-skin/theme-schema",
-      "0.2.0",
+      "0.3.0-alpha.1",
     );
     expect(studioPackage.dependencies).toHaveProperty(
       "@open-chatgpt-skin/theme-schema",
-      "0.2.0",
+      "0.3.0-alpha.1",
     );
-    expect(studioServicePackage.bin).toMatchObject({
-      "open-chatgpt-skin-studio": "./dist/cli.js",
-    });
   });
 });

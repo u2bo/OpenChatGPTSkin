@@ -1,0 +1,93 @@
+{
+  "implementation": "node",
+  "suites": [
+    {
+      "implementation": "node",
+      "suite": "studio",
+      "result": {
+        "protocolVersion": 2,
+        "sessionStatus": 204,
+        "bootstrapStatus": 200,
+        "unauthenticatedStatus": 401,
+        "securityHeaderCount": 5,
+        "eventKind": "runtime-status"
+      }
+    },
+    {
+      "implementation": "node",
+      "suite": "runtime",
+      "result": {
+        "protocolVersion": 1,
+        "frameLimitBytes": 65536,
+        "transportSecurityVerified": true,
+        "status": "stopped",
+        "launchStatus": "active",
+        "replayed": true,
+        "conflictingRequestCode": "RUNTIME_CONTROL_UNAVAILABLE"
+      }
+    },
+    {
+      "implementation": "node",
+      "suite": "theme",
+      "result": {
+        "builtins": [
+          "future-idol-cyan",
+          "glacier-aurora",
+          "mountain-mist",
+          "rose-carpet-star",
+          "yua-mikami-starlight"
+        ],
+        "migratedVersions": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "archiveRoundTrips": 5,
+        "archiveNegativeCode": "ARCHIVE_ENTRY_UNSAFE",
+        "futureVersionCode": "THEME_SCHEMA_VERSION_UNSUPPORTED",
+        "v4Capabilities": {
+          "welcomeLocales": [
+            "en",
+            "zh-CN"
+          ],
+          "displayFont": true,
+          "profileAvatar": true,
+          "suggestionIcons": 4,
+          "compositionLayers": 4
+        }
+      }
+    },
+    {
+      "implementation": "node",
+      "suite": "data",
+      "result": {
+        "draft": {
+          "schemaVersion": 1,
+          "dirty": true,
+          "revision": 6,
+          "past": 3,
+          "future": 0,
+          "savedRef": {
+            "id": "baseline-draft",
+            "version": "1.0.0"
+          },
+          "savedDraftWasClean": true,
+          "undoExposedRedo": true,
+          "redoConsumedFuture": true
+        },
+        "personalVersions": 2,
+        "runtimeTerminalStatus": "restored-awaiting-exit",
+        "trustedCacheSchemaVersion": 1,
+        "controllerLockSchemaVersion": 1,
+        "corruptRecordsRejected": 4,
+        "corruptStoresRejected": 4,
+        "sensitiveValuesFound": false
+      }
+    }
+  ],
+  "review": {
+    "status": "reviewed",
+    "knownNodeBugs": []
+  }
+}

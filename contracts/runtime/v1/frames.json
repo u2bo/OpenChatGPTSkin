@@ -1,0 +1,66 @@
+{
+  "afterResponseCommands": [
+    "launch",
+    "restore"
+  ],
+  "commands": [
+    "launch",
+    "status",
+    "switch",
+    "pause",
+    "resume",
+    "restore"
+  ],
+  "errors": [
+    "CODEX_NOT_INSTALLED",
+    "CODEX_DISCOVERY_REQUIRES_BOOTSTRAP",
+    "CODEX_IDENTITY_INVALID",
+    "CODEX_ALREADY_RUNNING_UNMANAGED",
+    "CODEX_LAUNCH_FAILED",
+    "CODEX_WINDOW_ACTIVATION_FAILED",
+    "PROCESS_INSPECTION_DENIED",
+    "CDP_NOT_READY",
+    "CDP_ENDPOINT_UNSAFE",
+    "CDP_PROCESS_MISMATCH",
+    "CDP_TARGET_NOT_FOUND",
+    "CDP_TARGET_AMBIGUOUS",
+    "ADAPTER_INCOMPATIBLE",
+    "THEME_APPLY_FAILED",
+    "THEME_VERIFY_FAILED",
+    "THEME_CLEANUP_FAILED",
+    "THEME_SWITCH_FAILED",
+    "THEME_ROLLBACK_FAILED",
+    "THEME_RUNTIME_TOO_LARGE",
+    "THEME_SCHEMA_VERSION_UNSUPPORTED",
+    "THEME_WELCOME_INVALID",
+    "THEME_DISPLAY_FONT_MISSING",
+    "THEME_COMPOSITION_INVALID",
+    "THEME_HOME_WELCOME_UNSUPPORTED",
+    "THEME_REQUIRED_LAYER_UNRESOLVED",
+    "THEME_NOT_FOUND",
+    "THEME_NOT_READY",
+    "RUNTIME_SESSION_STALE",
+    "RUNTIME_INVALID_STATE",
+    "RUNTIME_BUSY",
+    "RUNTIME_ENVIRONMENT_INVALID",
+    "RUNTIME_CONTROL_UNAVAILABLE",
+    "RESTORE_AWAITING_EXIT",
+    "PROBE_EXIT_PENDING",
+    "PROBE_FINALIZE_REQUIRED",
+    "PROBE_PENDING_SESSION_INVALID",
+    "INTERNAL"
+  ],
+  "frame": {
+    "byteOrder": "little-endian",
+    "encoding": "json",
+    "lengthPrefixBytes": 4,
+    "maxPayloadBytes": 65536
+  },
+  "mutationConcurrency": "serialized",
+  "protocolVersion": 1,
+  "readOnlyCommands": [
+    "status"
+  ],
+  "requestIdSemantics": "same-id-same-command-replays; same-id-different-command-rejected",
+  "statusConcurrency": "parallel-with-mutation"
+}

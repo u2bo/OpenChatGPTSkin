@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "baselineVersion": "0.2.0",
+  "release": {
+    "tag": "v0.2.0",
+    "publishedAt": "2026-07-24T06:54:04Z",
+    "assets": [
+      {
+        "name": "OpenChatGPTSkin_0.2.0_windows_x64_Setup.exe",
+        "platform": "windows",
+        "arch": "x64",
+        "kind": "setup",
+        "bytes": 34083496,
+        "sha256": "2919f5564270932222c2dfd75d776ab08af32922dc600ec64bec687b9b26fadc"
+      },
+      {
+        "name": "OpenChatGPTSkin_0.2.0_windows_x64.zip",
+        "platform": "windows",
+        "arch": "x64",
+        "kind": "zip",
+        "bytes": 44744668,
+        "sha256": "a4d36b5c36479179222dfc1c77bad33fb51358c1b7a90cbc84f13e2fb67fd4b5"
+      },
+      {
+        "name": "OpenChatGPTSkin_0.2.0_macos_arm64.dmg",
+        "platform": "macos",
+        "arch": "arm64",
+        "kind": "dmg",
+        "bytes": 59251126,
+        "sha256": "9d5c0cbbe888c9fb8262800d94fd08c997e7115a5e74dfc1484321237268245d"
+      },
+      {
+        "name": "OpenChatGPTSkin_0.2.0_macos_arm64.tar.gz",
+        "platform": "macos",
+        "arch": "arm64",
+        "kind": "tar.gz",
+        "bytes": 48772737,
+        "sha256": "7ff9db996a31a59b766a20d0f2302a58294ed20cb0b1b015f1ba94a83e1408b6"
+      },
+      {
+        "name": "OpenChatGPTSkin_0.2.0_macos_x64.dmg",
+        "platform": "macos",
+        "arch": "x64",
+        "kind": "dmg",
+        "bytes": 62221496,
+        "sha256": "5e9f08c624ec65244fe3a761cfc961da35bbd5eafbf397dafb4a9f0f8214ca94"
+      },
+      {
+        "name": "OpenChatGPTSkin_0.2.0_macos_x64.tar.gz",
+        "platform": "macos",
+        "arch": "x64",
+        "kind": "tar.gz",
+        "bytes": 51253278,
+        "sha256": "9c7fe62b8bcbfc69962be1804f0af115a1b31b4e9a8cc044220045e616ca0cf5"
+      },
+      {
+        "name": "checksums.txt",
+        "platform": "all",
+        "arch": "all",
+        "kind": "checksums",
+        "bytes": 632,
+        "sha256": "ba4da68cdccd7c04ad9e5b847f07ec0c553beea3e5e3d4e256c397574d28def3"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "target": "windows-x64",
+      "sourceAsset": "OpenChatGPTSkin_0.2.0_windows_x64.zip",
+      "totalBytes": 115070815,
+      "composition": {
+        "apps": 502939,
+        "LICENSE": 1577,
+        "node_modules": 24632575,
+        "launcher": 204,
+        "README.en.md": 24611,
+        "README.md": 23125,
+        "release-manifest.json": 115757,
+        "runtime": 85347134,
+        "themes": 4422893
+      }
+    },
+    {
+      "target": "macos-arm64",
+      "sourceAsset": "OpenChatGPTSkin_0.2.0_macos_arm64.tar.gz",
+      "totalBytes": 136974297,
+      "composition": {
+        "apps": 502927,
+        "LICENSE": 1546,
+        "node_modules": 21105393,
+        "launcher": 282,
+        "README.en.md": 24611,
+        "README.md": 23125,
+        "release-manifest.json": 116339,
+        "runtime": 110777181,
+        "themes": 4422893
+      }
+    },
+    {
+      "target": "macos-x64",
+      "sourceAsset": "OpenChatGPTSkin_0.2.0_macos_x64.tar.gz",
+      "totalBytes": 141958550,
+      "composition": {
+        "apps": 502927,
+        "LICENSE": 1546,
+        "node_modules": 23002262,
+        "launcher": 282,
+        "README.en.md": 24611,
+        "README.md": 23125,
+        "release-manifest.json": 116315,
+        "runtime": 113864589,
+        "themes": 4422893
+      }
+    }
+  ],
+  "contracts": {
+    "studioProtocol": 2,
+    "runtimeControl": 1,
+    "theme": 4,
+    "draft": 1,
+    "runtimeState": 2,
+    "trustedInstallCache": 1,
+    "themeStore": 1,
+    "controllerLock": 1,
+    "releaseManifest": 1,
+    "themeCatalog": 1
+  },
+  "themes": {
+    "catalog": {
+      "bytes": 1718,
+      "sha256": "db222609e1eb0df84a001ff3823171a20dc000f8f91bec1155a852de059c7749"
+    },
+    "directoryHashAlgorithm": "sha256-path-length-content-v1",
+    "builtins": [
+      {
+        "id": "future-idol-cyan",
+        "path": "builtin/future-idol-cyan",
+        "bytes": 443292,
+        "fileCount": 10,
+        "sha256": "cc55d0c4ddc7fc17667b7a1763599e11f565dc4c066a226aa2082ad8c4e6d35e"
+      },
+      {
+        "id": "glacier-aurora",
+        "path": "builtin/glacier-aurora",
+        "bytes": 370100,
+        "fileCount": 10,
+        "sha256": "50692ab6612c5c8a09dacc883403263d739811e145f13e08339461daa4930f6a"
+      },
+      {
+        "id": "mountain-mist",
+        "path": "builtin/mountain-mist",
+        "bytes": 253055,
+        "fileCount": 10,
+        "sha256": "de63ea7d9de6c759b56eb444f15b4cfb2d9ea24c2962fd9cfb917b0b36fcdd8a"
+      },
+      {
+        "id": "rose-carpet-star",
+        "path": "builtin/rose-carpet-star",
+        "bytes": 339181,
+        "fileCount": 10,
+        "sha256": "51208967070e6337fb7111f6722ad596bab0240c9e948c404df13e5563c8ce54"
+      },
+      {
+        "id": "yua-mikami-starlight",
+        "path": "builtin/yua-mikami-starlight",
+        "bytes": 3015547,
+        "fileCount": 15,
+        "sha256": "cb3c6b37c64edd5dd67038bd8123510ecd6c14823bfb703d746451cd216962b5"
+      }
+    ]
+  }
+}

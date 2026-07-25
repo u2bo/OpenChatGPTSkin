@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    { "name": "jpeg-exif-orientation-6", "expectedWidth": 1, "expectedHeight": 2 },
+    { "name": "png-alpha-crop-resize", "expectedWidth": 2, "expectedHeight": 2 },
+    { "name": "webp-roundtrip", "expectedFormat": "webp" },
+    { "name": "corrupt-input", "expectedErrorCode": "IMAGE_DECODE_INVALID" },
+    { "name": "input-limit", "expectedErrorCode": "IMAGE_INPUT_TOO_LARGE" },
+    { "name": "atomic-failure", "expectedOutput": "unchanged" }
+  ]
+}

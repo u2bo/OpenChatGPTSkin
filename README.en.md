@@ -2,9 +2,9 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-stable-2ea44f)
-![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20Preview-0078d4)
-![Node.js](https://img.shields.io/badge/Node.js-22%20bundled-339933)
+![Status](https://img.shields.io/badge/status-v0.3.0--alpha.1-f59e0b)
+![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
+![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
 ![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)
 [![LINUX DO Community](https://img.shields.io/badge/community-LINUX%20DO-f0b90b)](https://linux.do/)
@@ -46,7 +46,7 @@ The two complete concept images below show how far OpenChatGPTSkin can be custom
 <img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="Complete Super Saiyan Goku OpenChatGPTSkin concept">
 
 > [!IMPORTANT]
-> `v0.2.0` is the current stable release, providing a **stable Windows x64 build**, an **unsigned macOS preview**, and five bundled Theme Schema v4 themes. Windows includes an x64 portable ZIP and per-user Setup; macOS includes separate Apple Silicon ARM64 and Intel x64 DMGs/portable archives. Every artifact bundles Node.js and requires neither Git nor development dependencies. macOS has not completed the real-ChatGPT visual loop, Developer ID signing, or notarization. Use the standard Control-click → **Open** flow below and do not disable Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying or restoring a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
+> `v0.3.0-alpha.1` is the unified Go Host candidate for Windows x64, macOS ARM64, and macOS x64. Its six installer/portable artifacts include five Theme Schema v4 themes and one Go business host; no user package bundles Node.js or requires Git, Go, or development dependencies. The theme loop, data upgrade, and v0.2.0 rollback have passed real-device acceptance on Windows and both Mac architectures. macOS artifacts remain unsigned and unnotarized, so use the standard Control-click → **Open** flow without disabling Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
@@ -81,7 +81,7 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 | Five ready-to-use built-in themes | Complete |
 | Windows Runtime launch/switch/pause/restore | Stable |
 | Windows x64 portable ZIP and per-user Setup | Stable |
-| macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; real-Mac acceptance pending |
+| macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; both architectures accepted on real Macs |
 | Theme Studio editing/preview/version/import/export/apply | Stable |
 | Codex plugin-market installation | Not available yet |
 | Automatic updates, SEA single-file executable, theme marketplace | Planned |
@@ -168,7 +168,7 @@ Portrait and decoration assets carry separate authorization identifiers and sour
 
 ### Windows Setup (recommended)
 
-1. Download `OpenChatGPTSkin_0.2.0_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.2.0](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.2.0).
+1. Download `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.3.0-alpha.1](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.0-alpha.1).
 2. Verify SHA-256, then run Setup. It installs for the current user under `%LOCALAPPDATA%\Programs\OpenChatGPTSkin` and does not request administrator privileges.
 3. Start OpenChatGPTSkin from the Start menu. The production Theme Studio opens in your default browser only after its local health check succeeds.
 
@@ -176,35 +176,35 @@ The installer is unsigned, so Windows SmartScreen may warn. Download only from t
 
 ### Windows portable ZIP
 
-Download `OpenChatGPTSkin_0.2.0_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.cmd`. The portable build does not register an installation and needs no global Node.js or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
+Download `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
 
 ### macOS DMG (unsigned developer preview)
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.2.0_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.2.0_macos_x64.dmg`. Intel x64 compatibility depends on an official ChatGPT build for that architecture and has not completed real-device validation.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg`. Both targets have passed acceptance on matching real hardware and the official ChatGPT app.
 2. Verify SHA-256 as shown below, open the DMG, and drag `OpenChatGPTSkin.app` to Applications.
 3. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt. Do not disable Gatekeeper or use `xattr` to remove quarantine metadata.
 4. Theme Studio opens in the default browser after its health check succeeds. Replacing or deleting the `.app` keeps personal themes, drafts, and Runtime state under `~/Library/Application Support/OpenChatGPTSkin`.
 
-Developers can also download `OpenChatGPTSkin_0.2.0_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.2.0_macos_x64.tar.gz`. Most users should choose the DMG.
+Developers can also download `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
 
-Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. GitHub-hosted Windows, ARM64 macOS, and Intel macOS runners build Windows x64, macOS ARM64, and macOS x64 test artifacts. Download `windows-release`, `macos-arm64-release`, `macos-x64-release`, and their diagnostics from the completed run. A manual run never creates a tag or GitHub Release.
+Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. Three native runners build and accept the Go Host, then merge the result as `go-release-combined`. A manual run never creates a tag or GitHub Release.
 
 ### Verify downloads
 
 Run from the download directory:
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.2.0_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.2.0_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS Terminal:
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.2.0_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg
 # On Intel:
-shasum -a 256 OpenChatGPTSkin_0.2.0_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -212,7 +212,7 @@ Each hash must exactly match the corresponding line in `checksums.txt`. Do not r
 
 ### Install from source
 
-Source development requires Windows 11 or macOS, official Codex Desktop, Node.js `>= 22.0.0`, and npm. Git can be replaced with a downloaded source archive.
+Source development requires Windows 11 or macOS, official Codex Desktop, Go `1.25.12`, Node.js `>= 22.0.0`, and npm. Node is used only to build the frontend, contracts, and CDP Adapter; it is not shipped to users.
 
 Clone or download the repository from GitHub, then run from its root:
 
@@ -233,7 +233,7 @@ Windows developers can generate the same portable ZIP, per-user Setup, and SHA-2
 npm run release:windows
 ```
 
-The first run only requires Node.js 22, npm, and Git. If Inno Setup 6 is missing, the script downloads a pinned version from the official GitHub Release, verifies its pinned SHA-256, and uses it in portable mode from the temporary build directory without administrator access or a permanent installation. It validates and reuses complete existing dependencies, incrementally repairs missing or inconsistent dependencies from `package-lock.json`, then runs the full verification and Theme Studio build, fetches the official bundled Node.js Runtime, validates the staged payload, and packages the release. Final files are written to `artifacts/windows-x64/`. Failed builds retain and print their temporary directory for diagnosis; successful builds clean it automatically. The command intentionally skips the CI installer lifecycle test that manipulates local installation registration and the personal data directory.
+Local release builds require Go `1.25.12`, Node.js 22, npm, and Inno Setup 6. The command builds Theme Studio and the single Go Host, then produces a Node-free stage, ZIP, Setup, and SHA-256 file under `artifacts/windows-x64/`. End users need none of these development tools.
 
 When upgrading from the pre-rename development build, the first CLI or Theme Studio start atomically adopts the previous personal themes, drafts, and Runtime state only when the new-brand data directory does not exist. If both directories exist, the new directory wins and neither side is merged or overwritten.
 
@@ -244,7 +244,7 @@ Installing a newer Setup, replacing a portable directory, or replacing the macOS
 ### Theme Studio (recommended)
 
 1. Save your work and choose **Quit Codex** from the Codex menu or system tray. Make sure the regular app is fully closed.
-2. Windows Setup users launch from the Start menu, portable users double-click `OpenChatGPTSkin.cmd`, macOS users launch `OpenChatGPTSkin.app` from Applications, and source users run:
+2. Windows Setup users launch from the Start menu, portable users double-click `OpenChatGPTSkin.exe`, macOS users launch `OpenChatGPTSkin.app` from Applications, and source users run:
 
    ```powershell
    npm run studio:dev
@@ -309,29 +309,20 @@ npm run runtime -- restore
 - `restore` restores the official appearance and waits for a normal managed-Codex exit to finish cleanup.
 - Do not use Task Manager to force-close Codex while restore is pending.
 
-See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. macOS DMGs complete package, bundled-Runtime, Theme Studio, and four-theme acceptance on native ARM64/x64 runners. Real-Codex Runtime probes and visual-loop acceptance still require the manual real-device checklist.
+See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. The three native runners verify package structure, the single Go Host, Theme Studio, all five built-ins, and the Node-free manifest. Real-Codex visual and lifecycle acceptance still follows the manual checklist on each target platform.
 
-### Compatibility probe and real-app acceptance (Windows)
+### Real-app acceptance after a Codex update
 
-After a Codex update, fully quit the regular app and run the two-phase compatibility probe:
+The old Node Host commands `runtime:probe` and `runtime:acceptance` were removed during the Go cutover and are no longer executable entry points. After a Codex update, use a test workspace with no private projects or sensitive chats and:
 
-```powershell
-npm run runtime:probe -- --record-evidence
-# Quit the managed Codex instance normally from the Codex menu
-npm run runtime:probe -- --finalize
-```
+1. Fully quit regular Codex and check all five built-ins, a custom theme, `pause`, `resume`, and `restore`.
+2. Quit the managed instance from the Codex menu and verify Controller/control-endpoint cleanup.
+3. Start official Codex normally and verify that it has no inherited remote-debugging flags and keeps the official appearance.
+4. Record Codex/OpenChatGPTSkin/OS versions, results, and sanitized screenshots.
 
-For a release candidate, run the full Runtime acceptance flow:
+Published evidence must not contain PIDs, ports, usernames, absolute paths, command lines, project names, or chat content.
 
-```powershell
-npm run runtime:acceptance -- --begin
-# Quit managed Codex normally, then start official Codex normally from Start
-npm run runtime:acceptance -- --finalize
-```
-
-Acceptance evidence must remain sanitized and must not contain PIDs, ports, paths, command lines, project names, chat content, or screenshots.
-
-macOS packages receive automated acceptance on native CI runners; the real-Codex visual and Runtime loop still uses a manual checklist. On a real Mac, verify `codesign`, `spctl`, Unix-socket permissions, all five built-in themes, restore, and a regular Codex restart as described in [macOS Runtime and Acceptance](docs/runtime-macos.en.md).
+See the full [Windows checklist](docs/runtime-windows.md) and [macOS checklist](docs/runtime-macos.en.md).
 
 ## FAQ
 
@@ -379,8 +370,7 @@ packages/theme-schema/        Theme Schema v4, migrations, and visual model
 packages/theme-core/          Validation, catalog, archive, storage
 packages/cdp-adapter/         Codex UI surface recognition and compilation
 packages/theme-studio-core/   Theme Studio contracts and validation
-runtime/windows/              Desktop Runtime, Controller, recovery (historical package path)
-runtime/theme-studio-service/ Local Theme Studio service
+host/go/                      Single Go Studio, Controller, Runtime, and platform adapters
 themes/builtin/               Built-in themes and asset provenance
 tests/                        Schema, Runtime, UI, and documentation tests
 ```
@@ -400,7 +390,8 @@ UI adaptation changes must include deterministic page fixtures/tests. Theme cont
 
 ## Documentation
 
-- [v0.2.0 Release Notes](docs/releases/v0.2.0.md)
+- [v0.3.0-alpha.1 Release Notes](docs/releases/v0.3.0-alpha.1.md)
+- [v0.2.0 Historical Release Notes](docs/releases/v0.2.0.md)
 - [v0.1.0 Historical Release Notes](docs/releases/v0.1.0.md)
 - [v0.1.0-alpha.1 Historical Release Notes](docs/releases/v0.1.0-alpha.1.md)
 - [Custom Theme Guide](docs/custom-theme-guide.en.md)

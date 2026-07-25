@@ -1,0 +1,127 @@
+{
+  "cases": [
+    {
+      "command": "status",
+      "expectedConcurrency": "parallel-with-mutation",
+      "name": "status during mutation",
+      "valid": true
+    },
+    {
+      "command": "switch",
+      "expectedBehavior": "replay-stored-response",
+      "name": "duplicate request replay",
+      "valid": true
+    },
+    {
+      "command": "pause",
+      "expectedErrorCode": "RUNTIME_INVALID_STATE",
+      "expectedPath": "/requestId",
+      "name": "request ID reused for another command",
+      "valid": false
+    },
+    {
+      "expectedErrorCode": "RUNTIME_CONTROL_UNAVAILABLE",
+      "expectedPath": "/frame/length",
+      "name": "oversized frame",
+      "valid": false
+    },
+    {
+      "command": "restore",
+      "expectedBehavior": "after-response",
+      "name": "restore callback after response",
+      "valid": true
+    },
+    {
+      "command": "launch",
+      "expectedErrorCode": "THEME_NOT_FOUND",
+      "expectedPath": "/params/themeVersion",
+      "name": "personal theme without version",
+      "valid": false
+    }
+  ],
+  "protocolVersion": 1,
+  "recoveryCases": [
+    {
+      "expectedStatus": "active",
+      "name": "stable active appearance",
+      "sourceStatus": "active",
+      "valid": true
+    },
+    {
+      "expectedStatus": "paused",
+      "name": "stable paused appearance",
+      "sourceStatus": "paused",
+      "valid": true
+    },
+    {
+      "expectedStatus": "restored-awaiting-exit",
+      "name": "interrupted launch restores official appearance",
+      "operation": "launch",
+      "valid": true
+    },
+    {
+      "expectedStatus": "restored-awaiting-exit",
+      "name": "interrupted restore retries official appearance",
+      "operation": "restore",
+      "valid": true
+    },
+    {
+      "cleanupSucceeded": false,
+      "expectedStatus": "recovery-required",
+      "name": "failed cleanup marks appearance unknown",
+      "valid": true
+    },
+    {
+      "expectedErrorCode": "RUNTIME_SESSION_STALE",
+      "expectedPath": "/codex/startedAt",
+      "name": "managed process identity changed",
+      "valid": false
+    }
+  ],
+  "stateTransitions": {
+    "active": [
+      "active",
+      "paused",
+      "paused-incompatible",
+      "recovery-required",
+      "restoring"
+    ],
+    "launching": [
+      "launching",
+      "active",
+      "recovery-required",
+      "restored-awaiting-exit"
+    ],
+    "paused": [
+      "paused",
+      "active",
+      "paused-incompatible",
+      "recovery-required",
+      "restoring"
+    ],
+    "paused-incompatible": [
+      "paused-incompatible",
+      "paused",
+      "active",
+      "recovery-required",
+      "restoring"
+    ],
+    "recovery-required": [
+      "recovery-required",
+      "restoring"
+    ],
+    "restored-awaiting-exit": [
+      "restored-awaiting-exit",
+      "restored-cleanup-required"
+    ],
+    "restored-cleanup-required": [
+      "restored-cleanup-required"
+    ],
+    "restoring": [
+      "restoring",
+      "active",
+      "recovery-required",
+      "restored-awaiting-exit"
+    ]
+  }
+}

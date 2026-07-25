@@ -42,6 +42,7 @@ func Listen(endpoint string) (net.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
+	listener.(*net.UnixListener).SetUnlinkOnClose(false)
 	if err := os.Chmod(endpoint, 0o600); err != nil {
 		listener.Close()
 		os.Remove(endpoint)

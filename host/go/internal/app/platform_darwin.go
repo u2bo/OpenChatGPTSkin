@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func controlEndpoint(dataRoot string) string              { return filepath.Join(dataRoot, "runtime.sock") }
+func controlEndpoint(dataRoot string) string              { return platform.Endpoint(dataRoot) }
 func listenControl(endpoint string) (net.Listener, error) { return platform.Listen(endpoint) }
 func dialControl(endpoint string) (net.Conn, error)       { return platform.Dial(endpoint) }
 func configureDetached(command *exec.Cmd)                 { command.SysProcAttr = &syscall.SysProcAttr{Setsid: true} }

@@ -121,6 +121,35 @@ func TestManagedExitPersistsStoppedState(t *testing.T) {
 	}
 }
 
+func TestControllerRestartAfterRestoreWaitNormalizesStoppedState(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "runtime-session.json")
+	waiting := &controllerModel{
+		status:  "restored-awaiting-exit",
+		themeID: "stale-theme",
+		version: "9.9.9",
+		state:   statePath,
+	}
+	if err := waiting.persistLocked(); err != nil {
+		t.Fatal(err)
+	}
+
+	reloaded, err := loadControllerModel(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.status != "stopped" || reloaded.themeID != "" || reloaded.version != "" {
+		t.Fatalf("state=%q theme=%q version=%q", reloaded.status, reloaded.themeID, reloaded.version)
+	}
+
+	persisted, err := loadControllerModel(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.status != "stopped" || persisted.themeID != "" || persisted.version != "" {
+		t.Fatalf("persisted state=%q theme=%q version=%q", persisted.status, persisted.themeID, persisted.version)
+	}
+}
+
 func TestControllerStateMachinePersistsAndRequiresRecoveryAfterCrash(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "runtime-session.json")
 	model, err := loadControllerModel(statePath)

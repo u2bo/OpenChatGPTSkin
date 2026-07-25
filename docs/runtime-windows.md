@@ -2,7 +2,7 @@
 
 [返回 README](../README.md)
 
-`v0.3.0-alpha.1` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller 与 Runtime 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
+`v0.3.0` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller 与 Runtime 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
 
 ## 安装与数据目录
 
@@ -53,7 +53,7 @@ npm run runtime -- restore
 
 ## 真实 Windows 验收清单
 
-在无私人项目或敏感聊天的测试工作区执行。当前 `v0.3.0-alpha.1` 候选代码已完成一次 Windows x64 实机换肤与恢复验收；Codex 更新后仍必须重新执行本清单。
+在无私人项目或敏感聊天的测试工作区执行。当前 `v0.3.0` 正式代码已完成 Windows x64 实机换肤与恢复验收；Codex 更新后仍必须重新执行本清单。
 
 1. 校验 Setup/ZIP SHA-256，分别完成安装/启动；确认 Theme Studio 能打开且用户数据不写入程序目录。
 2. 完全退出普通 Codex，依次应用五个内置主题；检查首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端。

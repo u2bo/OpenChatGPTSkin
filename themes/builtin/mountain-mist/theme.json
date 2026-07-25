@@ -5,7 +5,7 @@
   "id": "mountain-mist",
   "name": "山岚云海",
   "description": "山色、云海与晨光带来的沉静自然体验。",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "author": "OpenChatGPTSkin",
   "metadata": {
     "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
@@ -63,16 +63,16 @@
     "positionY": 0.48,
     "scale": 1.05,
     "blur": 0,
-    "brightness": 1,
+    "brightness": 1.08,
     "overlay": 0,
     "safeArea": "none",
     "taskMode": "full",
     "taskOpacity": 0.18
   },
   "surfaces": {
-    "baseOpacity": 0.2,
-    "elevatedOpacity": 0.76,
-    "terminalOpacity": 0.84,
+    "baseOpacity": 0.16,
+    "elevatedOpacity": 0.58,
+    "terminalOpacity": 0.72,
     "blur": 0
   },
   "decorations": [

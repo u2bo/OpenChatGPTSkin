@@ -2235,6 +2235,15 @@ label:has(input[type="file"]:not(:disabled)) {
   background: var(--app-accent-soft);
 }
 
+.home-sidebar nav button:not(.active):hover,
+.home-sidebar nav label:hover,
+.home-sidebar nav button:not(.active):focus-visible,
+.home-sidebar nav label:focus-within {
+  color: var(--app-text);
+  border-color: color-mix(in srgb, var(--app-accent) 36%, var(--app-border));
+  background: color-mix(in srgb, var(--app-accent) 14%, var(--app-panel-solid));
+}
+
 .home-sidebar input[type="file"],
 .home-action-card input[type="file"] {
   display: none;
@@ -2902,6 +2911,13 @@ label:has(input[type="file"]:not(:disabled)) {
   color: var(--app-accent-strong);
   border-color: var(--app-accent);
   background: var(--app-accent-soft);
+}
+
+[data-studio-theme] .tool-list button:not(:disabled):hover,
+[data-studio-theme] .tool-list button:not(:disabled):focus-visible {
+  color: var(--app-text);
+  border-color: color-mix(in srgb, var(--app-accent) 36%, var(--app-border));
+  background: color-mix(in srgb, var(--app-accent) 14%, var(--app-panel-solid));
 }
 
 [data-studio-theme] .studio-title > span,

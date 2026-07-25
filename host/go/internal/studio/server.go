@@ -15,6 +15,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,6 +31,11 @@ const (
 	sessionLimitBytes   = 16 * 1024
 	jsonLimitBytes      = 256 * 1024
 	eventInterval       = 5 * time.Second
+)
+
+var (
+	viteScriptOpenTag = regexp.MustCompile(`(?i)<script\b[^>]*>`)
+	viteNonceAttribute = regexp.MustCompile(`(?i)\bnonce\s*=`)
 )
 
 type RuntimeStatus struct {
@@ -711,7 +717,8 @@ func newViteProxy(origin, nonce string) (*httputil.ReverseProxy, error) {
 		if strings.Count(string(contents), `property="csp-nonce"`) != 0 {
 			return errors.New("Vite HTML already defines CSP nonce metadata")
 		}
-		injected := strings.Replace(string(contents), "</head>", `<meta property="csp-nonce" nonce="`+nonce+`"></head>`, 1)
+		injected := injectViteNonce(string(contents), nonce)
+		injected = strings.Replace(injected, "</head>", `<meta property="csp-nonce" nonce="`+nonce+`"></head>`, 1)
 		if injected == string(contents) {
 			return errors.New("Vite HTML has no head for CSP nonce metadata")
 		}
@@ -727,6 +734,15 @@ func newViteProxy(origin, nonce string) (*httputil.ReverseProxy, error) {
 		_, _ = response.Write([]byte("<!doctype html><title>Theme Studio development host unavailable</title><p>Vite development server is unavailable.</p>"))
 	}
 	return proxy, nil
+}
+
+func injectViteNonce(contents, nonce string) string {
+	return viteScriptOpenTag.ReplaceAllStringFunc(contents, func(tag string) string {
+		if viteNonceAttribute.MatchString(tag) {
+			return tag
+		}
+		return strings.TrimSuffix(tag, ">") + ` nonce="` + nonce + `">`
+	})
 }
 
 func validateViteOrigin(value string) (*url.URL, error) {

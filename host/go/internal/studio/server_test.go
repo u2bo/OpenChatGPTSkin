@@ -174,7 +174,7 @@ func TestStudioDevProxyAcceptsOnlyLoopbackAndDoesNotForwardSessionState(t *testi
 			t.Fatal("Studio session state was forwarded to Vite")
 		}
 		response.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = response.Write([]byte("<html><head></head><body>Vite</body></html>"))
+		_, _ = response.Write([]byte(`<html><head><script type="module">window.__vite_inline = true</script><script nonce="existing">window.__vite_existing = true</script></head><body>Vite</body></html>`))
 	}))
 	defer upstream.Close()
 	config := studioFixture(t)
@@ -191,7 +191,9 @@ func TestStudioDevProxyAcceptsOnlyLoopbackAndDoesNotForwardSessionState(t *testi
 	}
 	contents, _ := io.ReadAll(response.Body)
 	response.Body.Close()
-	if response.StatusCode != http.StatusOK || !strings.Contains(string(contents), `property="csp-nonce"`) {
+	if response.StatusCode != http.StatusOK || !strings.Contains(string(contents), `property="csp-nonce"`) ||
+		!strings.Contains(string(contents), `<script type="module" nonce="`) ||
+		strings.Count(string(contents), `nonce="existing"`) != 1 {
 		t.Fatalf("dev proxy response = %d %s", response.StatusCode, contents)
 	}
 	api, err := http.Get(server.Origin + "/api/themes")

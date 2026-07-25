@@ -7,13 +7,23 @@ describe("Go production cutover", () => {
       readonly version: string;
       readonly scripts: Readonly<Record<string, string>>;
     };
-    expect(packageJson.version).toBe("0.3.0-alpha.1");
-    expect(packageJson.scripts["studio:dev"]).toBe("tsx scripts/dev/start-go-studio.ts");
+    expect(packageJson.version).toBe("0.3.0");
+    expect(packageJson.scripts["studio:dev"]).toContain("go:cdp-adapter:build");
+    expect(packageJson.scripts["go:verify"]).toContain("go:cdp-adapter:verify");
     expect(packageJson.scripts.runtime).toContain("host/go");
     expect(packageJson.scripts["release:build"]).toContain("build-go-release.ts");
     expect(packageJson.scripts["release:acceptance"]).toContain("accept-go-release.ts");
     expect(packageJson.scripts["release:merge"]).toContain("merge-go-release.ts");
     expect(packageJson.scripts["release:node"]).toBeUndefined();
+  });
+
+  it("keeps the checked-in Go adapter aligned with current surface rules", async () => {
+    const manifest = JSON.parse(await readFile(
+      "host/go/internal/cdp/generated/adapter-manifest.json",
+      "utf8",
+    )) as { readonly source?: string };
+    expect(manifest.source).toContain("data-sonner-toast");
+    expect(manifest.source).toContain("environment");
   });
 
   it("documents and publishes Node-free Go artifacts", async () => {
@@ -26,8 +36,8 @@ describe("Go production cutover", () => {
       expect(text).not.toContain("release:node");
       expect(text).not.toContain("OpenChatGPTSkin.cmd");
     }
-    expect(readme).toContain("OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe");
-    expect(readmeEn).toContain("OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe");
+    expect(readme).toContain("OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe");
+    expect(readmeEn).toContain("OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe");
     expect(workflow).toContain("npm run release:build -- --native-only");
   });
 

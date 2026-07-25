@@ -85,7 +85,7 @@ describe("Go host production packages", () => {
       }));
       await writeFile(join(input, "go-release-report.json"), JSON.stringify({
         schemaVersion: 1,
-        version: "0.3.0-alpha.1",
+        version: "0.3.0",
         imageImplementation: "gen2brain-webp-wasm2go-nodynamic-plus-internal-pipeline",
         cgo: false,
         sidecars: [],

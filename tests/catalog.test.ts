@@ -97,7 +97,9 @@ describe("built-in catalog", () => {
         },
         background: {
           blur: 0,
-          brightness: 1,
+          brightness: entry.id === "future-idol-cyan" ? 1.1 :
+            entry.id === "glacier-aurora" ? 1.05 :
+              entry.id === "mountain-mist" || entry.id === "rose-carpet-star" ? 1.08 : 1,
           overlay: 0,
           safeArea: "none",
           taskMode: "full",
@@ -105,10 +107,11 @@ describe("built-in catalog", () => {
         },
         surfaces: { blur: 0 },
       });
-      expect(theme.surfaces.baseOpacity, entry.id)
-        .toBe(entry.id === "yua-mikami-starlight"
-          ? 0.18
-          : theme.appearance === "dark" ? 0.26 : 0.2);
+      expect(theme.surfaces.baseOpacity, entry.id).toBe(
+        entry.id === "yua-mikami-starlight" ? 0.18 :
+          entry.id === "future-idol-cyan" ? 0.14 :
+            entry.id === "glacier-aurora" ? 0.2 : 0.16,
+      );
       if (entry.id === "yua-mikami-starlight") {
         expect(theme).toMatchObject({
           version: "1.0.0",
@@ -150,7 +153,7 @@ describe("built-in catalog", () => {
           expect(metadata.hasAlpha, path).toBe(true);
         }
       } else {
-        expect(theme).toMatchObject({ version: "1.3.0", background: { scale: 1.05 } });
+        expect(theme).toMatchObject({ version: "1.3.1", background: { scale: 1.05 } });
       }
     }
 

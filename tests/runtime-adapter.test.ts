@@ -33,6 +33,7 @@ function clientFor(
       pointerEvents: node.style.pointerEvents,
       backgroundColor: node.style.backgroundColor || "rgba(0, 0, 0, 0)",
       backgroundImage: node.style.backgroundImage || "none",
+      position: node.style.position || "static",
       fontSize: node.dataset.fontSize ?? (node.tagName === "H1" ? "32px" : "14px"),
     }),
   });
@@ -1356,6 +1357,38 @@ describe("CurrentCodexAdapter", () => {
     });
   });
 
+  it("keeps configuration history, composer chrome, quota banners, and floating environment panels distinct", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html);
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledTheme());
+
+    await expect(client.evaluate<Record<string, string | null | number>>(`(() => ({
+      settings: document.querySelectorAll('[data-open-chatgpt-skin-surface="settings"]').length,
+      composer: document.querySelector("#history-composer-stack")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+      composerChrome: document.querySelector("#history-composer-chrome")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+      composerInput: document.querySelector("#history-composer-input")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+      quota: document.querySelector("#history-quota-banner")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+      backdrop: document.querySelector("#history-composer-backdrop")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+      environment: document.querySelector("#history-environment-panel")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+    }))()`)).resolves.toEqual({
+      settings: 0,
+      composer: "composer",
+      composerChrome: "composer-chrome",
+      composerInput: "composer-input",
+      quota: "status-banner",
+      backdrop: "scroll-fade",
+      environment: "overlay",
+    });
+  });
+
   it("keeps task coverage when a Codex update removes the nested main role", async () => {
     const html = (await readFile("tests/fixtures/runtime/codex-task-page.html", "utf8"))
       .replace('id="native-task-route" role="main"', 'id="native-task-route"');
@@ -1422,6 +1455,48 @@ describe("CurrentCodexAdapter", () => {
     expect(await client.evaluate<string | null>(
       'document.querySelector("#late-settings-menu")?.getAttribute("data-open-chatgpt-skin-surface") ?? null',
     )).toBe("overlay");
+  });
+
+  it("marks native rate-limit notices and environment popovers opened after rendering", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-task-page.html", "utf8");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex/tasks/example", html, {
+      mutationController,
+    });
+    const adapter = new CurrentCodexAdapter(client);
+
+    await adapter.apply(compiledTheme());
+    await client.evaluate(`(() => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
+      Object.defineProperty(window, "innerHeight", { configurable: true, value: 760 });
+      const notice = document.createElement("section");
+      notice.id = "late-rate-limit-notice";
+      notice.setAttribute("role", "status");
+      notice.setAttribute("style", "position: fixed; background-color: rgb(30, 30, 30)");
+      notice.textContent = "You have a new rate limit reset opportunity";
+      const environment = document.createElement("div");
+      environment.id = "late-environment-info";
+      environment.setAttribute("style", "position: fixed; background-color: rgb(30, 30, 30)");
+      environment.textContent = "Environment info";
+      for (const [node, left, top, width, height] of [
+        [notice, 440, 80, 520, 96],
+        [environment, 940, 120, 280, 320],
+      ]) {
+        Object.defineProperty(node, "getBoundingClientRect", {
+          value: () => ({ left, top, width, height, right: left + width, bottom: top + height }),
+        });
+        document.body.append(node);
+      }
+      return true;
+    })()`);
+    mutationController.flush?.();
+
+    await expect(client.evaluate<Record<string, string | null>>(`(() => ({
+      rateLimit: document.querySelector("#late-rate-limit-notice")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+      environment: document.querySelector("#late-environment-info")
+        ?.getAttribute("data-open-chatgpt-skin-surface") ?? null,
+    }))()`)).resolves.toEqual({ rateLimit: "overlay", environment: "overlay" });
   });
 
   it("keeps long settings lists fully inside the themed settings surface", async () => {

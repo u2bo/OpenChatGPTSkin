@@ -6,7 +6,9 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const workspaceRoot = resolve(".");
+const studioRoot = resolve(workspaceRoot, "apps", "theme-studio");
 const viteOrigin = "http://127.0.0.1:5173";
+const viteEntrypoint = resolve(workspaceRoot, "node_modules", "vite", "bin", "vite.js");
 const buildRoot = await mkdtemp(join(tmpdir(), "openchatgptskin-dev-"));
 const executable = join(buildRoot, process.platform === "win32" ? "OpenChatGPTSkin.exe" : "OpenChatGPTSkin");
 const children = new Set<ChildProcess>();
@@ -43,10 +45,10 @@ try {
     "-o", executable, "./cmd/openchatgptskin",
   ], { cwd: workspaceRoot, windowsHide: true });
 
-  const vite = spawn(process.platform === "win32" ? "npm.cmd" : "npm", [
-    "run", "dev", "-w", "@open-chatgpt-skin/theme-studio", "--",
+  const vite = spawn(process.execPath, [
+    viteEntrypoint,
     "--host", "127.0.0.1", "--port", "5173", "--strictPort",
-  ], { cwd: workspaceRoot, stdio: "inherit", windowsHide: true });
+  ], { cwd: studioRoot, stdio: "inherit", windowsHide: true });
   children.add(vite);
   vite.once("exit", (code) => stop(code ?? 1));
   await waitForVite();

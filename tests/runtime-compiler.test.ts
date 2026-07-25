@@ -315,6 +315,12 @@ describe("compileTheme", () => {
       '[data-open-chatgpt-skin-surface="overlay"] :is(.composer-surface-chrome',
     );
     expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="overlay"] :where(button,[role=button]){color:var(--ocs-text)!important;background:transparent!important;',
+    );
+    expect(compiled.themeCss).toContain(
+      '[data-open-chatgpt-skin-surface="composer"] :is(.composer-surface-chrome,[class*="bg-token-main-surface"]',
+    );
+    expect(compiled.themeCss).toContain(
       '[data-open-chatgpt-skin-surface="workspace-panel"] :is(.text-token-foreground',
     );
     expect(compiled.themeCss).toContain(

@@ -88,7 +88,7 @@ macOS 窗口枚举通常需要 Accessibility 权限。OpenChatGPTSkin 不为换�
 | 发布包自动验收 | ZIP、Setup 与安装生命周期 | payload、`.tar.gz`、`.app`、Mach-O 与 DMG 挂载 |
 | 真实 Codex Probe/视觉验收 | 已提供 | 尚未自动化，使用下方手动清单 |
 
-`v0.3.0-alpha.1` 起生产 Studio、Controller 与 Runtime 由 `host/go` 的同一实现提供；TypeScript 仅保留前端、Theme/Contract 作者源与 CDP Adapter，不存在 Node 业务 Host 或平台 fallback。
+`v0.3.0` 起生产 Studio、Controller 与 Runtime 由 `host/go` 的同一实现提供；TypeScript 仅保留前端、Theme/Contract 作者源与 CDP Adapter，不存在 Node 业务 Host 或平台 fallback。
 
 ## 真实 Mac 验收清单
 

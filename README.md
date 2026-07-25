@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-v0.3.0--alpha.1-f59e0b)
+![Status](https://img.shields.io/badge/status-v0.3.0-2ea44f)
 ![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
 ![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
@@ -46,7 +46,7 @@
 <img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="赛亚人孙悟空 OpenChatGPTSkin 完整主题概念图">
 
 > [!IMPORTANT]
-> `v0.3.0-alpha.1` 是统一 Go Host 候选版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置五个 Theme Schema v4 主题。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。Windows 与两种 Mac 架构的主题闭环、数据升级和 v0.2.0 回滚均已完成实机验收。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
+> `v0.3.0` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置五个 Theme Schema v4 主题。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。Windows 与两种 Mac 架构的主题闭环、数据升级和 v0.2.0 回滚均已完成实机验收。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
 
 ## 目录
 
@@ -168,7 +168,7 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows Setup（推荐）
 
-1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.0-alpha.1) 下载 `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe` 和 `checksums.txt`。
+1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.0) 下载 `OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe` 和 `checksums.txt`。
 2. 校验 SHA-256 后双击 Setup。安装范围为当前用户，默认目录是 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限。
 3. 从开始菜单启动 OpenChatGPTSkin；生产 Theme Studio 健康启动后会自动打开默认浏览器。
 
@@ -176,16 +176,16 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows 便携 ZIP
 
-下载 `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
+下载 `OpenChatGPTSkin_0.3.0_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
 
 ### macOS DMG（未签名开发者预览）
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg`。两个架构均已在对应真实设备与官方 ChatGPT 上完成验收。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.0_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.0_macos_x64.dmg`。两个架构均已在对应真实设备与官方 ChatGPT 上完成验收。
 2. 先按下方命令核对 SHA-256，再打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 3. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。不要关闭 Gatekeeper，也不要使用 `xattr` 移除隔离属性。
 4. Theme Studio 健康启动后会自动打开默认浏览器。替换或删除 `.app` 不会删除 `~/Library/Application Support/OpenChatGPTSkin` 下的个人主题、草稿和 Runtime 状态。
 
-开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
+开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.0_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.0_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
 
 维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。三个原生 Runner 会分别构建并验收 Go Host，随后合并为 `go-release-combined`；手动运行不会创建 Tag 或 GitHub Release。
 
@@ -194,17 +194,17 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 在下载目录运行：
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS 终端：
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0_macos_arm64.dmg
 # Intel Mac 使用：
-shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -390,7 +390,8 @@ npm run build
 
 ## 更多文档
 
-- [v0.3.0-alpha.1 发布说明](docs/releases/v0.3.0-alpha.1.md)
+- [v0.3.0 发布说明](docs/releases/v0.3.0.md)
+- [v0.3.0-alpha.1 历史发布说明](docs/releases/v0.3.0-alpha.1.md)
 - [v0.2.0 历史发布说明](docs/releases/v0.2.0.md)
 - [v0.1.0 历史发布说明](docs/releases/v0.1.0.md)
 - [v0.1.0-alpha.1 历史发布说明](docs/releases/v0.1.0-alpha.1.md)

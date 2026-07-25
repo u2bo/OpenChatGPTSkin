@@ -1,5 +1,5 @@
 {
-  "name": "@open-chatgpt-skin/cdp-adapter",
+  "name": "@open-chatgpt-skin/runtime-contract",
   "version": "0.3.0-alpha.1",
   "type": "module",
   "exports": "./dist/index.js",
@@ -11,7 +11,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@open-chatgpt-skin/theme-core": "0.3.0-alpha.1",
-    "@open-chatgpt-skin/theme-schema": "0.3.0-alpha.1"
+    "@open-chatgpt-skin/theme-schema": "0.3.0-alpha.1",
+    "zod": "^3.25.76"
   }
 }

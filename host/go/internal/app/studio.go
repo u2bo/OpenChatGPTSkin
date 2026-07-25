@@ -10,7 +10,7 @@ import (
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
 
-const goHostVersion = "0.3.0-alpha.1"
+var goHostVersion = "0.3.0-alpha.1"
 
 type RunningStudio = studio.RunningServer
 
@@ -75,18 +75,16 @@ func startStudio(ctx context.Context, viteOrigin, configuredDataRoot string) (*R
 }
 
 func findInstallRoot(requireProductionUI bool) (string, error) {
-	candidates := make([]string, 0, 2)
-	if executable, err := os.Executable(); err == nil {
-		candidates = append(candidates, filepath.Dir(executable))
+	executable, current := "", ""
+	if value, err := os.Executable(); err == nil {
+		executable = value
 	}
-	if current, err := os.Getwd(); err == nil {
-		candidates = append(candidates, current)
+	if value, err := os.Getwd(); err == nil {
+		current = value
 	}
-	for _, candidate := range candidates {
+	for _, candidate := range installRootCandidates(executable, current) {
 		for root := candidate; ; root = filepath.Dir(root) {
-			hasThemes := fileExists(filepath.Join(root, "themes", "catalog.json"))
-			hasProductionUI := fileExists(filepath.Join(root, "apps", "theme-studio", "dist", "index.html"))
-			if hasThemes && (!requireProductionUI || hasProductionUI) {
+			if isInstallRoot(root, requireProductionUI) {
 				return root, nil
 			}
 			parent := filepath.Dir(root)
@@ -96,6 +94,29 @@ func findInstallRoot(requireProductionUI bool) (string, error) {
 		}
 	}
 	return "", errors.New("Studio install root is unavailable")
+}
+
+func installRootCandidates(executable, current string) []string {
+	candidates := make([]string, 0, 3)
+	if executable != "" {
+		directory := filepath.Dir(executable)
+		candidates = append(candidates, directory)
+		candidates = append(candidates, filepath.Clean(filepath.Join(directory, "..", "Resources", "payload")))
+	}
+	if current != "" {
+		candidates = append(candidates, current)
+	}
+	return candidates
+}
+
+func isInstallRoot(root string, requireProductionUI bool) bool {
+	hasThemes := fileExists(filepath.Join(root, "themes", "catalog.json"))
+	hasProductionUI := fileExists(filepath.Join(root, "apps", "theme-studio", "dist", "index.html"))
+	hasReleaseManifest := fileExists(filepath.Join(root, "release-manifest.json"))
+	hasRepositoryMarkers := fileExists(filepath.Join(root, "package.json")) &&
+		fileExists(filepath.Join(root, "host", "go", "go.mod"))
+	return hasThemes && (!requireProductionUI || hasProductionUI) &&
+		(hasReleaseManifest || hasRepositoryMarkers)
 }
 
 func fileExists(path string) bool {

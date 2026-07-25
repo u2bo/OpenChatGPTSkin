@@ -20,8 +20,9 @@ type Command struct {
 }
 
 type commandError struct {
-	code    string
-	message string
+	code       string
+	message    string
+	nextAction string
 }
 
 func (err commandError) Error() string { return err.message }

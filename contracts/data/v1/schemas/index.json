@@ -1847,9 +1847,13 @@
                   "additionalProperties": false,
                   "properties": {
                     "id": {
+                      "maxLength": 80,
+                      "minLength": 3,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                       "type": "string"
                     },
                     "version": {
+                      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
                       "type": "string"
                     }
                   },
@@ -2815,9 +2819,13 @@
                   "additionalProperties": false,
                   "properties": {
                     "id": {
+                      "maxLength": 80,
+                      "minLength": 3,
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                       "type": "string"
                     },
                     "version": {
+                      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)$",
                       "type": "string"
                     }
                   },
@@ -3145,33 +3153,64 @@
         "releaseManifest": {
           "additionalProperties": false,
           "properties": {
-            "build": {
+            "cdpAdapter": {
               "additionalProperties": false,
               "properties": {
-                "commit": {
-                  "pattern": "^[0-9a-f]{40}$",
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
                   "type": "string"
                 }
               },
               "required": [
-                "commit"
+                "sha256"
               ],
               "type": "object"
             },
-            "entry": {
-              "enum": [
-                "OpenChatGPTSkin.cmd",
-                "OpenChatGPTSkin"
+            "contracts": {
+              "additionalProperties": false,
+              "properties": {
+                "data": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "runtime": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "studio": {
+                  "const": 2,
+                  "type": "number"
+                },
+                "theme": {
+                  "const": 4,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "studio",
+                "runtime",
+                "theme",
+                "data",
+                "sha256"
               ],
-              "type": "string"
+              "type": "object"
             },
             "files": {
-              "additionalProperties": {
+              "items": {
                 "additionalProperties": false,
                 "properties": {
                   "bytes": {
-                    "minimum": 0,
+                    "exclusiveMinimum": 0,
                     "type": "integer"
+                  },
+                  "path": {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
                   },
                   "sha256": {
                     "pattern": "^[0-9a-f]{64}$",
@@ -3179,81 +3218,173 @@
                   }
                 },
                 "required": [
+                  "path",
                   "bytes",
                   "sha256"
                 ],
                 "type": "object"
               },
+              "minItems": 1,
+              "type": "array"
+            },
+            "host": {
+              "additionalProperties": false,
+              "properties": {
+                "commit": {
+                  "pattern": "^[0-9a-f]{40}$",
+                  "type": "string"
+                },
+                "dirty": {
+                  "type": "boolean"
+                },
+                "entry": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bytes": {
+                      "exclusiveMinimum": 0,
+                      "type": "integer"
+                    },
+                    "path": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "pattern": "^[0-9a-f]{64}$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "bytes",
+                    "sha256"
+                  ],
+                  "type": "object"
+                },
+                "goVersion": {
+                  "pattern": "^go\\d+\\.\\d+(?:\\.\\d+)?$",
+                  "type": "string"
+                },
+                "language": {
+                  "const": "go",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "language",
+                "goVersion",
+                "commit",
+                "dirty",
+                "entry"
+              ],
+              "type": "object"
+            },
+            "image": {
+              "additionalProperties": false,
+              "properties": {
+                "cgo": {
+                  "const": false,
+                  "type": "boolean"
+                },
+                "implementation": {
+                  "maxLength": 160,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "implementation",
+                "cgo"
+              ],
               "type": "object"
             },
             "product": {
               "const": "OpenChatGPTSkin",
               "type": "string"
             },
-            "runtime": {
-              "additionalProperties": false,
-              "properties": {
-                "nodeVersion": {
-                  "pattern": "^\\d+\\.\\d+\\.\\d+$",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "nodeVersion"
-              ],
-              "type": "object"
-            },
-            "schemaVersion": {
-              "const": 1,
-              "type": "number"
-            },
-            "target": {
-              "additionalProperties": false,
-              "properties": {
-                "arch": {
-                  "enum": [
-                    "x64",
-                    "arm64"
-                  ],
+            "roles": {
+              "items": [
+                {
+                  "const": "studio",
                   "type": "string"
                 },
-                "platform": {
-                  "enum": [
-                    "win32",
-                    "darwin"
-                  ],
+                {
+                  "const": "controller",
+                  "type": "string"
+                },
+                {
+                  "const": "runtime",
                   "type": "string"
                 }
-              },
-              "required": [
-                "platform",
-                "arch"
               ],
-              "type": "object"
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
             },
-            "themeCatalog": {
+            "schemaVersion": {
+              "const": 2,
+              "type": "number"
+            },
+            "sidecars": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "bytes": {
+                    "exclusiveMinimum": 0,
+                    "type": "integer"
+                  },
+                  "path": {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "sha256": {
+                    "pattern": "^[0-9a-f]{64}$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path",
+                  "bytes",
+                  "sha256"
+                ],
+                "type": "object"
+              },
+              "maxItems": 0,
+              "type": "array"
+            },
+            "target": {
+              "enum": [
+                "windows-x64",
+                "macos-arm64",
+                "macos-x64"
+              ],
+              "type": "string"
+            },
+            "themes": {
               "additionalProperties": false,
               "properties": {
-                "schemaVersion": {
-                  "exclusiveMinimum": 0,
-                  "type": "integer"
+                "builtins": {
+                  "items": {
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "catalogSchemaVersion": {
+                  "const": 1,
+                  "type": "number"
                 }
               },
               "required": [
-                "schemaVersion"
+                "catalogSchemaVersion",
+                "builtins"
               ],
               "type": "object"
             },
-            "themes": {
-              "items": {
-                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-                "type": "string"
-              },
-              "minItems": 1,
-              "type": "array"
-            },
             "version": {
-              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$",
+              "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?$",
               "type": "string"
             }
           },
@@ -3262,11 +3393,13 @@
             "product",
             "version",
             "target",
-            "runtime",
-            "build",
-            "themeCatalog",
-            "entry",
+            "roles",
+            "host",
+            "contracts",
+            "cdpAdapter",
             "themes",
+            "image",
+            "sidecars",
             "files"
           ],
           "type": "object"

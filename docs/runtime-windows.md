@@ -1,114 +1,73 @@
-# Windows Runtime、发布包与兼容性门
+# Windows Runtime、发布包与兼容性验收
 
-> Runtime 控制器更新（以本节为准）：当前仓库提供开发者预览命令与自动化测试，但尚未在本文档中声明真实 Codex 的视觉验收或本机 `runtime:acceptance` 证据已经完成。下面较早的 Probe 流程仍用于 Codex 包升级后的兼容性检查。
+[返回 README](../README.md)
 
-## Windows 发布包
+`v0.3.0-alpha.1` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller 与 Runtime 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
 
-`v0.1.0` 提供 Windows x64 便携 ZIP 与用户级 Setup，当时的发布验收读取四个内置主题。当前源码的后续构建会通过同一 Release staging、固定 Node.js 22 Runtime 和平台匹配的 `sharp` 校验五个内置主题，并继续覆盖完整文件 manifest、生产 UI、一次性 session、真实图片处理、`.ocskin` 保存导出和正常关闭。Setup 额外验证当前用户静默安装、覆盖安装与默认卸载均保留个人主题和草稿。
+## 安装与数据目录
 
-Setup 默认安装到 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不要求管理员权限；程序数据位于 `%LOCALAPPDATA%\OpenChatGPTSkin`。交互式卸载会询问是否同时删除个人数据，默认选择为“否”，确认删除时会再次明确提示不可恢复。未签名安装包可能触发 SmartScreen，应先用 Release 的 `checksums.txt` 验证 SHA-256。
+- Setup 默认安装到 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限；
+- 便携 ZIP 解压后运行 `OpenChatGPTSkin.exe`；
+- 用户数据位于 `%LOCALAPPDATA%\OpenChatGPTSkin`，覆盖安装和默认卸载不会删除个人主题、草稿或版本；
+- 未签名安装包可能触发 SmartScreen，只应从项目 GitHub Release 下载并先核对 `checksums.txt`。
 
-## Runtime 控制器开发者用法
+发布包必须包含 `release-manifest.json` schema v2。Manifest 记录 Go Host 版本/提交/入口 Hash、Contract Hash、CDP Adapter Hash、五个内置主题和 Stage 中每个文件的 SHA-256，并明确声明空 sidecar；验收会拒绝 `node.exe`、`node` 或 `node_modules`。
 
-前提：Windows 11、Node.js `>=22`、依赖已安装。先保存工作并完全退出普通 Codex；若发现普通实例仍在运行，Runtime 会拒绝接管，不会结束该实例。
+## 源码开发命令
 
-新版 Codex 在官方 AUMID 激活期间可能短暂创建第二个同包根进程，或把窗口与 CDP
-交接给新根。Runtime 会先检查直接启动的实例，并在 AUMID 前给予窗口最多 5 秒的
-收敛时间；当唯一可信根、可见窗口和原回环 CDP 所有权已经成立时，不再执行冗余
-AUMID 激活，避免制造第二个根进程。只有该收敛期结束后窗口仍未就绪时才进入 AUMID
-流程。该流程不依赖 PID 必须保持不变，并要求最终根唯一、
-入口路径仍等于已验证的官方 Appx 入口、可见窗口属于最终根进程树、原回环 CDP 端口
-也属于最终根进程树。只有这些条件同时成立才会更新受管会话并继续应用主题。
+源码开发需要 Windows 11、Go `1.25.12`、Node.js `>=22` 与 npm。Node 只用于前端、Contract 和 Adapter 构建，不进入用户包。
 
 ```powershell
 npm run runtime -- list-themes
-npm run runtime -- import --theme-file "D:\\Themes\\personal-theme.ocskin"
+npm run runtime -- import --theme-file "D:\Themes\personal-theme.ocskin"
 npm run runtime -- launch --theme mountain-mist
 npm run runtime -- switch --theme glacier-aurora
+npm run runtime -- launch --theme personal-theme --version 1.0.0
 npm run runtime -- pause
 npm run runtime -- resume
+npm run runtime -- status
 npm run runtime -- restore
 ```
 
-可用主题为 `future-idol-cyan`、`rose-carpet-star`、`mountain-mist`、`glacier-aurora`。`import --theme-file` 会使用现有 `.ocskin` 安全校验并原子安装个人主题，不启动 Controller；导入后使用 `launch` 或 `switch` 的 `--theme <id> --version <version>` 形式选择精确版本。`pause` 会移除已应用皮肤；暂停期间 `switch` 只更新选择，不修改 DOM；`resume` 才重新应用选择。`restore` 恢复官方外观后进入等待退出状态，不能继续切换主题。请从 Codex 菜单或系统托盘执行“退出 / Quit Codex”，不要使用任务管理器强制结束。
+五个内置主题是 `future-idol-cyan`、`glacier-aurora`、`mountain-mist`、`rose-carpet-star` 和 `yua-mikami-starlight`。内置主题可省略版本；个人主题必须使用 `--version <version>` 选择精确版本。
 
-## 两阶段 Runtime 验收
+`list-themes` 与 `import --theme-file` 只访问主题仓库，不启动 Controller 或连接 Codex。导入仍经过 `.ocskin` Schema、大小、Hash 和路径安全校验，并原子安装到个人主题仓库。
 
-自动化验收会通过固定公开控制协议验证四主题、12 条有向切换、暂停后切换、恢复、性能阈值和正常启动无远程调试参数。它只生成严格脱敏的 evidence，绝不写入 PID、端口、用户名、路径、命令行、WebSocket URL、项目内容、聊天内容或截图。
+## Runtime 行为
 
-```powershell
-npm run runtime:acceptance -- --begin
-# 完全退出受控 Codex；从 Windows 开始菜单正常启动 Codex
-npm run runtime:acceptance -- --finalize
-```
+- `launch` 前必须完全退出普通 Codex；发现未受管理实例时会安全拒绝，不会接管或结束它；
+- `switch` 只在受管理会话中切换主题；
+- `pause` 移除主题投影但保留选择，`resume` 重新应用已选主题；
+- `restore` 恢复官方外观并等待用户从 Codex 菜单或系统托盘正常退出；
+- 不要通过任务管理器强制结束受管理实例，否则 Runtime 无法验证清理完成。
 
-`--begin` 后不得使用任务管理器结束受控实例。`--finalize` 仅在旧根进程已退出、旧 CDP 端口关闭、且正常 Codex 没有 `--remote-debugging-address` / `--remote-debugging-port` 时写入 `docs/runtime-acceptance/codex-<packageVersion>.json`。正常启动的 Codex 不会被关闭。
-
-Theme Studio 完整本地闭环已经提供，包括主题编辑、图片与字体上传、首页 / 任务双视图预览、版本保存、导入导出和精确版本 Runtime 应用。Runtime 会在路由变化和 portal 弹层创建后持续重标记任务、工作台、终端、应用菜单与弹层。Windows 安装器与便携包已进入 Alpha；SEA、MCP 和可安装 Codex 插件仍是后续工作。兼容性 Probe 命令继续保留，用于 Codex 升级后的安全检查。
-
-> 当前结论：Windows 兼容性门已通过。本页描述的是开发验证流程，不是面向最终用户的换肤功能。
-
-## 已验证的范围
-
-本机对已安装的官方 Codex Desktop 完成了一次两阶段兼容性探测，并生成与包版本绑定的脱敏证据。探测确认：
-
-- 官方 Appx 身份链和受管进程树通过验证；
-- CDP 只监听 `127.0.0.1`，不会接受局域网、IPv6 或主机名端点；
-- 当前页面具有主内容区、导航区和输入区所需能力；
-- 仅创建并移除无视觉影响的受控标记，`markerRoundTrip` 成功；
-- 标记清理后官方外观仍然存在；
-- 用户完全退出受管 Codex 后，受管根进程和 CDP 监听均已关闭；
-- 从开始菜单正常启动 Codex 时，没有 `--remote-debugging-port` 参数。
-
-这份结论只适用于已记录的 Codex 包版本。升级 Codex 后必须重新运行兼容性门；证据文件名由经过验证的包版本自动推导，不能由命令行指定。
+新版 Codex 在官方 App 激活期间可能短暂创建或交接根进程。Runtime 只有在官方包身份、唯一可信根、可见窗口和原回环 CDP 端口所有权同时成立后才继续，不依赖 PID 永远不变，也不会放宽为任意可执行文件或任意调试端点。
 
 ## 安全边界
 
-- 只管理由 OpenChatGPTSkin 本次探测明确启动的 Codex；发现普通运行中的 Codex 会拒绝接管，不会结束它。
-- CDP 仅允许 `127.0.0.1`，并验证端口所属进程和官方 Codex 进程树。
-- 不接受来自主题包或命令行的任意 CSS、JavaScript、HTML、DOM 选择器、可执行路径或 CDP URL。
-- 不会修改 WindowsApps、`app.asar`、认证信息、API 配置、项目文件或聊天内容。
-- 任何身份、端点、Target、DOM 适配或清理检查失败都会停止探测，并保持或恢复官方外观。
-- 不要使用任务管理器强制结束 Codex；等待应用正常退出，或使用应用菜单/系统托盘中的“退出”。
+- CDP 只允许 `127.0.0.1`，并验证端口属于受管理的官方 Codex 进程树；
+- 主题不能携带 JavaScript、HTML、CSS、可执行文件、远程 URL、自定义 DOM 选择器或 CDP 地址；
+- 不修改 `WindowsApps`、`app.asar`、官方签名、账号/API 配置、项目文件或聊天内容；
+- 身份、Target、DOM Adapter、主题校验或恢复检查失败时返回结构化错误，不使用隐藏 fallback；
+- Theme Studio 会把精确 `{id, version}` 交给同一个 Go Runtime，不存在 Node/Go 双写或第二业务后端。
 
-## 复现兼容性探测
+## 真实 Windows 验收清单
 
-前提：Windows 11、Node.js `>=22.0.0`，并已在仓库根目录安装依赖。
+在无私人项目或敏感聊天的测试工作区执行。当前 `v0.3.0-alpha.1` 候选代码已完成一次 Windows x64 实机换肤与恢复验收；Codex 更新后仍必须重新执行本清单。
 
-1. 如需首次建立可信安装缓存，可在普通 Codex 仍打开时执行：
+1. 校验 Setup/ZIP SHA-256，分别完成安装/启动；确认 Theme Studio 能打开且用户数据不写入程序目录。
+2. 完全退出普通 Codex，依次应用五个内置主题；检查首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端。
+3. 导入并应用一个包含自定义背景、颜色、字体、装饰、头像、建议图标和项目图标的 `.ocskin`。
+4. 执行 `pause`、`switch`、`resume`，确认暂停时官方外观可见，恢复时只应用已选主题。
+5. 执行 `restore`，确认官方外观恢复；从 Codex 菜单或系统托盘正常退出，确认 Controller 清理完成。
+6. 从开始菜单正常启动官方 Codex，确认未继承 `--remote-debugging-address` 或 `--remote-debugging-port`，且保持官方外观。
+7. 验证覆盖安装和卸载默认保留 `%LOCALAPPDATA%\OpenChatGPTSkin` 下的个人主题、草稿与版本。
+8. 记录 Codex/OpenChatGPTSkin/Windows 版本、主题结果和脱敏截图。公开记录不得包含 PID、端口、用户名、绝对路径、命令行、项目名或聊天内容。
 
-   ```powershell
-   npm run runtime:probe
-   ```
+旧 Node Host 的 `runtime:probe` 与 `runtime:acceptance` 已随 Go cutover 删除。历史脱敏证据 [codex-26.707.12708.0.json](runtime-probes/codex-26.707.12708.0.json) 只用于说明早期兼容性门，不是当前 Go 版本的自动验收结果，也不能替代上面的真实设备检查。
 
-   该命令预期拒绝普通实例并返回 `CODEX_ALREADY_RUNNING_UNMANAGED`；这不是失败后的强制接管，也不会关闭应用。
+## 已知风险
 
-2. 保存工作并完全退出普通 Codex。随后执行第一阶段探测：
-
-   ```powershell
-   npm run runtime:probe -- --record-evidence
-   ```
-
-   命令会通过官方 App 身份启动一个受管实例，完成无视觉标记往返并恢复官方外观。完成后它会保留该实例，等待用户手动完全退出。
-
-3. 使用 Codex 的“退出 / Quit Codex”命令完全退出该实例。不要只关闭窗口，也不要使用任务管理器强制结束。
-
-4. 执行第二阶段收尾：
-
-   ```powershell
-   npm run runtime:probe -- --finalize
-   ```
-
-   只有受管根进程与 CDP 监听都已关闭时，这一步才会写入 `docs/runtime-probes/codex-<packageVersion>.json`。如果返回 `PROBE_EXIT_PENDING`，说明应用尚未完全退出；此时会话保留，供用户完成正常退出后重试。
-
-5. 从 Windows 开始菜单正常启动 Codex，确认其可用且没有调试参数。此步骤验证普通启动不会继承本次探测的 CDP 暴露。
-
-## 脱敏证据
-
-当前开发机的证据为 [codex-26.707.12708.0.json](runtime-probes/codex-26.707.12708.0.json)。它仅包含包身份和版本、Target 分类、能力布尔值以及退出/清理结果；不包含 PID、端口号、WebSocket URL、用户名、磁盘路径、命令行、项目内容、聊天内容或认证信息。
-
-## 当前未交付的能力
-
-尚未提供可安装的 Codex 插件、SEA 单文件程序、自动更新或 Windows ARM64 包。Theme Studio 已交付安全会话、三栏编辑器、用户素材处理、不可变版本、导入导出、受约束模块布局以及编辑后应用到真实 Codex 的闭环。
-
-Runtime Adapter 已覆盖 Hero、建议卡、任务路由、审阅 / 终端 / 浏览器 / 文件工作区、应用菜单和 portal 弹层；不会通过修改官方安装目录、接受用户 DOM 选择器或扩大 CDP 暴露范围来缩短路径。Codex 升级后仍需重新运行兼容性门和真实视觉验收。
+- Codex 更新可能改变包身份、进程结构或 DOM surface contract，需要 Adapter 更新和重新验收；
+- Windows 安装包尚未代码签名，SmartScreen 提示不会通过关闭系统安全功能规避；
+- 尚未提供 Windows ARM64、自动更新、Codex 插件市场安装或单文件 SEA。

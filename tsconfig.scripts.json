@@ -20,8 +20,8 @@
       "@open-chatgpt-skin/cdp-adapter": [
         "./packages/cdp-adapter/src/index.ts"
       ],
-      "@open-chatgpt-skin/windows-runtime": [
-        "./runtime/windows/src/index.ts"
+      "@open-chatgpt-skin/runtime-contract": [
+        "./packages/runtime-contract/src/index.ts"
       ]
     }
   },

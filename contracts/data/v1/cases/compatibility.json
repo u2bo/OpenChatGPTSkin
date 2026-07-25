@@ -31,10 +31,10 @@
       "version": 1
     },
     {
-      "name": "release manifest v1",
+      "name": "release manifest v2",
       "schema": "releaseManifest",
       "valid": true,
-      "version": 1
+      "version": 2
     },
     {
       "expectedErrorCode": "DATA_SCHEMA_INVALID",
@@ -73,7 +73,7 @@
     },
     {
       "expectedErrorCode": "RELEASE_MANIFEST_INVALID",
-      "expectedPath": "/files/sha256",
+      "expectedPath": "/files/0/sha256",
       "name": "release file hash malformed",
       "schema": "releaseManifest",
       "valid": false

@@ -88,7 +88,7 @@ macOS 窗口枚举通常需要 Accessibility 权限。OpenChatGPTSkin 不为换�
 | 发布包自动验收 | ZIP、Setup 与安装生命周期 | payload、`.tar.gz`、`.app`、Mach-O 与 DMG 挂载 |
 | 真实 Codex Probe/视觉验收 | 已提供 | 尚未自动化，使用下方手动清单 |
 
-仓库暂时保留历史目录和包名 `runtime/windows` / `@open-chatgpt-skin/windows-runtime`，避免在本次平台适配中进行无关的大范围搬迁；其中 Controller 和公共接口已经平台中立。
+`v0.3.0-alpha.1` 起生产 Studio、Controller 与 Runtime 由 `host/go` 的同一实现提供；TypeScript 仅保留前端、Theme/Contract 作者源与 CDP Adapter，不存在 Node 业务 Host 或平台 fallback。
 
 ## 真实 Mac 验收清单
 
@@ -115,12 +115,12 @@ macOS 窗口枚举通常需要 Accessibility 权限。OpenChatGPTSkin 不为换�
 
    运行期间应为当前用户所有、权限 `srw-------`；Controller 退出后对应 socket 应被删除。
 7. 正常启动官方 Codex，确认没有继承 `--remote-debugging-address` 或 `--remote-debugging-port`，且普通应用不受主题影响。
-8. 记录 Codex 版本、macOS 版本、四主题结果、恢复结果和脱敏截图；不要记录 PID、端口、用户名、路径、命令行、项目名或聊天内容。
+8. 记录 Codex 版本、macOS 版本、五主题结果、恢复结果和脱敏截图；不要记录 PID、端口、用户名、路径、命令行、项目名或聊天内容。
 
-`npm run runtime:probe` 与 `npm run runtime:acceptance` 当前会在 macOS 返回 `RUNTIME_ENVIRONMENT_INVALID`，这是明确的平台边界，不是静默降级。
+旧 Node Host 的 `runtime:probe` 与 `runtime:acceptance` 已删除。当前验收以 Go 单元/合约/原生包自动检查加本清单的真实设备观察为准，不通过隐藏 fallback 伪造平台能力。
 
 ## 已知风险
 
 - Codex 更新可能改变 bundle 签名信息、进程结构或 DOM surface contract，需要更新适配并重新验收；
 - 首次实机验收必须确认代码中的 Apple Team ID 与当前官方 Codex 签名一致；不一致时应先核对官方来源，不能放宽为“接受任意有效签名”；
-- 真实 Mac 验收完成前，不应发布“macOS 已完全兼容”或“所有 UI 已实机验证”的声明。
+- Codex 升级后必须重新执行本清单，不能把旧版本的实机结果外推到新版本。

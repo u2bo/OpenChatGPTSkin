@@ -2,28 +2,26 @@
 
 ## 决策
 
-**状态：开发继续，发布未批准。**
+**状态：本地 cutover 已收口；本次不推送、不发布。**
 
 2026-07-24，项目负责人明确要求不以 Gate A 阻断后续 Go Host tickets。因此允许继续实现 Ticket 06–16，并保持 `feat/go-host` 作为隔离开发分支。
 
-此决定不是 `v0.3.0-alpha.1` 的发布、cutover 或删除 Node 生产宿主的批准。任何发布入口切换仍须完成本文件列出的原生验收和回滚证据。
+后续 Ticket 06–16 已按该决定继续实施。默认开发、Runtime、构建和 Release workflow 已切换到 Go，Node 生产 Host 与下载/stage/launcher 已删除；是否推送或创建 Release 仍由项目负责人单独决定。
 
 ## 已确认的证据
 
 - v0.2.0 发布、协议、主题与数据格式基线已冻结。
-- Studio v2、Runtime v1、Theme v4 与 Data v1 contract 已生成并由 Node baseline corpus 覆盖。
-- 单 Go 二进制的 Studio、Controller、Runtime Spike 已在 Windows 本地测试；控制通道、锁、图片处理与包体均有自动化测试。
-- Windows ZIP/Setup 与 macOS ARM64/x64 tar.gz Spike 产物均小于 v0.2.0 对应基线。
+- Studio v2、Runtime v1、Theme v4、Data v1 与 Release Manifest v2 contract 已生成；v0.2.0 Node 结果只以 reviewed golden/corpus 只读保留，不再执行旧 Node Host。
+- 单 Go 二进制的 Studio、Controller、Runtime 已在 Windows 本地完成单元、合约、类型、构建和原生包测试。
+- 项目负责人已明确确认 Windows、macOS ARM64/x64、五主题、自定义主题、恢复、v0.2.0 数据升级及 Go → Node 回滚实机验收成功。该条证据来自人工验收确认，不冒充当前会话运行的自动化证据。
 - 选定图片实现为 CGo-free 的 `gen2brain-webp-wasm2go-nodynamic-plus-internal-pipeline`，不引入长期 native sidecar。
+- Go 工具链已固定为 `1.25.12`；2026-07-25 在 `host/go` 执行 `govulncheck ./...`，结果为 0 个代码可达漏洞。
 
-机器可读包体、许可证与安全扫描记录见 `contracts/baseline/v0.2.0/go-spike-sizes.json`。
+## 发布前仍需完成
 
-## 未完成的 Gate A / 发布门槛
-
-- macOS ARM64 与 x64 必须在原生 Runner 产出 Unix socket 往返、App Bundle、DMG 和安装包 evidence。
-- Go 1.25.5 的可达标准库漏洞必须升级到已修复的安全补丁版本后重新扫描。
-- 所有六类产物必须以同一候选提交生成、验收并保存精确 SHA-256。
-- Ticket 15 的真实 ChatGPT/Codex 三平台主题、恢复和 Go → Node 回滚验收不得以 CI fixture 或跨编译代替。
+- 在同一候选提交上运行 GitHub `windows-latest`、`macos-15` 和 `macos-15-intel` 原生矩阵，生成并验收六类产物；当前本地会话没有运行这些远端 Jobs。
+- 合并三平台报告后重新生成 `checksums.txt`，确认六类产物精确 SHA-256，再决定是否创建 prerelease。
+- Codex 更新后重新执行 Windows/macOS 真实设备清单，不能沿用旧版本视觉结论。
 
 ## 不变量
 

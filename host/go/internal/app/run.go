@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"os/signal"
@@ -105,7 +106,11 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 			writeCLIError(stderr, startErr)
 			return 1
 		}
-		_ = json.NewEncoder(stdout).Encode(map[string]any{"ok": true, "role": "studio"})
+		result := map[string]any{"ok": true, "role": "studio"}
+		if options.noOpen {
+			result["url"] = studio.BootstrapURL
+		}
+		_ = json.NewEncoder(stdout).Encode(result)
 		if options.healthOnce {
 			_ = studio.Close()
 			return 0
@@ -132,7 +137,7 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 		}
 		return 0
 	case RoleRuntime:
-		response, runtimeErr := runRuntime(ctx, command.Args)
+		response, runtimeErr := runRuntimeCLI(ctx, command.Args)
 		if runtimeErr != nil {
 			writeCLIError(stderr, runtimeErr)
 			return 1
@@ -154,9 +159,12 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 }
 
 func writeCLIError(writer io.Writer, err error) {
-	_ = json.NewEncoder(writer).Encode(map[string]any{
-		"error": map[string]string{"code": ErrorCode(err), "message": err.Error()},
-	})
+	value := map[string]string{"code": ErrorCode(err), "message": err.Error()}
+	var command commandError
+	if errors.As(err, &command) && command.nextAction != "" {
+		value["nextAction"] = command.nextAction
+	}
+	_ = json.NewEncoder(writer).Encode(map[string]any{"error": value})
 }
 
 func Main(arguments []string, stdout, stderr io.Writer) int {

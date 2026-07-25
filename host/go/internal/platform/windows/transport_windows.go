@@ -16,7 +16,7 @@ import (
 
 func Endpoint(identity string) string {
 	digest := sha256.Sum256([]byte(identity))
-	return `\\.\pipe\OpenChatGPTSkin-Go-Spike-` + hex.EncodeToString(digest[:12])
+	return `\\.\pipe\OpenChatGPTSkin-` + hex.EncodeToString(digest[:12])
 }
 
 func TestEndpoint(identity string) string { return Endpoint(identity) }

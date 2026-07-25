@@ -2,7 +2,7 @@ module github.com/u2bo/OpenChatGPTSkin/host/go
 
 go 1.25.0
 
-toolchain go1.25.5
+toolchain go1.25.12
 
 require (
 	github.com/Microsoft/go-winio v0.6.2

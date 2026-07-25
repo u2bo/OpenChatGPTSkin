@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -8,8 +9,24 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/control"
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/studio"
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
+
+type runtimeThemeRepositoryStub struct {
+	library  themerepo.Library
+	imported []byte
+}
+
+func (repository *runtimeThemeRepositoryStub) List() (themerepo.Library, error) {
+	return repository.library, nil
+}
+
+func (repository *runtimeThemeRepositoryStub) ImportArchive(contents []byte) (themerepo.Ref, error) {
+	repository.imported = append([]byte(nil), contents...)
+	return themerepo.Ref{ID: "personal-theme", Version: "1.0.0"}, nil
+}
 
 func TestParseDefaultsToStudio(t *testing.T) {
 	command, err := Parse(nil)
@@ -38,6 +55,39 @@ func TestStudioDevRequiresAnExplicitLoopbackOrigin(t *testing.T) {
 	}
 }
 
+func TestInstallRootCandidatesIncludeMacOSBundlePayload(t *testing.T) {
+	executable := filepath.Join("Applications", "OpenChatGPTSkin.app", "Contents", "MacOS", "OpenChatGPTSkin")
+	candidates := installRootCandidates(executable, filepath.Join("workspace", "OpenChatGPTSkin"))
+	expected := filepath.Clean(filepath.Join("Applications", "OpenChatGPTSkin.app", "Contents", "Resources", "payload"))
+	if len(candidates) != 3 || candidates[1] != expected {
+		t.Fatalf("install root candidates = %v, want payload %q", candidates, expected)
+	}
+}
+
+func TestInstallRootRequiresManifestOrRepositoryMarkers(t *testing.T) {
+	root := t.TempDir()
+	for _, path := range []string{
+		filepath.Join(root, "themes", "catalog.json"),
+		filepath.Join(root, "apps", "theme-studio", "dist", "index.html"),
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("{}"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if isInstallRoot(root, true) {
+		t.Fatal("unmanifested production root was accepted")
+	}
+	if err := os.WriteFile(filepath.Join(root, "release-manifest.json"), []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if !isInstallRoot(root, true) {
+		t.Fatal("manifested production root was rejected")
+	}
+}
+
 func TestRuntimeRejectsMissingAndCommandSpecificThemeOptions(t *testing.T) {
 	dataRoot := t.TempDir()
 	_, err := runRuntime(context.Background(), []string{"launch", "--data-root", dataRoot})
@@ -49,6 +99,85 @@ func TestRuntimeRejectsMissingAndCommandSpecificThemeOptions(t *testing.T) {
 	})
 	if err == nil || ErrorCode(err) != "CLI_ARGUMENT_INVALID" {
 		t.Fatalf("status theme error = %v", err)
+	}
+}
+
+func TestRuntimeThemeCommandsListAndImportWithoutController(t *testing.T) {
+	repository := &runtimeThemeRepositoryStub{library: themerepo.Library{Themes: []themerepo.ListItem{{
+		Ref: themerepo.Ref{ID: "mountain-mist", Version: "1.3.0"}, Name: "Mountain Mist",
+	}}}}
+	listed, err := executeRuntimeThemeCommand(runtimeThemeCommand{name: "list-themes"}, repository)
+	if err != nil || len(listed.(themerepo.Library).Themes) != 1 {
+		t.Fatalf("list result=%+v error=%v", listed, err)
+	}
+
+	archive := filepath.Join(t.TempDir(), "personal-theme.ocskin")
+	if err := os.WriteFile(archive, []byte("archive"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	imported, err := executeRuntimeThemeCommand(runtimeThemeCommand{name: "import", themeFile: archive}, repository)
+	if err != nil || string(repository.imported) != "archive" {
+		t.Fatalf("import result=%+v bytes=%q error=%v", imported, repository.imported, err)
+	}
+	result := imported.(map[string]any)["theme"].(themerepo.Ref)
+	if result.ID != "personal-theme" || result.Version != "1.0.0" {
+		t.Fatalf("imported ref=%+v", result)
+	}
+}
+
+func TestRuntimeThemeCommandArgumentsAreFixed(t *testing.T) {
+	if _, err := parseRuntimeThemeCommand([]string{"import"}); err == nil {
+		t.Fatal("import without --theme-file was accepted")
+	}
+	if _, err := parseRuntimeThemeCommand([]string{"list-themes", "--theme-file", "theme.ocskin"}); err == nil {
+		t.Fatal("list-themes with --theme-file was accepted")
+	}
+	if _, err := parseRuntimeThemeCommand([]string{"import", "--theme-file", "bad\x00path"}); err == nil {
+		t.Fatal("theme file containing NUL was accepted")
+	}
+}
+
+func TestPersonalRuntimeThemeRequiresExactVersion(t *testing.T) {
+	builtins := []themerepo.Ref{{ID: "mountain-mist", Version: "1.3.0"}}
+	if err := validateUnversionedRuntimeTheme("mountain-mist", builtins); err != nil {
+		t.Fatalf("builtin rejected: %v", err)
+	}
+	if err := validateUnversionedRuntimeTheme("personal-theme", builtins); err == nil || ErrorCode(err) != "THEME_NOT_FOUND" {
+		t.Fatalf("personal theme error=%v", err)
+	}
+}
+
+func TestRuntimeCLIUnwrapsSuccessAndPreservesSafeRejection(t *testing.T) {
+	result, err := runtimeCLIControlResult(control.Response{
+		ProtocolVersion: 1, RequestID: "00000000-0000-4000-8000-000000000001", OK: true,
+		Result: json.RawMessage(`{"status":"active"}`),
+	})
+	if err != nil || result.(map[string]any)["status"] != "active" {
+		t.Fatalf("success result=%+v error=%v", result, err)
+	}
+	_, err = runtimeCLIControlResult(control.Response{
+		ProtocolVersion: 1, RequestID: "00000000-0000-4000-8000-000000000002", OK: false,
+		Error: &control.Error{Code: "THEME_CLEANUP_FAILED", Message: "cleanup rejected", NextAction: "Quit Codex and retry."},
+	})
+	if err == nil || ErrorCode(err) != "THEME_CLEANUP_FAILED" {
+		t.Fatalf("rejection error=%v", err)
+	}
+	var output bytes.Buffer
+	writeCLIError(&output, err)
+	if !bytes.Contains(output.Bytes(), []byte(`"nextAction":"Quit Codex and retry."`)) {
+		t.Fatalf("error output=%s", output.String())
+	}
+}
+
+func TestStoppedRuntimeResponseUsesPublicStatusShape(t *testing.T) {
+	response, err := stoppedRuntimeResponse("00000000-0000-4000-8000-000000000003")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := runtimeCLIControlResult(response)
+	status := result.(map[string]any)
+	if err != nil || status["status"] != "stopped" || status["controllerAvailable"] != false {
+		t.Fatalf("status=%+v error=%v", status, err)
 	}
 }
 

@@ -2,9 +2,9 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-stable-2ea44f)
-![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20Preview-0078d4)
-![Node.js](https://img.shields.io/badge/Node.js-22%20bundled-339933)
+![Status](https://img.shields.io/badge/status-v0.3.0--alpha.1-f59e0b)
+![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
+![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
 ![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)
 [![LINUX DO 社区](https://img.shields.io/badge/community-LINUX%20DO-f0b90b)](https://linux.do/)
@@ -46,7 +46,7 @@
 <img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="赛亚人孙悟空 OpenChatGPTSkin 完整主题概念图">
 
 > [!IMPORTANT]
-> `v0.2.0` 是当前正式版本，提供 **Windows x64 正式版**和 **macOS 未签名预览版**，并内置五个 Theme Schema v4 主题。Windows 包含 x64 便携 ZIP 与用户级 Setup；macOS 分别提供 Apple Silicon ARM64 和 Intel x64 DMG/便携包。所有产物都内置 Node.js，无需安装 Git 或开发依赖。macOS 尚未完成真实 ChatGPT 视觉闭环、Developer ID 签名和公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用或恢复主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
+> `v0.3.0-alpha.1` 是统一 Go Host 候选版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置五个 Theme Schema v4 主题。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。Windows 与两种 Mac 架构的主题闭环、数据升级和 v0.2.0 回滚均已完成实机验收。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
 
 ## 目录
 
@@ -81,7 +81,7 @@ OpenChatGPTSkin 由三个相互约束的部分组成：
 | 五个可直接使用的内置主题 | 已完成 |
 | Windows Runtime 启动、切换、暂停、恢复 | 正式版 |
 | Windows x64 便携 ZIP 与用户级 Setup | 正式版 |
-| macOS ARM64/x64 DMG、Runtime 启动/切换/恢复 | 未签名预览，实机验收待完成 |
+| macOS ARM64/x64 DMG、Runtime 启动/切换/恢复 | 未签名预览，双架构实机验收通过 |
 | Theme Studio 编辑、预览、版本、导入导出、应用 | 正式版 |
 | Codex 插件市场安装 | 尚未提供 |
 | 自动更新、SEA 单文件程序、主题市场 | 规划中 |
@@ -168,7 +168,7 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows Setup（推荐）
 
-1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.2.0) 下载 `OpenChatGPTSkin_0.2.0_windows_x64_Setup.exe` 和 `checksums.txt`。
+1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.0-alpha.1) 下载 `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe` 和 `checksums.txt`。
 2. 校验 SHA-256 后双击 Setup。安装范围为当前用户，默认目录是 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限。
 3. 从开始菜单启动 OpenChatGPTSkin；生产 Theme Studio 健康启动后会自动打开默认浏览器。
 
@@ -176,35 +176,35 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows 便携 ZIP
 
-下载 `OpenChatGPTSkin_0.2.0_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.cmd`。便携版不会注册安装信息，也不依赖全局 Node.js 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
+下载 `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
 
 ### macOS DMG（未签名开发者预览）
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.2.0_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.2.0_macos_x64.dmg`。Intel x64 兼容性取决于官方 ChatGPT 是否提供对应架构版本，目前尚未完成实机验证。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg`。两个架构均已在对应真实设备与官方 ChatGPT 上完成验收。
 2. 先按下方命令核对 SHA-256，再打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 3. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。不要关闭 Gatekeeper，也不要使用 `xattr` 移除隔离属性。
 4. Theme Studio 健康启动后会自动打开默认浏览器。替换或删除 `.app` 不会删除 `~/Library/Application Support/OpenChatGPTSkin` 下的个人主题、草稿和 Runtime 状态。
 
-开发者还可以下载同架构的 `OpenChatGPTSkin_0.2.0_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.2.0_macos_x64.tar.gz`。普通用户优先使用 DMG。
+开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
 
-维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。GitHub 托管的 Windows、ARM64 macOS 和 Intel macOS Runner 会构建 Windows x64、macOS ARM64 和 macOS x64 测试产物；完成后下载 `windows-release`、`macos-arm64-release`、`macos-x64-release` 及对应 diagnostics。手动运行不会创建 Tag 或 GitHub Release。
+维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。三个原生 Runner 会分别构建并验收 Go Host，随后合并为 `go-release-combined`；手动运行不会创建 Tag 或 GitHub Release。
 
 ### 校验下载文件
 
 在下载目录运行：
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.2.0_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.2.0_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS 终端：
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.2.0_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg
 # Intel Mac 使用：
-shasum -a 256 OpenChatGPTSkin_0.2.0_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -212,7 +212,7 @@ cat checksums.txt
 
 ### 从源码安装
 
-源码开发需要 Windows 11 或 macOS、官方 Codex Desktop、Node.js `>= 22.0.0` 和 npm；Git 可由源码压缩包替代。
+源码开发需要 Windows 11 或 macOS、官方 Codex Desktop、Go `1.25.12`、Node.js `>= 22.0.0` 和 npm；Node 只用于前端、Contract 与 CDP Adapter 构建，不进入用户发布包。
 
 从 GitHub 页面克隆或下载仓库，然后在仓库根目录运行：
 
@@ -233,7 +233,7 @@ Windows 开发者可以在仓库根目录用一条命令生成与 CI 相同结�
 npm run release:windows
 ```
 
-首次运行前只需要 Node.js 22、npm 与 Git；如果本机没有 Inno Setup 6，脚本会从官方 GitHub Release 下载固定版本、校验固定 SHA-256，并在临时目录中以便携模式使用，不需要管理员权限或永久安装。随后脚本会校验并复用完整的现有依赖，仅在依赖缺失或不一致时依据 `package-lock.json` 增量修复，再完成完整验证、Theme Studio 构建、官方 Node.js Runtime 下载、发布载荷验收和打包。最终产物位于 `artifacts/windows-x64/`。如果构建失败，临时目录会保留并打印路径用于排障；成功后会自动清理临时文件。该命令不会运行会触碰本机安装注册与个人数据目录的 CI 安装生命周期测试。
+本地构建需要 Go `1.25.12`、Node.js 22、npm 和 Inno Setup 6。命令会构建 Theme Studio 与单一 Go Host，生成 Node-free Stage、ZIP、Setup 和 SHA-256；最终产物位于 `artifacts/windows-x64/`。用户不需要安装这些开发工具。
 
 从重命名前的开发版本升级时，首次启动 CLI 或 Theme Studio 会在新品牌数据目录不存在的前提下，原子迁移上一版本的个人主题、草稿和 Runtime 状态。若新旧目录同时存在，新目录优先，程序不会自动合并或覆盖任何一边。
 
@@ -244,7 +244,7 @@ npm run release:windows
 ### 使用 Theme Studio（推荐）
 
 1. 保存正在进行的工作，通过 Codex 菜单或系统托盘执行“退出 / Quit Codex”，确认普通 Codex 已完全退出。
-2. Windows Setup 用户从开始菜单启动，便携版双击 `OpenChatGPTSkin.cmd`；macOS 用户从“应用程序”启动 `OpenChatGPTSkin.app`；源码用户运行：
+2. Windows Setup 用户从开始菜单启动，便携版双击 `OpenChatGPTSkin.exe`；macOS 用户从“应用程序”启动 `OpenChatGPTSkin.app`；源码用户运行：
 
    ```powershell
    npm run studio:dev
@@ -309,29 +309,20 @@ npm run runtime -- restore
 - `restore`：恢复官方外观，并等待用户正常退出受管理 Codex 完成清理；
 - 不要使用任务管理器强制结束恢复中的 Codex。
 
-完整安全边界见 [Windows Runtime 说明](docs/runtime-windows.md) 与 [macOS Runtime 说明](docs/runtime-macos.md)。macOS DMG 会在原生 ARM64/x64 Runner 完成包结构、内置 Runtime、Theme Studio 和四主题自动验收；真实 Codex 的 Runtime Probe 与视觉闭环仍须按 macOS 文档在真实设备手动完成。
+完整安全边界见 [Windows Runtime 说明](docs/runtime-windows.md) 与 [macOS Runtime 说明](docs/runtime-macos.md)。三个原生 Runner 会验证包结构、单一 Go Host、Theme Studio、五个内置主题及 Node-free manifest；真实 Codex 的视觉和生命周期闭环仍按对应平台文档在真实设备手动验收。
 
-### 兼容性 Probe 与真实验收（Windows）
+### Codex 更新后的真实验收
 
-Codex 升级后，先在完全退出普通 Codex 的前提下运行两阶段兼容性 Probe：
+旧 Node Host 的 `runtime:probe` 与 `runtime:acceptance` 已随 Go cutover 删除，不再作为可执行入口。Codex 升级后，在无私人项目或敏感聊天的测试工作区完成以下检查：
 
-```powershell
-npm run runtime:probe -- --record-evidence
-# 使用 Codex 的“退出 / Quit Codex”正常退出受管理实例
-npm run runtime:probe -- --finalize
-```
+1. 完全退出普通 Codex，依次检查五个内置主题、自定义主题、`pause`、`resume` 与 `restore`；
+2. 从 Codex 菜单正常退出受管理实例，确认 Controller 和本地控制端点完成清理；
+3. 正常启动官方 Codex，确认未继承远程调试参数且保持官方外观；
+4. 记录 Codex/OpenChatGPTSkin/系统版本、结果和脱敏截图。
 
-发布候选版本可以进一步运行完整 Runtime 验收：
+公开的验收记录不得包含 PID、端口、用户名、绝对路径、命令行、项目名或聊天内容。
 
-```powershell
-npm run runtime:acceptance -- --begin
-# 正常退出受管理 Codex，并从开始菜单正常启动官方 Codex
-npm run runtime:acceptance -- --finalize
-```
-
-验收证据必须脱敏，不得包含 PID、端口、路径、命令行、项目名、聊天内容或截图。
-
-macOS 安装包会在原生 CI 中完成自动验收；真实 Codex 的视觉与 Runtime 闭环仍使用手动清单。请在真实 Mac 上核对 `codesign`、`spctl`、Unix socket 权限、五个内置主题、恢复流程和普通 Codex 重启，详见 [macOS Runtime 说明](docs/runtime-macos.md)。
+Windows 与 macOS 的完整检查项分别见 [Windows Runtime 说明](docs/runtime-windows.md) 和 [macOS Runtime 说明](docs/runtime-macos.md)。
 
 ## 常见问题
 
@@ -379,8 +370,7 @@ packages/theme-schema/      Theme Schema v4、迁移与视觉模型
 packages/theme-core/        校验、目录、打包、存储
 packages/cdp-adapter/       Codex UI surface 识别与主题编译
 packages/theme-studio-core/ Theme Studio 合约与校验
-runtime/windows/            Desktop Runtime、Controller、恢复（保留历史包路径）
-runtime/theme-studio-service/ 本地 Theme Studio 服务
+host/go/                    单一 Go Studio、Controller、Runtime 与平台适配
 themes/builtin/             五个内置主题及素材来源记录
 tests/                      Schema、Runtime、UI 和文档测试
 ```
@@ -400,7 +390,8 @@ npm run build
 
 ## 更多文档
 
-- [v0.2.0 发布说明](docs/releases/v0.2.0.md)
+- [v0.3.0-alpha.1 发布说明](docs/releases/v0.3.0-alpha.1.md)
+- [v0.2.0 历史发布说明](docs/releases/v0.2.0.md)
 - [v0.1.0 历史发布说明](docs/releases/v0.1.0.md)
 - [v0.1.0-alpha.1 历史发布说明](docs/releases/v0.1.0-alpha.1.md)
 - [自定义主题指南](docs/custom-theme-guide.md)

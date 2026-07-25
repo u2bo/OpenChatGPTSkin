@@ -6,7 +6,7 @@ import { STUDIO_PROTOCOL_VERSION } from
 import { THEME_SCHEMA_VERSION } from
   "../../packages/theme-schema/src/index.js";
 import { CONTROL_PROTOCOL_VERSION } from
-  "../../runtime/windows/src/control/result.js";
+  "../../packages/runtime-contract/src/index.js";
 import { z } from "zod";
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
@@ -212,7 +212,7 @@ export async function verifyFrozenBaseline(
   if (baseline.contracts.studioProtocol !== STUDIO_PROTOCOL_VERSION ||
     baseline.contracts.runtimeControl !== CONTROL_PROTOCOL_VERSION ||
     baseline.contracts.theme !== THEME_SCHEMA_VERSION) {
-    throw new Error("Baseline protocol versions do not match the Node author sources");
+    throw new Error("Baseline protocol versions do not match the checked-in author sources");
   }
 
   const themesRoot = join(workspaceRoot, "themes");

@@ -82,7 +82,7 @@ Enumerating macOS windows normally requires Accessibility consent. OpenChatGPTSk
 | Release-package acceptance | ZIP, Setup, and installer lifecycle | Payload, `.tar.gz`, `.app`, Mach-O, and DMG mount |
 | Real-Codex probe/visual acceptance | Available | Not automated; use the manual checklist below |
 
-The historical path and package name `runtime/windows` / `@open-chatgpt-skin/windows-runtime` remain for compatibility and to avoid an unrelated repository-wide move. Its Controller and public provider interface are now platform-neutral.
+Starting with `v0.3.0-alpha.1`, production Studio, Controller, and Runtime roles come from the same implementation under `host/go`. TypeScript remains only for the frontend, Theme/Contract authoring sources, and the CDP Adapter; there is no Node business host or platform fallback.
 
 ## Real-Mac acceptance checklist
 
@@ -103,12 +103,12 @@ Use a test account/workspace with no private projects or sensitive chats:
 5. Run `restore`, verify the official appearance, and quit from the Codex menu so cleanup can finish.
 6. During the run, `ls -l /tmp/OpenChatGPTSkin-*.sock` must show a current-user `srw-------` socket. The endpoint must disappear after Controller exit.
 7. Start official Codex normally. It must not inherit `--remote-debugging-address` or `--remote-debugging-port`, and the regular app must remain unthemed.
-8. Record Codex/macOS versions, four-theme results, restore result, and sanitized screenshots. Do not record PIDs, ports, usernames, paths, command lines, project names, or chat content.
+8. Record Codex/macOS versions, five-theme results, restore result, and sanitized screenshots. Do not record PIDs, ports, usernames, paths, command lines, project names, or chat content.
 
-`npm run runtime:probe` and `npm run runtime:acceptance` currently return `RUNTIME_ENVIRONMENT_INVALID` on macOS. That is an explicit platform boundary, not a silent downgrade.
+The old Node Host commands `runtime:probe` and `runtime:acceptance` have been removed. Current acceptance combines Go unit/contract/native-package automation with the real-device observations in this checklist; no hidden fallback claims platform support.
 
 ## Known risks
 
 - Codex updates may change signing metadata, process structure, or DOM surface contracts and require adapter updates plus new acceptance.
 - The first real-Mac run must confirm that the Apple Team ID in code matches the current official Codex signature. If it differs, verify the official source first; never weaken the policy to accept any valid signature.
-- Do not claim complete macOS compatibility or full real-app UI validation before this checklist is completed on a Mac.
+- Repeat this checklist after every Codex update; do not extrapolate real-device results from an older Codex version.

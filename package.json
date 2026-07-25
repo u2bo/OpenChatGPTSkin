@@ -1,6 +1,6 @@
 {
   "name": "open-chatgpt-skin",
-  "version": "0.2.0",
+  "version": "0.3.0-alpha.1",
   "private": true,
   "type": "module",
   "repository": {
@@ -13,8 +13,7 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "runtime/*"
+    "packages/*"
   ],
   "scripts": {
     "build": "tsc -b",
@@ -23,32 +22,23 @@
     "contracts:build": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/build.ts",
     "contracts:verify": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/verify.ts",
     "contracts:baseline": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/baseline-runner.ts",
-    "go:spike:test": "go -C host/go test -buildvcs=false -tags nodynamic ./... -count=1 -timeout 60s",
+    "go:test": "go -C host/go test -buildvcs=false -tags nodynamic ./... -count=1 -timeout 60s",
+    "go:verify": "npm run go:test && go -C host/go vet -buildvcs=false -tags nodynamic ./...",
     "go:cdp-adapter:build": "tsx --tsconfig tsconfig.scripts.json scripts/build-go-cdp-adapter.ts",
-    "go:spike:package": "tsx --tsconfig tsconfig.scripts.json scripts/release/build-go-spike.ts",
-    "go:spike:acceptance": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-go-spike.ts",
-    "go:spike:merge": "tsx --tsconfig tsconfig.scripts.json scripts/release/merge-go-spike.ts",
+    "release:build": "tsx --tsconfig tsconfig.scripts.json scripts/release/build-go-release.ts",
+    "release:acceptance": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-go-release.ts",
+    "release:merge": "tsx --tsconfig tsconfig.scripts.json scripts/release/merge-go-release.ts",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:watch": "vitest",
-    "runtime": "npm run build && node runtime/windows/dist/cli.js",
-    "runtime:probe": "npm run build && node runtime/windows/dist/probe-cli.js",
-    "runtime:acceptance": "npm run build && node runtime/windows/dist/acceptance-cli.js",
+    "runtime": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin runtime",
     "studio:build": "npm run build -w @open-chatgpt-skin/theme-studio",
-    "release:stage": "tsx scripts/release/stage-release.ts",
-    "studio:dev:go": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin studio --dev --vite-origin http://127.0.0.1:5173",
-    "release:acceptance": "tsx scripts/release/accept-release.ts",
-    "release:package": "tsx scripts/release/package-release.ts",
-    "release:acceptance:archive": "tsx scripts/release/accept-portable.ts",
     "release:checksums": "tsx scripts/release/write-checksums.ts",
     "release:version": "tsx scripts/release/verify-version.ts",
-    "release:node": "tsx scripts/release/fetch-node-runtime.ts",
-    "release:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release/build-windows-local.ps1",
-    "release:macos": "tsx scripts/release/build-macos-distribution.ts",
-    "release:acceptance:macos": "tsx scripts/release/accept-macos-distribution.ts",
-    "studio:dev": "npm run build && npm run dev -w @open-chatgpt-skin/theme-studio-service",
-    "verify": "npm run contracts:verify && npm run build && npm run test && npm run typecheck",
-    "verify:runtime": "npm run build && npm run test && npm run typecheck",
+    "release:windows": "npm run release:build -- --native-only --output artifacts/windows-x64 && npm run release:checksums -- --output artifacts/windows-x64",
+    "release:macos": "npm run release:build -- --native-only --output artifacts/macos-native && npm run release:checksums -- --output artifacts/macos-native",
+    "studio:dev": "tsx scripts/dev/start-go-studio.ts",
+    "verify": "npm run contracts:verify && npm run build && npm run test && npm run typecheck && npm run go:verify",
     "verify:foundation": "npm run themes:build && npm run build && npm run test && npm run typecheck && node packages/theme-core/dist/cli.js catalog --root themes"
   },
   "engines": {
@@ -65,6 +55,7 @@
     "typescript": "^5.9.3",
     "vitest": "^3.2.7",
     "ws": "^8.18.3",
+    "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
   }
 }

@@ -4,10 +4,18 @@ package windows
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/control"
 )
+
+func TestNamedPipeUsesProductionIdentity(t *testing.T) {
+	endpoint := Endpoint("current-user")
+	if !strings.HasPrefix(endpoint, `\\.\pipe\OpenChatGPTSkin-`) || strings.Contains(strings.ToLower(endpoint), "spike") {
+		t.Fatalf("endpoint = %q", endpoint)
+	}
+}
 
 func TestNamedPipeRoundTrip(t *testing.T) {
 	endpoint := TestEndpoint(t.Name())

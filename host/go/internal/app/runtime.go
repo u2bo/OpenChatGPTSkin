@@ -5,13 +5,29 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/control"
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
+
+const maxRuntimeThemeArchiveBytes = 32 * 1024 * 1024
+
+type runtimeThemeRepository interface {
+	List() (themerepo.Library, error)
+	ImportArchive([]byte) (themerepo.Ref, error)
+}
+
+type runtimeThemeCommand struct {
+	name      string
+	dataRoot  string
+	themeFile string
+}
 
 func requestID() (string, error) {
 	value := make([]byte, 16)
@@ -61,6 +77,184 @@ func sendRuntime(ctx context.Context, dataRoot string, request control.Request) 
 	return control.RoundTrip(ctx, func() (control.Connection, error) { return dialControl(endpoint) }, request)
 }
 
+func parseRuntimeThemeCommand(arguments []string) (runtimeThemeCommand, error) {
+	if len(arguments) == 0 || arguments[0] != "list-themes" && arguments[0] != "import" {
+		return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "runtime theme command is invalid"}
+	}
+	command := runtimeThemeCommand{name: arguments[0]}
+	for index := 1; index < len(arguments); index++ {
+		switch arguments[index] {
+		case "--data-root", "--theme-file":
+			name := arguments[index]
+			index++
+			if index >= len(arguments) || arguments[index] == "" || len(arguments[index]) > 4096 || containsNull(arguments[index]) {
+				return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: name + " requires a valid value"}
+			}
+			if name == "--data-root" {
+				if command.dataRoot != "" {
+					return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--data-root may be specified only once"}
+				}
+				command.dataRoot = arguments[index]
+			} else {
+				if command.themeFile != "" {
+					return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--theme-file may be specified only once"}
+				}
+				command.themeFile = arguments[index]
+			}
+		default:
+			return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "unknown runtime option: " + arguments[index]}
+		}
+	}
+	if command.name == "list-themes" && command.themeFile != "" {
+		return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--theme-file is valid only for import"}
+	}
+	if command.name == "import" && command.themeFile == "" {
+		return runtimeThemeCommand{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--theme-file is required for import"}
+	}
+	return command, nil
+}
+
+func containsNull(value string) bool {
+	for _, character := range value {
+		if character == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func readRuntimeThemeArchive(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, commandError{code: "STUDIO_IMPORT_INVALID", message: "Theme archive could not be opened"}
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil || !info.Mode().IsRegular() || info.Size() < 1 || info.Size() > maxRuntimeThemeArchiveBytes {
+		return nil, commandError{code: "STUDIO_IMPORT_INVALID", message: "Theme archive size is invalid"}
+	}
+	contents, err := io.ReadAll(io.LimitReader(file, maxRuntimeThemeArchiveBytes+1))
+	if err != nil || len(contents) < 1 || len(contents) > maxRuntimeThemeArchiveBytes {
+		return nil, commandError{code: "STUDIO_IMPORT_INVALID", message: "Theme archive could not be read"}
+	}
+	return contents, nil
+}
+
+func executeRuntimeThemeCommand(command runtimeThemeCommand, repository runtimeThemeRepository) (any, error) {
+	if command.name == "list-themes" {
+		return repository.List()
+	}
+	contents, err := readRuntimeThemeArchive(command.themeFile)
+	if err != nil {
+		return nil, err
+	}
+	ref, err := repository.ImportArchive(contents)
+	if err != nil {
+		var repositoryError themerepo.Error
+		if errors.As(err, &repositoryError) {
+			return nil, commandError{code: repositoryError.Code, message: repositoryError.Message}
+		}
+		return nil, commandError{code: "STUDIO_IMPORT_INVALID", message: "Theme archive could not be imported"}
+	}
+	return map[string]any{"theme": ref}, nil
+}
+
+func runRuntimeThemeCommand(arguments []string) (any, error) {
+	command, err := parseRuntimeThemeCommand(arguments)
+	if err != nil {
+		return nil, err
+	}
+	if command.dataRoot == "" {
+		command.dataRoot, err = defaultDataRoot()
+		if err != nil {
+			return nil, commandError{code: "RUNTIME_CONTROL_UNAVAILABLE", message: "Runtime data root is unavailable"}
+		}
+	}
+	installRoot, err := findInstallRoot(false)
+	if err != nil {
+		return nil, commandError{code: "THEME_NOT_FOUND", message: "Installed themes are unavailable"}
+	}
+	repository, err := themerepo.OpenWithPersonal(
+		filepath.Join(installRoot, "themes"),
+		filepath.Join(command.dataRoot, "theme-store"),
+	)
+	if err != nil {
+		return nil, commandError{code: "RUNTIME_ENVIRONMENT_INVALID", message: "Runtime theme repository is unavailable"}
+	}
+	return executeRuntimeThemeCommand(command, repository)
+}
+
+func runRuntimeCLI(ctx context.Context, arguments []string) (any, error) {
+	if len(arguments) == 0 {
+		return nil, commandError{code: "CLI_ARGUMENT_INVALID", message: "runtime command is required"}
+	}
+	if arguments[0] == "list-themes" || arguments[0] == "import" {
+		return runRuntimeThemeCommand(arguments)
+	}
+	response, err := runRuntime(ctx, arguments)
+	if err != nil {
+		return nil, err
+	}
+	return runtimeCLIControlResult(response)
+}
+
+func runtimeCLIControlResult(response control.Response) (any, error) {
+	if !response.OK {
+		if response.Error == nil {
+			return nil, commandError{code: "RUNTIME_CONTROL_UNAVAILABLE", message: "Runtime returned an invalid rejection"}
+		}
+		return nil, commandError{
+			code: response.Error.Code, message: response.Error.Message, nextAction: response.Error.NextAction,
+		}
+	}
+	var result any
+	if len(response.Result) == 0 || json.Unmarshal(response.Result, &result) != nil {
+		return nil, commandError{code: "RUNTIME_CONTROL_UNAVAILABLE", message: "Runtime returned an invalid result"}
+	}
+	return result, nil
+}
+
+func stoppedRuntimeResponse(requestID string) (control.Response, error) {
+	result, err := json.Marshal(map[string]any{
+		"status": "stopped", "controllerAvailable": false,
+		"selectedTheme": nil, "appliedTheme": nil, "skinApplied": nil,
+		"packageVersion": nil, "operation": nil,
+		"nextAction": "Open a saved theme and apply it to start Runtime.",
+	})
+	if err != nil {
+		return control.Response{}, err
+	}
+	return control.Response{ProtocolVersion: control.ProtocolVersion, RequestID: requestID, OK: true, Result: result}, nil
+}
+
+func validateUnversionedRuntimeTheme(themeID string, builtins []themerepo.Ref) error {
+	for _, builtin := range builtins {
+		if builtin.ID == themeID {
+			return nil
+		}
+	}
+	return commandError{code: "THEME_NOT_FOUND", message: "Personal themes require an exact --version"}
+}
+
+func validateRuntimeThemeSelection(themeID, themeVersion string) error {
+	if themeVersion != "" {
+		return nil
+	}
+	installRoot, err := findInstallRoot(false)
+	if err != nil {
+		return commandError{code: "THEME_NOT_FOUND", message: "Installed themes are unavailable"}
+	}
+	repository, err := themerepo.Open(filepath.Join(installRoot, "themes"))
+	if err != nil {
+		return commandError{code: "THEME_NOT_FOUND", message: "Installed themes are unavailable"}
+	}
+	builtins, err := repository.BuiltinRefs()
+	if err != nil {
+		return commandError{code: "THEME_NOT_FOUND", message: "Installed theme catalog is unavailable"}
+	}
+	return validateUnversionedRuntimeTheme(themeID, builtins)
+}
+
 func runRuntime(ctx context.Context, arguments []string) (control.Response, error) {
 	if len(arguments) == 0 {
 		return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "runtime command is required"}
@@ -88,10 +282,13 @@ func runRuntime(ctx context.Context, arguments []string) (control.Response, erro
 			}
 			themeID = arguments[index]
 			themeProvided = true
-		case "--theme-version":
+		case "--theme-version", "--version":
+			if themeVersionProvided {
+				return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "theme version may be specified only once"}
+			}
 			index++
 			if index >= len(arguments) {
-				return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--theme-version requires a value"}
+				return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "theme version requires a value"}
 			}
 			themeVersion = arguments[index]
 			themeVersionProvided = true
@@ -99,8 +296,15 @@ func runRuntime(ctx context.Context, arguments []string) (control.Response, erro
 			return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "unknown runtime option: " + arguments[index]}
 		}
 	}
+	if themeVersionProvided && themeVersion == "" {
+		return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--theme-version requires a value"}
+	}
 	if dataRoot == "" {
-		return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "--data-root is required for the spike"}
+		var err error
+		dataRoot, err = defaultDataRoot()
+		if err != nil {
+			return control.Response{}, commandError{code: "RUNTIME_CONTROL_UNAVAILABLE", message: "Runtime data root is unavailable"}
+		}
 	}
 	themeCommand := commandName == "launch" || commandName == "switch"
 	if themeCommand && !themeProvided {
@@ -108,6 +312,11 @@ func runRuntime(ctx context.Context, arguments []string) (control.Response, erro
 	}
 	if !themeCommand && (themeProvided || themeVersionProvided) {
 		return control.Response{}, commandError{code: "CLI_ARGUMENT_INVALID", message: "theme options are valid only for launch and switch"}
+	}
+	if themeCommand {
+		if err := validateRuntimeThemeSelection(themeID, themeVersion); err != nil {
+			return control.Response{}, err
+		}
 	}
 	id, err := requestID()
 	if err != nil {
@@ -122,8 +331,16 @@ func runRuntime(ctx context.Context, arguments []string) (control.Response, erro
 	}
 	request := control.Request{ProtocolVersion: 1, RequestID: id, Command: commandName, Params: params}
 	response, err := sendRuntime(ctx, dataRoot, request)
-	if err == nil || commandName == "status" {
-		return response, err
+	if err == nil {
+		return response, nil
+	}
+	if commandName == "status" {
+		if errors.Is(err, os.ErrNotExist) {
+			return stoppedRuntimeResponse(id)
+		}
+		return control.Response{}, commandError{
+			code: "RUNTIME_CONTROL_UNAVAILABLE", message: "Runtime controller status could not be read",
+		}
 	}
 	executable, executableErr := os.Executable()
 	if executableErr != nil {

@@ -60,12 +60,12 @@ import {
   RuntimeSessionStateSchema,
   RuntimeStatusViewSchema,
   TrustedCodexInstallSchema,
-} from "../../runtime/windows/src/index.js";
+} from "../../packages/runtime-contract/src/index.js";
 import {
   DraftRecordSchema,
   PersistedDraftRecordSchema,
-} from "../../runtime/theme-studio-service/src/workspace.js";
-import { ReleaseManifestSchema } from "../release/payload.js";
+} from "../../packages/theme-studio-core/src/index.js";
+import { ReleaseManifestSchema } from "../release/manifest.js";
 import type { ZodTypeAny } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -93,13 +93,13 @@ const DATA_COMPATIBILITY_CASES = [
   { name: "runtime state v2", valid: true, schema: "runtimeState", version: 2 },
   { name: "trusted install cache v1", valid: true, schema: "trustedInstall", version: 1 },
   { name: "controller lock v1", valid: true, schema: "controllerLock", version: 1 },
-  { name: "release manifest v1", valid: true, schema: "releaseManifest", version: 1 },
+  { name: "release manifest v2", valid: true, schema: "releaseManifest", version: 2 },
   { name: "unknown draft version", valid: false, schema: "draftRecord", expectedErrorCode: "DATA_SCHEMA_INVALID", expectedPath: "/schemaVersion" },
   { name: "dirty draft without history", valid: false, schema: "draftRecord", expectedErrorCode: "DATA_SCHEMA_INVALID", expectedPath: "/past" },
   { name: "runtime request ID mismatch", valid: false, schema: "runtimeState", expectedErrorCode: "RUNTIME_INVALID_STATE", expectedPath: "/recentRequests/0/requestId" },
   { name: "trusted cache identity mismatch", valid: false, schema: "trustedInstall", expectedErrorCode: "CODEX_IDENTITY_INVALID", expectedPath: "/packagePublisher" },
   { name: "lock without process identity", valid: false, schema: "controllerLock", expectedErrorCode: "RUNTIME_SESSION_STALE", expectedPath: "/startedAt" },
-  { name: "release file hash malformed", valid: false, schema: "releaseManifest", expectedErrorCode: "RELEASE_MANIFEST_INVALID", expectedPath: "/files/sha256" },
+  { name: "release file hash malformed", valid: false, schema: "releaseManifest", expectedErrorCode: "RELEASE_MANIFEST_INVALID", expectedPath: "/files/0/sha256" },
 ] as const;
 
 function portable(path: string): string {

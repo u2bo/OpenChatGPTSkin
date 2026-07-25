@@ -6,7 +6,6 @@
     { "path": "./packages/theme-core" },
     { "path": "./packages/cdp-adapter" },
     { "path": "./packages/theme-studio-core" },
-    { "path": "./runtime/windows" },
-    { "path": "./runtime/theme-studio-service" }
+    { "path": "./packages/runtime-contract" }
   ]
 }

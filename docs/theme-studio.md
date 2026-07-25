@@ -10,7 +10,7 @@ Theme Studio 是 OpenChatGPTSkin 的本地三栏编辑器。它完成“创建�
 
 ### Windows 发布包
 
-Setup 用户从开始菜单启动 OpenChatGPTSkin；便携版用户双击解压目录中的 `OpenChatGPTSkin.cmd`。发布包内置 Node.js、生产依赖和单 HTML Theme Studio，不需要全局 Node.js、npm、Git 或 Vite。生产 Host 通过健康检查后自动打开默认浏览器；使用 `--no-open` 时只输出启动 URL，供自动验收使用。
+Setup 用户从开始菜单启动 OpenChatGPTSkin；便携版用户双击解压目录中的 `OpenChatGPTSkin.exe`。发布包包含单一 Go Host 和单 HTML Theme Studio，不捆绑 Node.js，也不需要全局 Node.js、Go、npm、Git 或 Vite。生产 Host 通过健康检查后自动打开默认浏览器；使用 `--no-open` 时只输出启动 URL，供自动验收使用。
 
 生产启动失败会返回结构化 `code`、`message` 和 `nextAction`，并把不含用户名、绝对路径、端口或 bootstrap token 的记录写入 `%LOCALAPPDATA%\OpenChatGPTSkin\runtime\logs\theme-studio.jsonl`。
 

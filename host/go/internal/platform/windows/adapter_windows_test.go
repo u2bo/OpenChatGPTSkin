@@ -43,6 +43,13 @@ func TestInspectionAcceptsCompleteOfficialIdentity(t *testing.T) {
 	}
 }
 
+func TestPowerShellInspectionNeverCreatesAVisibleConsole(t *testing.T) {
+	command := newPowerShellCommand(context.Background())
+	if command.SysProcAttr == nil || !command.SysProcAttr.HideWindow || command.SysProcAttr.CreationFlags&0x08000000 == 0 {
+		t.Fatalf("PowerShell inspection may create a visible console: %+v", command.SysProcAttr)
+	}
+}
+
 func TestInspectionRejectsSubstitutedPublisher(t *testing.T) {
 	value := validInstall()
 	value.PackagePublisher = "CN=Unknown"

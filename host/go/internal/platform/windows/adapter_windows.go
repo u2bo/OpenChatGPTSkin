@@ -27,6 +27,7 @@ const (
 	expectedResource       = "OpenAI OpCo, LLC"
 	expectedEntry          = "app/ChatGPT.exe"
 	managedCDPReadyTimeout = 90 * time.Second
+	createNoWindow         = 0x08000000
 )
 
 var versionPattern = regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+$`)
@@ -82,8 +83,14 @@ type PowerShellRunner interface {
 
 type defaultRunner struct{}
 
-func (defaultRunner) Run(ctx context.Context, script string) ([]byte, error) {
+func newPowerShellCommand(ctx context.Context) *exec.Cmd {
 	command := exec.CommandContext(ctx, "powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "& ([scriptblock]::Create([Console]::In.ReadToEnd()))")
+	command.SysProcAttr = &syscall.SysProcAttr{CreationFlags: createNoWindow, HideWindow: true}
+	return command
+}
+
+func (defaultRunner) Run(ctx context.Context, script string) ([]byte, error) {
+	command := newPowerShellCommand(ctx)
 	command.Stdin = strings.NewReader(script)
 	var stdout, stderr bytes.Buffer
 	command.Stdout, command.Stderr = &stdout, &stderr
@@ -257,7 +264,7 @@ func inspectPort(ctx context.Context, port int) (portInspection, error) {
 	}
 	inspectionContext, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
-	command := exec.CommandContext(inspectionContext, "powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "& ([scriptblock]::Create([Console]::In.ReadToEnd()))")
+	command := newPowerShellCommand(inspectionContext)
 	command.Env = append(os.Environ(), fmt.Sprintf("OPEN_CHATGPT_SKIN_PORT=%d", port))
 	command.Stdin = strings.NewReader(portScript)
 	var stderr bytes.Buffer

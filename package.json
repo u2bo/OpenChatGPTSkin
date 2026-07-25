@@ -24,6 +24,7 @@
     "contracts:verify": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/verify.ts",
     "contracts:baseline": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/baseline-runner.ts",
     "go:spike:test": "go -C host/go test -buildvcs=false -tags nodynamic ./... -count=1 -timeout 60s",
+    "go:cdp-adapter:build": "tsx --tsconfig tsconfig.scripts.json scripts/build-go-cdp-adapter.ts",
     "go:spike:package": "tsx --tsconfig tsconfig.scripts.json scripts/release/build-go-spike.ts",
     "go:spike:acceptance": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-go-spike.ts",
     "go:spike:merge": "tsx --tsconfig tsconfig.scripts.json scripts/release/merge-go-spike.ts",
@@ -56,6 +57,7 @@
   "devDependencies": {
     "@types/node": "^22.20.1",
     "@types/ws": "^8.18.1",
+    "esbuild": "^0.28.1",
     "fflate": "^0.8.3",
     "linkedom": "^0.18.12",
     "sharp": "^0.34.5",

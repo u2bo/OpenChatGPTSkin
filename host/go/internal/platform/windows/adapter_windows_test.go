@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,27 @@ func TestRefuseUnmanagedCodexUsesTheRootProcessBoundary(t *testing.T) {
 	}
 }
 
+func TestPortInspectionRejectsMissingOwner(t *testing.T) {
+	_, err := parsePortInspection([]byte(`{"host":"127.0.0.1","port":9222,"owningPid":0,"ancestors":[]}`), 9222)
+	var runtimeError Error
+	if !errors.As(err, &runtimeError) || runtimeError.Code != "CDP_NOT_READY" {
+		t.Fatalf("error=%v", err)
+	}
+}
+
+func TestPortInspectionAcceptsLoopbackOwnerInItsTree(t *testing.T) {
+	actual, err := parsePortInspection([]byte(`{"host":"127.0.0.1","port":9222,"owningPid":202,"ancestors":[202,101,1]}`), 9222)
+	if err != nil || actual.OwningPID != 202 {
+		t.Fatalf("inspection=%+v error=%v", actual, err)
+	}
+}
+
+func TestPortInspectionScriptUsesTheDocumentedOwningProcessProperty(t *testing.T) {
+	if strings.Contains(portScript, "OwningProcessID") || strings.Count(portScript, "OwningProcess") != 2 {
+		t.Fatalf("port inspection script has an unsafe owner field: %s", portScript)
+	}
+}
+
 func TestLiveOfficialCodexInspection(t *testing.T) {
 	if os.Getenv("OPENCHATGPTSKIN_LIVE_WINDOWS_TEST") != "1" {
 		t.Skip("set OPENCHATGPTSKIN_LIVE_WINDOWS_TEST=1 on a prepared Windows device")
@@ -104,5 +126,18 @@ func TestLiveClosedCodexHasNoUnmanagedRoot(t *testing.T) {
 	}
 	if err := RefuseUnmanagedCodex(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLiveManagedLaunchOwnsLoopbackCDP(t *testing.T) {
+	if os.Getenv("OPENCHATGPTSKIN_LIVE_WINDOWS_TEST") != "1" {
+		t.Skip("set OPENCHATGPTSKIN_LIVE_WINDOWS_TEST=1 on a prepared Windows device")
+	}
+	launch, err := LaunchManaged(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if launch.Port < 1 || launch.Root.PID < 1 || launch.Install.IdentityName != expectedIdentity {
+		t.Fatalf("managed launch evidence is incomplete: %+v", launch)
 	}
 }

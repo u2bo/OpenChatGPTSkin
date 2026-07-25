@@ -9,19 +9,24 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 )
 
 const (
-	expectedIdentity  = "OpenAI.Codex"
-	expectedPublisher = "CN=50BDFD77-8903-4850-9FFE-6E8522F64D5B"
-	expectedSigner    = "50BDFD77-8903-4850-9FFE-6E8522F64D5B"
-	expectedResource  = "OpenAI OpCo, LLC"
-	expectedEntry     = "app/ChatGPT.exe"
+	expectedIdentity       = "OpenAI.Codex"
+	expectedPublisher      = "CN=50BDFD77-8903-4850-9FFE-6E8522F64D5B"
+	expectedSigner         = "50BDFD77-8903-4850-9FFE-6E8522F64D5B"
+	expectedResource       = "OpenAI OpCo, LLC"
+	expectedEntry          = "app/ChatGPT.exe"
+	managedCDPReadyTimeout = 90 * time.Second
 )
 
 var versionPattern = regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+$`)
@@ -49,6 +54,19 @@ type ProcessIdentity struct {
 	ParentPID      int    `json:"parentPid"`
 	StartedAt      string `json:"startedAt"`
 	ExecutablePath string `json:"executablePath"`
+}
+
+type ManagedLaunch struct {
+	Install Install
+	Root    ProcessIdentity
+	Port    int
+}
+
+type portInspection struct {
+	Host      string `json:"host"`
+	Port      int    `json:"port"`
+	OwningPID int    `json:"owningPid"`
+	Ancestors []int  `json:"ancestors"`
 }
 
 type Error struct {
@@ -147,6 +165,134 @@ func RefuseUnmanagedCodex(ctx context.Context) error {
 	return nil
 }
 
+// LaunchManaged starts only a freshly verified official Appx entry. A normal
+// already-running instance is never attached to, and the selected CDP port is
+// accepted only when it belongs to the launched process tree.
+func LaunchManaged(ctx context.Context) (ManagedLaunch, error) {
+	if err := RefuseUnmanagedCodex(ctx); err != nil {
+		return ManagedLaunch{}, err
+	}
+	install, err := InspectOfficialCodex(ctx)
+	if err != nil {
+		return ManagedLaunch{}, err
+	}
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		return ManagedLaunch{}, Error{Code: "CODEX_LAUNCH_FAILED", Message: "Could not reserve an IPv4 loopback CDP port"}
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	if err := listener.Close(); err != nil {
+		return ManagedLaunch{}, err
+	}
+	launchedAfter := time.Now().UTC().Add(-time.Second)
+	command := exec.Command(install.EntryPath, "--remote-debugging-address=127.0.0.1", fmt.Sprintf("--remote-debugging-port=%d", port))
+	command.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x00000008 | 0x00000200, HideWindow: true}
+	command.Stdin, command.Stdout, command.Stderr = nil, nil, nil
+	if err := command.Start(); err != nil {
+		return ManagedLaunch{}, Error{Code: "CODEX_LAUNCH_FAILED", Message: err.Error()}
+	}
+	_ = command.Process.Release()
+	deadline := time.Now().Add(managedCDPReadyTimeout)
+	for time.Now().Before(deadline) {
+		roots, rootsErr := ListCodexRoots(ctx)
+		if rootsErr != nil {
+			return ManagedLaunch{}, rootsErr
+		}
+		for _, root := range roots {
+			started, parseErr := time.Parse(time.RFC3339Nano, root.StartedAt)
+			if parseErr == nil && !started.Before(launchedAfter) && strings.EqualFold(normalizePath(root.ExecutablePath), normalizePath(install.EntryPath)) {
+				inspection, inspectErr := inspectPort(ctx, port)
+				if inspectErr != nil {
+					var platformError Error
+					if errors.As(inspectErr, &platformError) && platformError.Code != "CDP_NOT_READY" {
+						return ManagedLaunch{}, inspectErr
+					}
+					continue
+				}
+				if inspection.Host == "127.0.0.1" && inspection.Port == port && containsPID(inspection.Ancestors, root.PID) {
+					return ManagedLaunch{Install: install, Root: root, Port: port}, nil
+				}
+				return ManagedLaunch{}, Error{Code: "CDP_ENDPOINT_UNSAFE", Message: "CDP endpoint is not owned by the managed Codex process"}
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return ManagedLaunch{}, Error{Code: "CDP_NOT_READY", Message: "Managed Codex did not expose an owned IPv4 loopback CDP endpoint"}
+}
+
+// WaitForManagedExit observes only the exact process identity created by this
+// Host. It never attaches to or terminates a later normal Codex instance.
+func WaitForManagedExit(ctx context.Context, managed ProcessIdentity) error {
+	if managed.PID < 1 || !validTimestamp(managed.StartedAt) || managed.ExecutablePath == "" {
+		return Error{Code: "PROCESS_INSPECTION_DENIED", Message: "Managed Codex identity is invalid"}
+	}
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		roots, err := ListCodexRoots(ctx)
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, root := range roots {
+			if root.PID == managed.PID && root.StartedAt == managed.StartedAt && strings.EqualFold(normalizePath(root.ExecutablePath), normalizePath(managed.ExecutablePath)) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
+}
+
+func inspectPort(ctx context.Context, port int) (portInspection, error) {
+	if port < 1 || port > 65535 {
+		return portInspection{}, Error{Code: "CDP_ENDPOINT_UNSAFE", Message: "CDP port is invalid"}
+	}
+	inspectionContext, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	command := exec.CommandContext(inspectionContext, "powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "& ([scriptblock]::Create([Console]::In.ReadToEnd()))")
+	command.Env = append(os.Environ(), fmt.Sprintf("OPEN_CHATGPT_SKIN_PORT=%d", port))
+	command.Stdin = strings.NewReader(portScript)
+	var stderr bytes.Buffer
+	command.Stderr = &stderr
+	contents, err := command.Output()
+	if err != nil {
+		message := strings.TrimSpace(stderr.String())
+		if message == "" {
+			message = err.Error()
+		}
+		return portInspection{}, Error{Code: "PROCESS_INSPECTION_DENIED", Message: "CDP port inspection failed: " + message}
+	}
+	return parsePortInspection(contents, port)
+}
+
+func parsePortInspection(contents []byte, port int) (portInspection, error) {
+	var value portInspection
+	if err := json.Unmarshal(contents, &value); err != nil || value.Host != "127.0.0.1" || value.Port != port || value.OwningPID < 1 || len(value.Ancestors) == 0 {
+		return portInspection{}, Error{Code: "CDP_NOT_READY", Message: "CDP endpoint is not ready"}
+	}
+	if !containsPID(value.Ancestors, value.OwningPID) {
+		return portInspection{}, Error{Code: "CDP_ENDPOINT_UNSAFE", Message: "CDP endpoint owner is not in its process ancestry"}
+	}
+	return value, nil
+}
+
+func containsPID(values []int, target int) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
 func verify(install Install) error {
 	valid := install.PackageRoot != "" && install.EntryPath != "" &&
 		install.IdentityName == expectedIdentity && versionPattern.MatchString(install.PackageVersion) &&
@@ -225,3 +371,12 @@ $roots = @($all | Where-Object { -not $ids.ContainsKey([int]$_.parentPid) } | Fo
   [pscustomobject]@{ pid = [int]$_.pid; parentPid = [int]$_.parentPid; startedAt = $process.StartTime.ToUniversalTime().ToString("o"); executablePath = [string]$_.executablePath }
 })
 ConvertTo-Json -InputObject @($roots) -Compress`
+
+const portScript = `$ErrorActionPreference = "Stop"
+$port = [int][Environment]::GetEnvironmentVariable("OPEN_CHATGPT_SKIN_PORT", [EnvironmentVariableTarget]::Process)
+$connection = @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue | Where-Object { $_.LocalAddress -eq "127.0.0.1" } | Select-Object -First 1)
+if ($connection.Count -ne 1) { [pscustomobject]@{} | ConvertTo-Json -Compress; exit 0 }
+$processes = @{}; foreach ($process in @(Get-CimInstance Win32_Process)) { $processes[[int]$process.ProcessId] = [int]$process.ParentProcessId }
+$ancestors = @(); $cursor = [int]$connection[0].OwningProcess; $seen = @{}
+while ($cursor -gt 0 -and -not $seen.ContainsKey($cursor)) { $seen[$cursor] = $true; $ancestors += $cursor; if (-not $processes.ContainsKey($cursor)) { break }; $cursor = [int]$processes[$cursor] }
+[pscustomobject]@{ host = "127.0.0.1"; port = $port; owningPid = [int]$connection[0].OwningProcess; ancestors = @($ancestors) } | ConvertTo-Json -Compress`

@@ -82,7 +82,7 @@ Enumerating macOS windows normally requires Accessibility consent. OpenChatGPTSk
 | Release-package acceptance | ZIP, Setup, and installer lifecycle | Payload, `.tar.gz`, `.app`, Mach-O, and DMG mount |
 | Real-Codex probe/visual acceptance | Available | Not automated; use the manual checklist below |
 
-Starting with `v0.3.0-alpha.1`, production Studio, Controller, and Runtime roles come from the same implementation under `host/go`. TypeScript remains only for the frontend, Theme/Contract authoring sources, and the CDP Adapter; there is no Node business host or platform fallback.
+Starting with `v0.3.0`, production Studio, Controller, and Runtime roles come from the same implementation under `host/go`. TypeScript remains only for the frontend, Theme/Contract authoring sources, and the CDP Adapter; there is no Node business host or platform fallback.
 
 ## Real-Mac acceptance checklist
 

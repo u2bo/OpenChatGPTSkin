@@ -68,7 +68,15 @@ func loadControllerModel(path string) (*controllerModel, error) {
 		return nil, control.CommandError{Code: "RUNTIME_SESSION_STALE", Message: "Runtime session evidence has trailing data"}
 	}
 	model.status, model.themeID, model.version = persisted.Status, persisted.ThemeID, persisted.ThemeVersion
-	if model.status != "stopped" && model.status != "restored-awaiting-exit" {
+	if model.status == "restored-awaiting-exit" {
+		// Restore has already removed the theme and closed the CDP session before
+		// this state is persisted. After a controller restart the in-memory exit
+		// watcher cannot be recovered, so the only valid durable state is stopped.
+		model.status, model.themeID, model.version = "stopped", "", ""
+		if err := model.persistLocked(); err != nil {
+			return nil, err
+		}
+	} else if model.status != "stopped" {
 		model.status = "recovery-required"
 		if err := model.persistLocked(); err != nil {
 			return nil, err

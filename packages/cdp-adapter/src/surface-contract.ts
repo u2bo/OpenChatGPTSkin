@@ -77,6 +77,10 @@ export const NATIVE_CODEX_SURFACE_SELECTORS = {
     '[role="dialog"]',
     '[role="alertdialog"]',
     '[role="listbox"]',
+    '[role="status"]',
+    '[role="alert"]',
+    '[data-sonner-toast]',
+    '[data-radix-toast-viewport] > *',
     '[data-radix-popper-content-wrapper]',
   ].join(","),
 } as const;

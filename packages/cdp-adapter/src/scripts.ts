@@ -93,19 +93,24 @@ const SETTINGS_PAGE_DETECTION_EXPRESSION = `(() => {
     node.getAttribute("data-testid") || "",
   ].join(" ")));
   const main = document.querySelector("main,[role=main]");
-  const mainSemantic = Boolean(main) && Array.from(main.querySelectorAll(
+  const mainSemanticSignals = !main ? [] : Array.from(main.querySelectorAll(
       "h1,h2,h3,[role=heading],[aria-label],[data-testid]"
-    )).some((node) => visible(node) &&
+    )).filter((node) => visible(node) &&
       !node.closest('[role="dialog"],[role="menu"],[role="alertdialog"]') &&
-      pattern.test([
-      node.id,
-      typeof node.className === "string" ? node.className : "",
-      node.getAttribute("role") || "",
-      node.getAttribute("aria-label") || "",
-      node.getAttribute("data-testid") || "",
-      String(node.textContent || "").slice(0, 120),
-    ].join(" ")));
-  return settingsPath || settingsNavigation || mainSemantic;
+      (() => {
+        const attributeSignature = [
+          node.id,
+          typeof node.className === "string" ? node.className : "",
+          node.getAttribute("role") || "",
+          node.getAttribute("aria-label") || "",
+          node.getAttribute("data-testid") || "",
+        ].join(" ");
+        if (pattern.test(attributeSignature)) return true;
+        if (!node.matches("h1,h2,h3,[role=heading]")) return false;
+        const headingText = String(node.textContent || "").trim();
+        return headingText.length <= 80 && pattern.test(headingText);
+      })());
+  return settingsPath || settingsNavigation || mainSemanticSignals.length >= 2;
 })()`;
 const HOME_HEADING_RESOLVER_EXPRESSION = `((main, composer, suggestions, visible) => {
   const marked = Array.from(main.querySelectorAll(
@@ -936,7 +941,7 @@ export function applyExpression(theme: CompiledTheme, themeReference?: string): 
         composer = nativeWidthContainer ||
           stackCandidates[stackCandidates.length - 1] || composerInput;
         composerChromeCandidates = stackCandidates.filter((node) =>
-          node !== composer && node !== composerInput && hasSurfaceBackground(node)
+          node !== composer && node !== composerInput
         );
       }
       mark(composer, "composer");
@@ -1225,6 +1230,52 @@ export function applyExpression(theme: CompiledTheme, themeReference?: string): 
         }
       }
 
+      const floatingOverlayKeywords = /(?:rate\\s*limit|reset|environment\\s*info|速率|限制|重置|环境信息)/i;
+      const keywordLeaves = Array.from(document.querySelectorAll("body *"))
+        .filter((node) => visible(node) && floatingOverlayKeywords.test(
+          String(node.textContent || "").replace(/\\s+/g, " ").trim()
+        ))
+        .filter((node) => !Array.from(node.children).some((child) =>
+          visible(child) && floatingOverlayKeywords.test(
+            String(child.textContent || "").replace(/\\s+/g, " ").trim()
+          )
+        ));
+      const viewportWidth = Math.max(
+        window.innerWidth || document.documentElement.clientWidth ||
+          main?.getBoundingClientRect().width || 1280,
+        1
+      );
+      const viewportHeight = Math.max(
+        window.innerHeight || document.documentElement.clientHeight ||
+          main?.getBoundingClientRect().height || 760,
+        1
+      );
+      for (const leaf of keywordLeaves) {
+        if (insideOverlay(leaf) || insideTerminal(leaf) ||
+          insideThreadConversation(leaf) || (composer && composer.contains(leaf))) continue;
+        const panelCandidates = [];
+        let floatingContext = false;
+        let ancestor = leaf;
+        while (ancestor && ancestor !== main && ancestor !== document.body) {
+          const style = window.getComputedStyle(ancestor);
+          if (style.position === "fixed" || style.position === "absolute") {
+            floatingContext = true;
+          }
+          const rect = ancestor.getBoundingClientRect();
+          if (visible(ancestor) && hasSurfaceBackground(ancestor) &&
+            rect.width >= 180 && rect.width <= viewportWidth * 0.8 &&
+            rect.height >= 48 && rect.height <= viewportHeight * 0.85) {
+            panelCandidates.push({ node: ancestor, rect });
+          }
+          ancestor = ancestor.parentElement;
+        }
+        if (!floatingContext) continue;
+        const panel = panelCandidates.sort((left, right) =>
+          right.rect.width * right.rect.height - left.rect.width * left.rect.height
+        )[0]?.node || null;
+        if (panel) mark(panel, "overlay");
+      }
+
       if (composer && composerInput) {
         const composerRect = composer.getBoundingClientRect();
         const inputRect = composerInput.getBoundingClientRect();
@@ -1411,15 +1462,29 @@ export function applyExpression(theme: CompiledTheme, themeReference?: string): 
         if (fade !== topFade && !interactive) mark(fade, "scroll-fade");
       }
       const scrollFadePattern = /(?:fade|gradient|mask|scroll-shadow)/i;
+      const composerRectForFade = composer?.getBoundingClientRect() || null;
       const composerFadeMinimumWidth = composer
         ? composer.getBoundingClientRect().width * 0.75
         : Number.POSITIVE_INFINITY;
+      const sharesPositionedComposerFooter = (node) => {
+        if (!composer || composer.contains(node) || node.contains(composer)) return false;
+        let ancestor = node.parentElement;
+        while (ancestor && ancestor !== main) {
+          if (ancestor.contains(composer)) {
+            const position = window.getComputedStyle(ancestor).position;
+            return position === "sticky" || position === "absolute" || position === "fixed";
+          }
+          ancestor = ancestor.parentElement;
+        }
+        return false;
+      };
       const gradientScrollFades = Array.from(main.querySelectorAll("div"))
         .map((node) => ({
           node,
           rect: node.getBoundingClientRect(),
           backgroundImage: window.getComputedStyle(node).backgroundImage,
           insideComposer: Boolean(composer && composer.contains(node)),
+          composerBackdrop: sharesPositionedComposerFooter(node),
           signature: [
             node.id,
             typeof node.className === "string" ? node.className : "",
@@ -1430,9 +1495,18 @@ export function applyExpression(theme: CompiledTheme, themeReference?: string): 
           !entry.node.getAttribute("data-open-chatgpt-skin-surface") &&
           !entry.node.matches("button,[role=button],input,textarea,[contenteditable=true]") &&
           !entry.node.querySelector("button,[role=button],input,textarea,[contenteditable=true]") &&
-          (entry.rect.width >= mainRect.width * 0.5 ||
-            (entry.insideComposer && entry.rect.width >= composerFadeMinimumWidth)) &&
-          entry.rect.height > 0 && entry.rect.height <= 120 &&
+          entry.rect.height > 0 && (
+            (entry.rect.height <= 120 && (
+              entry.rect.width >= mainRect.width * 0.5 ||
+              (entry.insideComposer && entry.rect.width >= composerFadeMinimumWidth)
+            )) ||
+            (entry.composerBackdrop && composerRectForFade &&
+              entry.rect.width >= composerFadeMinimumWidth &&
+              entry.rect.top >= composerRectForFade.top - 96 &&
+              entry.rect.top <= composerRectForFade.bottom &&
+              entry.rect.bottom >= composerRectForFade.bottom &&
+              entry.rect.height <= composerRectForFade.height + 96)
+          ) &&
           typeof entry.backgroundImage === "string" &&
           entry.backgroundImage.includes("gradient") &&
           scrollFadePattern.test(entry.signature))

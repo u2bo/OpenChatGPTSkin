@@ -1,6 +1,6 @@
 {
   "name": "open-chatgpt-skin",
-  "version": "0.3.0-alpha.1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "repository": {
@@ -23,9 +23,10 @@
     "contracts:verify": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/verify.ts",
     "contracts:baseline": "tsx --tsconfig tsconfig.scripts.json scripts/contracts/baseline-runner.ts",
     "go:test": "go -C host/go test -buildvcs=false -tags nodynamic ./... -count=1 -timeout 60s",
-    "go:verify": "npm run go:test && go -C host/go vet -buildvcs=false -tags nodynamic ./...",
+    "go:verify": "npm run go:cdp-adapter:verify && npm run go:test && go -C host/go vet -buildvcs=false -tags nodynamic ./...",
     "go:cdp-adapter:build": "tsx --tsconfig tsconfig.scripts.json scripts/build-go-cdp-adapter.ts",
-    "release:build": "tsx --tsconfig tsconfig.scripts.json scripts/release/build-go-release.ts",
+    "go:cdp-adapter:verify": "tsx --tsconfig tsconfig.scripts.json scripts/build-go-cdp-adapter.ts --check",
+    "release:build": "npm run go:cdp-adapter:verify && tsx --tsconfig tsconfig.scripts.json scripts/release/build-go-release.ts",
     "release:acceptance": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-go-release.ts",
     "release:merge": "tsx --tsconfig tsconfig.scripts.json scripts/release/merge-go-release.ts",
     "typecheck": "tsc -b --pretty false",
@@ -37,7 +38,7 @@
     "release:version": "tsx scripts/release/verify-version.ts",
     "release:windows": "npm run release:build -- --native-only --output artifacts/windows-x64 && npm run release:checksums -- --output artifacts/windows-x64",
     "release:macos": "npm run release:build -- --native-only --output artifacts/macos-native && npm run release:checksums -- --output artifacts/macos-native",
-    "studio:dev": "tsx scripts/dev/start-go-studio.ts",
+    "studio:dev": "npm run go:cdp-adapter:build && tsx scripts/dev/start-go-studio.ts",
     "verify": "npm run contracts:verify && npm run build && npm run test && npm run typecheck && npm run go:verify",
     "verify:foundation": "npm run themes:build && npm run build && npm run test && npm run typecheck && node packages/theme-core/dist/cli.js catalog --root themes"
   },

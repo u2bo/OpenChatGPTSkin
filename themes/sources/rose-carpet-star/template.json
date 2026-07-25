@@ -6,7 +6,7 @@
     "id": "rose-carpet-star",
     "name": "玫瑰星光",
     "description": "玫瑰金、柔光与典雅氛围构成的温暖主题。",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "author": "OpenChatGPTSkin",
     "metadata": {
       "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
@@ -64,16 +64,16 @@
       "positionY": 0.5,
       "scale": 1.05,
       "blur": 0,
-      "brightness": 1,
+      "brightness": 1.08,
       "overlay": 0,
       "safeArea": "none",
       "taskMode": "full",
       "taskOpacity": 0.18
     },
     "surfaces": {
-      "baseOpacity": 0.2,
-      "elevatedOpacity": 0.78,
-      "terminalOpacity": 0.84,
+      "baseOpacity": 0.16,
+      "elevatedOpacity": 0.6,
+      "terminalOpacity": 0.72,
       "blur": 0
     },
     "decorations": [

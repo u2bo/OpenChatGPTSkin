@@ -67,7 +67,7 @@
     {
       "target": "windows-x64",
       "sourceAsset": "OpenChatGPTSkin_0.2.0_windows_x64.zip",
-      "totalBytes": 115070815,
+      "totalBytes": 115070826,
       "composition": {
         "apps": 502939,
         "LICENSE": 1577,
@@ -77,13 +77,13 @@
         "README.md": 23125,
         "release-manifest.json": 115757,
         "runtime": 85347134,
-        "themes": 4422893
+        "themes": 4422904
       }
     },
     {
       "target": "macos-arm64",
       "sourceAsset": "OpenChatGPTSkin_0.2.0_macos_arm64.tar.gz",
-      "totalBytes": 136974297,
+      "totalBytes": 136974308,
       "composition": {
         "apps": 502927,
         "LICENSE": 1546,
@@ -93,13 +93,13 @@
         "README.md": 23125,
         "release-manifest.json": 116339,
         "runtime": 110777181,
-        "themes": 4422893
+        "themes": 4422904
       }
     },
     {
       "target": "macos-x64",
       "sourceAsset": "OpenChatGPTSkin_0.2.0_macos_x64.tar.gz",
-      "totalBytes": 141958550,
+      "totalBytes": 141958561,
       "composition": {
         "apps": 502927,
         "LICENSE": 1546,
@@ -109,7 +109,7 @@
         "README.md": 23125,
         "release-manifest.json": 116315,
         "runtime": 113864589,
-        "themes": 4422893
+        "themes": 4422904
       }
     }
   ],
@@ -128,37 +128,37 @@
   "themes": {
     "catalog": {
       "bytes": 1718,
-      "sha256": "db222609e1eb0df84a001ff3823171a20dc000f8f91bec1155a852de059c7749"
+      "sha256": "000a412822c0f3e89e8a0a700b9cd3a5f3f078fc3213cf00d37652bfd495003c"
     },
     "directoryHashAlgorithm": "sha256-path-length-content-v1",
     "builtins": [
       {
         "id": "future-idol-cyan",
         "path": "builtin/future-idol-cyan",
-        "bytes": 443292,
+        "bytes": 443294,
         "fileCount": 10,
-        "sha256": "cc55d0c4ddc7fc17667b7a1763599e11f565dc4c066a226aa2082ad8c4e6d35e"
+        "sha256": "6c5a7b038d3cce786ecf7f5ea78d9b5be73c83312df4ac86f9362fd38e625da1"
       },
       {
         "id": "glacier-aurora",
         "path": "builtin/glacier-aurora",
-        "bytes": 370100,
+        "bytes": 370102,
         "fileCount": 10,
-        "sha256": "50692ab6612c5c8a09dacc883403263d739811e145f13e08339461daa4930f6a"
+        "sha256": "94c55ec8e319499949d029f47a26d857dd0df23f7dd04ca728d011120ddb5058"
       },
       {
         "id": "mountain-mist",
         "path": "builtin/mountain-mist",
-        "bytes": 253055,
+        "bytes": 253059,
         "fileCount": 10,
-        "sha256": "de63ea7d9de6c759b56eb444f15b4cfb2d9ea24c2962fd9cfb917b0b36fcdd8a"
+        "sha256": "9700c9740067f8c358468701ebd7c8c96471559edc11bddb3fc39b498a6c09e2"
       },
       {
         "id": "rose-carpet-star",
         "path": "builtin/rose-carpet-star",
-        "bytes": 339181,
+        "bytes": 339184,
         "fileCount": 10,
-        "sha256": "51208967070e6337fb7111f6722ad596bab0240c9e948c404df13e5563c8ce54"
+        "sha256": "8ff8f4203dd16e9a5c3a836f52b73fac856fa6e5030475f7960a2b04961c5a97"
       },
       {
         "id": "yua-mikami-starlight",

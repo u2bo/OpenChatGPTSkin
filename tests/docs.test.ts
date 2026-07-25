@@ -24,15 +24,15 @@ describe("project documentation", () => {
   it("documents the Go-only v0.3 release and current developer commands", async () => {
     const [readme, readmeEn, notes, windows, mac, macEn, studio] = await Promise.all([
       readFile("README.md", "utf8"), readFile("README.en.md", "utf8"),
-      readFile("docs/releases/v0.3.0-alpha.1.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
+      readFile("docs/releases/v0.3.0.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"), readFile("docs/runtime-macos.en.md", "utf8"),
       readFile("docs/theme-studio.md", "utf8"),
     ]);
     for (const document of [readme, readmeEn]) {
-      expect(document).toContain("v0.3.0-alpha.1");
-      expect(document).toContain("OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe");
-      expect(document).toContain("OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg");
-      expect(document).toContain("OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg");
+      expect(document).toContain("v0.3.0");
+      expect(document).toContain("OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe");
+      expect(document).toContain("OpenChatGPTSkin_0.3.0_macos_arm64.dmg");
+      expect(document).toContain("OpenChatGPTSkin_0.3.0_macos_x64.dmg");
       expect(document).toContain("npm run runtime -- list-themes");
       expect(document).toContain("npm run runtime -- import --theme-file");
       expect(document).toContain("npm run runtime -- restore");
@@ -48,7 +48,7 @@ describe("project documentation", () => {
     expect(studio).toContain("单一 Go Host");
     expect(studio).toContain("OpenChatGPTSkin.exe");
     expect(notes).toContain("跨平台 Go Host");
-    expect(notes).toContain("Node Runtime");
+    expect(notes).toContain("不捆绑 Node.js");
   });
 
   it("ships bilingual custom-theme guidance, contribution rules, and screenshots", async () => {

@@ -240,7 +240,7 @@ func startTestStudio(t *testing.T) *studio.RunningServer {
 	}
 	server, err := studio.Start(context.Background(), studio.Config{
 		IndexHTML: []byte(`<html><head><meta property="csp-nonce" nonce="__OPEN_CHATGPT_SKIN_CSP_NONCE__"></head></html>`),
-		ThemeRoot: filepath.Join(root, "themes"), DraftRoot: filepath.Join(root, "theme-studio-drafts"), StudioVersion: "0.3.0-alpha.1",
+		ThemeRoot: filepath.Join(root, "themes"), DraftRoot: filepath.Join(root, "theme-studio-drafts"), StudioVersion: "0.3.0",
 	})
 	if err != nil {
 		t.Fatal(err)

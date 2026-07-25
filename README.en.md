@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-v0.3.0--alpha.1-f59e0b)
+![Status](https://img.shields.io/badge/status-v0.3.0-2ea44f)
 ![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
 ![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
@@ -46,7 +46,7 @@ The two complete concept images below show how far OpenChatGPTSkin can be custom
 <img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="Complete Super Saiyan Goku OpenChatGPTSkin concept">
 
 > [!IMPORTANT]
-> `v0.3.0-alpha.1` is the unified Go Host candidate for Windows x64, macOS ARM64, and macOS x64. Its six installer/portable artifacts include five Theme Schema v4 themes and one Go business host; no user package bundles Node.js or requires Git, Go, or development dependencies. The theme loop, data upgrade, and v0.2.0 rollback have passed real-device acceptance on Windows and both Mac architectures. macOS artifacts remain unsigned and unnotarized, so use the standard Control-click → **Open** flow without disabling Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
+> `v0.3.0` is the stable unified Go Host release for Windows x64, macOS ARM64, and macOS x64. Its six installer/portable artifacts include five Theme Schema v4 themes and one Go business host; no user package bundles Node.js or requires Git, Go, or development dependencies. The theme loop, data upgrade, and v0.2.0 rollback have passed real-device acceptance on Windows and both Mac architectures. macOS artifacts remain unsigned and unnotarized, so use the standard Control-click → **Open** flow without disabling Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
@@ -168,7 +168,7 @@ Portrait and decoration assets carry separate authorization identifiers and sour
 
 ### Windows Setup (recommended)
 
-1. Download `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.3.0-alpha.1](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.0-alpha.1).
+1. Download `OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.3.0](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.0).
 2. Verify SHA-256, then run Setup. It installs for the current user under `%LOCALAPPDATA%\Programs\OpenChatGPTSkin` and does not request administrator privileges.
 3. Start OpenChatGPTSkin from the Start menu. The production Theme Studio opens in your default browser only after its local health check succeeds.
 
@@ -176,16 +176,16 @@ The installer is unsigned, so Windows SmartScreen may warn. Download only from t
 
 ### Windows portable ZIP
 
-Download `OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
+Download `OpenChatGPTSkin_0.3.0_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
 
 ### macOS DMG (unsigned developer preview)
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg`. Both targets have passed acceptance on matching real hardware and the official ChatGPT app.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.3.0_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.3.0_macos_x64.dmg`. Both targets have passed acceptance on matching real hardware and the official ChatGPT app.
 2. Verify SHA-256 as shown below, open the DMG, and drag `OpenChatGPTSkin.app` to Applications.
 3. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt. Do not disable Gatekeeper or use `xattr` to remove quarantine metadata.
 4. Theme Studio opens in the default browser after its health check succeeds. Replacing or deleting the `.app` keeps personal themes, drafts, and Runtime state under `~/Library/Application Support/OpenChatGPTSkin`.
 
-Developers can also download `OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
+Developers can also download `OpenChatGPTSkin_0.3.0_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.3.0_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
 
 Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. Three native runners build and accept the Go Host, then merge the result as `go-release-combined`. A manual run never creates a tag or GitHub Release.
 
@@ -194,17 +194,17 @@ Maintainers can open **Actions → Build and Release → Run workflow** and manu
 Run from the download directory:
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.3.0-alpha.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS Terminal:
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0_macos_arm64.dmg
 # On Intel:
-shasum -a 256 OpenChatGPTSkin_0.3.0-alpha.1_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.0_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -390,7 +390,8 @@ UI adaptation changes must include deterministic page fixtures/tests. Theme cont
 
 ## Documentation
 
-- [v0.3.0-alpha.1 Release Notes](docs/releases/v0.3.0-alpha.1.md)
+- [v0.3.0 Release Notes](docs/releases/v0.3.0.md)
+- [v0.3.0-alpha.1 Historical Release Notes](docs/releases/v0.3.0-alpha.1.md)
 - [v0.2.0 Historical Release Notes](docs/releases/v0.2.0.md)
 - [v0.1.0 Historical Release Notes](docs/releases/v0.1.0.md)
 - [v0.1.0-alpha.1 Historical Release Notes](docs/releases/v0.1.0-alpha.1.md)

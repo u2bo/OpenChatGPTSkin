@@ -20,6 +20,9 @@
             class="flex min-h-full shrink-0 flex-col justify-start"
             data-rect="255,-1200,1010,2100"
           >
+            <h2 id="history-configuration-heading" data-rect="392,96,440,32">
+              Configuration notes from conversation
+            </h2>
             <div class="text-size-chat text-token-text-secondary" data-rect="392,130,736,28">
               <button data-rect="392,130,116,24">
                 <span id="history-processed" class="text-token-conversation-body" data-rect="393,133,95,18">
@@ -75,12 +78,63 @@
           style="background-image: linear-gradient(rgb(255, 255, 255), transparent)"
           data-rect="240,83,1040,16"
         ></div>
-        <section id="history-composer-stack" data-rect="360,660,800,140">
-          <div class="composer-surface-chrome" data-rect="380,680,760,100">
-            <textarea aria-label="Prompt" data-rect="400,700,720,44"></textarea>
-            <button data-rect="1080,748,32,32">Send</button>
+        <div
+          id="history-floating-environment-root"
+          class="pointer-events-none absolute right-0 z-40"
+          style="position: absolute"
+          data-rect="940,95,316,500"
+        >
+          <div
+            id="history-environment-panel"
+            class="bg-token-dropdown-background"
+            style="background-color: rgb(45, 45, 45)"
+            data-rect="940,95,300,199"
+          >
+            <header data-rect="940,105,300,28">Environment info</header>
+            <button data-rect="956,150,180,36">Compare branch</button>
           </div>
-        </section>
+        </div>
+        <div
+          id="history-composer-footer"
+          class="sticky bottom-0 z-10 mt-auto w-full pb-4"
+          style="position: sticky"
+          data-rect="240,640,1040,180"
+        >
+          <div
+            id="history-composer-backdrop-root"
+            class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex h-full w-full justify-center pt-4"
+            style="position: absolute"
+            data-rect="240,640,1040,180"
+          >
+            <div
+              id="history-composer-backdrop"
+              class="mx-auto w-full max-w-(--thread-content-max-width) px-toolbar z-0 h-full bg-gradient-to-t from-token-main-surface-primary via-token-main-surface-primary"
+              style="background-image: linear-gradient(to top, rgb(24, 24, 24) 0%, rgb(24, 24, 24) 50%, transparent 100%)"
+              data-rect="376,645,768,175"
+            ></div>
+          </div>
+          <section id="history-composer-stack" data-rect="360,660,800,140">
+            <aside
+              id="history-quota-banner"
+              class="bg-token-main-surface-primary"
+              style="background-color: rgb(24, 24, 24)"
+              data-rect="380,650,760,56"
+            >
+              <h3 data-rect="400,660,520,36">Rate limit reset opportunity</h3>
+            </aside>
+            <div
+              id="history-composer-chrome"
+              class="bg-token-main-surface"
+              style="background-color: rgb(17, 17, 17)"
+              data-rect="370,706,780,108"
+            >
+              <div id="history-composer-input" class="composer-surface-chrome" data-rect="380,714,760,92">
+                <textarea aria-label="Prompt" data-rect="400,730,720,44"></textarea>
+                <button data-rect="1080,766,32,32">Send</button>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
   </body>

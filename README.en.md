@@ -30,24 +30,12 @@
   <img src="docs/assets/screenshots/theme-studio.webp" alt="OpenChatGPTSkin Theme Studio editor workspace">
 </details>
 
-## Concept explorations
-
-The concept below explores how far OpenChatGPTSkin can be customized in a high-energy sci-fi direction and is shown at its original aspect ratio. Both Ichigo Hoshimiya Shining Stage and Goku Saiyan Engine are released themes; see their real-app screenshots under [Built-in themes](#built-in-themes).
-
-> [!NOTE]
-> Concept artwork does not imply an official relationship with any depicted person, work, or rights holder. Goku Saiyan Engine ships in `v0.3.2`; character-theme assets are not automatically covered by the project MIT License.
-
-### Super Saiyan engine concept
-
-<img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="Complete Super Saiyan Goku OpenChatGPTSkin concept">
-
 > [!IMPORTANT]
 > `v0.3.2` is the stable unified Go Host release for Windows x64, macOS ARM64, and macOS x64. Its six installer/portable artifacts include seven Theme Schema v4 themes, including Goku Saiyan Engine, plus more reliable Runtime restore verification while ChatGPT is committing its initial surface and corrected focal points for character-theme Studio thumbnails. No user package bundles Node.js or requires Git, Go, or development dependencies. macOS artifacts remain unsigned and unnotarized, so use the standard Control-click → **Open** flow without disabling Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
 - [Overview](#overview)
-- [Concept explorations](#concept-explorations)
 - [Features](#features)
 - [Full UI coverage](#full-ui-coverage)
 - [Built-in themes](#built-in-themes)
@@ -152,6 +140,14 @@ A bright immersive idol-stage theme built from strawberry red, pink-gold neon, a
 
 The character background and derived crops carry a separate license identifier, are not automatically covered by the MIT License, and do not imply an official relationship with the original rights holder.
 
+### Yua Mikami Starlight `yua-mikami-starlight`
+
+A dark immersive theme built from soft-pink neon, starlight, and an authorized portrait background. It uses Theme Schema v4 localized dynamic welcome text, real project-name interpolation, four independent suggestion icons, project icons, a profile avatar, and four non-interactive visual layers. Its display typography uses the bundled ZCOOL XiaoWei font under the SIL Open Font License 1.1 with system-font fallback.
+
+![Yua Mikami Starlight theme applied in ChatGPT](docs/assets/screenshots/yua-mikami-starlight.webp)
+
+Portrait and decoration assets carry separate authorization identifiers and source hashes. Read the generated theme `LICENSE.md`; do not treat these assets as MIT-licensed.
+
 ### Rose Carpet Star `rose-carpet-star`
 
 A warm rose-gold, champagne, and burgundy theme with light translucent panels for an elegant desktop appearance.
@@ -169,14 +165,6 @@ A light natural theme built around sunrise, clouds, and forest-green mountains, 
 A dark navy, glacial cyan, and aurora-violet theme for low-light environments and users who prefer high contrast.
 
 ![Glacier Aurora theme](docs/assets/screenshots/glacier-aurora.webp)
-
-### Yua Mikami Starlight `yua-mikami-starlight`
-
-A dark immersive theme built from soft-pink neon, starlight, and an authorized portrait background. It uses Theme Schema v4 localized dynamic welcome text, real project-name interpolation, four independent suggestion icons, project icons, a profile avatar, and four non-interactive visual layers. Its display typography uses the bundled ZCOOL XiaoWei font under the SIL Open Font License 1.1 with system-font fallback.
-
-![Yua Mikami Starlight theme applied in ChatGPT](docs/assets/screenshots/yua-mikami-starlight.webp)
-
-Portrait and decoration assets carry separate authorization identifiers and source hashes. Read the generated theme `LICENSE.md`; do not treat these assets as MIT-licensed.
 
 ## Installation
 

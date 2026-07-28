@@ -30,24 +30,12 @@
   <img src="docs/assets/screenshots/theme-studio.webp" alt="OpenChatGPTSkin Theme Studio 主题编辑工作台">
 </details>
 
-## 概念探索
-
-下面的概念图用于探索 OpenChatGPTSkin 在高能科幻方向上的可定制空间，图片保持原始宽高比，不做裁切。“星宫莓·闪耀舞台”和“孙悟空·赛亚引擎”均已在正式包发布；请在[内置主题](#内置主题)查看真实应用截图。
-
-> [!NOTE]
-> 概念图不代表与相关人物、作品或权利人的官方合作。“孙悟空·赛亚引擎”已随 `v0.3.2` 发布；角色主题素材不自动纳入项目 MIT License。
-
-### 赛亚人引擎主题概念
-
-<img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="赛亚人孙悟空 OpenChatGPTSkin 完整主题概念图">
-
 > [!IMPORTANT]
 > `v0.3.2` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置七个 Theme Schema v4 主题。该版本正式加入“孙悟空·赛亚引擎”，并改善 Runtime 在 ChatGPT 初始界面切换期间的恢复校验与 Theme Studio 人物主题缩略图焦点。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
 
 ## 目录
 
 - [项目介绍](#项目介绍)
-- [概念探索](#概念探索)
 - [主要能力](#主要能力)
 - [全 UI 适配](#全-ui-适配)
 - [内置主题](#内置主题)
@@ -152,6 +140,14 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 该角色背景及衍生裁剪使用独立授权标识，不自动纳入 MIT License，也不代表与原作品权利方存在官方合作。
 
+### 三上悠亚·星光粉 `yua-mikami-starlight`
+
+柔粉霓虹、星光和授权人物背景构成的深色沉浸主题。它使用 Theme Schema v4 的中英文动态欢迎语、真实项目名插值、四个独立建议图标、项目图标、用户头像及四个不可交互视觉图层；展示字体使用随主题分发、依据 SIL Open Font License 1.1 授权的站酷小薇字体，并保留系统字体回退。
+
+![三上悠亚·星光粉主题真实应用效果](docs/assets/screenshots/yua-mikami-starlight.webp)
+
+该主题的肖像与装饰素材来源网络；请参阅生成主题目录中的 `LICENSE.md`，不要将其误认为 MIT 素材。
+
 ### 玫瑰星光 `rose-carpet-star`
 
 玫瑰金、香槟色和勃艮第红组成的暖色主题，面板使用轻盈半透明效果，适合柔和、优雅的桌面风格。
@@ -169,14 +165,6 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 深海军蓝、冰川青和极光紫构成的深色主题，适合低照度环境和偏好高对比界面的用户。
 
 ![冰川极光主题](docs/assets/screenshots/glacier-aurora.webp)
-
-### 三上悠亚·星光粉 `yua-mikami-starlight`
-
-柔粉霓虹、星光和授权人物背景构成的深色沉浸主题。它使用 Theme Schema v4 的中英文动态欢迎语、真实项目名插值、四个独立建议图标、项目图标、用户头像及四个不可交互视觉图层；展示字体使用随主题分发、依据 SIL Open Font License 1.1 授权的站酷小薇字体，并保留系统字体回退。
-
-![三上悠亚·星光粉主题真实应用效果](docs/assets/screenshots/yua-mikami-starlight.webp)
-
-该主题的肖像与装饰素材来源网络；请参阅生成主题目录中的 `LICENSE.md`，不要将其误认为 MIT 素材。
 
 ## 安装
 

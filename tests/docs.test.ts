@@ -63,11 +63,16 @@ describe("project documentation", () => {
       "docs/assets/screenshots/index1.webp", "docs/assets/screenshots/index2.webp",
       "docs/assets/screenshots/hoshimiya-ichigo-shining-stage-real.png",
       "docs/assets/screenshots/goku-saiyan-engine-real.png",
-      "docs/assets/concepts/super-saiyan-goku.png",
       "CONTRIBUTING.md", "MIT License",
     ]) expect(readme).toContain(required);
     expect(readme).not.toContain("docs/assets/concepts/ichigo-hoshimiya.png");
+    expect(readme).not.toContain("docs/assets/concepts/super-saiyan-goku.png");
     expect(readmeEn).toContain("README.md");
+    for (const document of [readme, readmeEn]) {
+      expect(document.indexOf("hoshimiya-ichigo-shining-stage")).toBeLessThan(
+        document.indexOf("yua-mikami-starlight"),
+      );
+    }
     expect(readme).toContain("https://linux.do/");
     expect(readmeEn).toContain("https://linux.do/");
     expect(guide).toContain("Theme Schema v4");

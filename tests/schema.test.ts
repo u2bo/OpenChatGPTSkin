@@ -342,16 +342,22 @@ describe("ThemeDocumentSchema", () => {
         localized: {
           en: { name: "Mountain Mist", description: "A quiet mountain theme." },
         },
+        thumbnail: { positionX: 0.8, positionY: 0.35 },
       },
     }).metadata).toEqual({
       homepage: "https://github.com/example/theme",
       localized: {
         en: { name: "Mountain Mist", description: "A quiet mountain theme." },
       },
+      thumbnail: { positionX: 0.8, positionY: 0.35 },
     });
     expect(() => parseThemeDocument({
       ...validTheme,
       metadata: { homepage: "http://example.com/theme" },
+    })).toThrow();
+    expect(() => parseThemeDocument({
+      ...validTheme,
+      metadata: { thumbnail: { positionX: 1.1, positionY: 0.5 } },
     })).toThrow();
   });
 

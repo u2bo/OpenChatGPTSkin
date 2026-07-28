@@ -680,6 +680,26 @@
                   ]
                 },
                 "type": "object"
+              },
+              "thumbnail": {
+                "additionalProperties": false,
+                "properties": {
+                  "positionX": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "positionY": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "positionX",
+                  "positionY"
+                ],
+                "type": "object"
               }
             },
             "type": "object"

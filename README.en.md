@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-v0.3.1-2ea44f)
+![Status](https://img.shields.io/badge/status-v0.3.2-2ea44f)
 ![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
 ![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
@@ -32,17 +32,17 @@
 
 ## Concept explorations
 
-The concept below explores how far OpenChatGPTSkin can be customized in a high-energy sci-fi direction and is shown at its original aspect ratio. Ichigo Hoshimiya Shining Stage is no longer a concept: see its real ChatGPT screenshot under [Built-in themes](#built-in-themes).
+The concept below explores how far OpenChatGPTSkin can be customized in a high-energy sci-fi direction and is shown at its original aspect ratio. Both Ichigo Hoshimiya Shining Stage and Goku Saiyan Engine are released themes; see their real-app screenshots under [Built-in themes](#built-in-themes).
 
 > [!NOTE]
-> Concept artwork does not imply an official relationship with any depicted person, work, or rights holder, nor does it indicate that the theme is part of a release.
+> Concept artwork does not imply an official relationship with any depicted person, work, or rights holder. Goku Saiyan Engine ships in `v0.3.2`; character-theme assets are not automatically covered by the project MIT License.
 
 ### Super Saiyan engine concept
 
 <img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="Complete Super Saiyan Goku OpenChatGPTSkin concept">
 
 > [!IMPORTANT]
-> `v0.3.1` is the stable unified Go Host release for Windows x64, macOS ARM64, and macOS x64. Its six installer/portable artifacts include six Theme Schema v4 themes, including Ichigo Hoshimiya Shining Stage, plus compatibility for the updated Windows ChatGPT AppX launch and Runtime process model. No user package bundles Node.js or requires Git, Go, or development dependencies. macOS artifacts remain unsigned and unnotarized, so use the standard Control-click → **Open** flow without disabling Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
+> `v0.3.2` is the stable unified Go Host release for Windows x64, macOS ARM64, and macOS x64. Its six installer/portable artifacts include seven Theme Schema v4 themes, including Goku Saiyan Engine, plus more reliable Runtime restore verification while ChatGPT is committing its initial surface and corrected focal points for character-theme Studio thumbnails. No user package bundles Node.js or requires Git, Go, or development dependencies. macOS artifacts remain unsigned and unnotarized, so use the standard Control-click → **Open** flow without disabling Gatekeeper. Save your work and **fully quit the regular ChatGPT app** before applying a theme. OpenChatGPTSkin manages only the ChatGPT instance it launches and never modifies `WindowsApps`, `Codex.app`, `app.asar`, account settings, or API configuration.
 
 ## Contents
 
@@ -74,7 +74,7 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 | Capability | Status |
 |---|---|
 | Theme Schema v4 and `.ocskin` validation/migration/pack/unpack | Complete |
-| Six ready-to-use built-in themes | Included in the stable `v0.3.1` release |
+| Seven ready-to-use built-in themes | Included in the stable `v0.3.2` release |
 | Windows Runtime launch/switch/pause/restore | Stable |
 | Windows x64 portable ZIP and per-user Setup | Stable |
 | macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; both architectures accepted on real Macs |
@@ -128,13 +128,21 @@ OpenChatGPTSkin is not a home-page wallpaper overlay. The Runtime uses a shared 
 
 ## Built-in themes
 
-Each built-in theme includes a complete theme document, preview, provenance record, and SHA-256 hashes. All six in the current source are ready after a clean checkout. The four general themes use project-original AI backgrounds; the two character themes use separately supplied assets and license identifiers that are not covered by the project MIT License.
+Each built-in theme includes a complete theme document, preview, provenance record, and SHA-256 hashes. All seven in the current source are ready after a clean checkout. The four general themes use project-original AI backgrounds; the three character themes use separately supplied assets and license identifiers that are not covered by the project MIT License.
 
 ### Future Idol `future-idol-cyan`
 
 A bright cyan, silver, and restrained magenta sci-fi theme. The focal subject stays on the right while the left side remains a safe area for UI text.
 
 ![Future Idol theme](docs/assets/screenshots/future-idol-cyan.webp)
+
+### Goku Saiyan Engine `goku-saiyan-engine`
+
+A high-energy creative theme built from deep-space blue, electric cyan, and battle orange. It keeps the character focal point on the right and dynamic welcome-safe area on the left, with radar, energy, scanner, and seven-star energy-orb suggestion icons plus project icons and a profile avatar.
+
+![Goku Saiyan Engine applied in the real ChatGPT desktop app](docs/assets/screenshots/goku-saiyan-engine-real.png)
+
+The character background and derived crops carry a separate license identifier, are not automatically covered by the MIT License, and do not imply an official relationship with the original rights holder.
 
 ### Ichigo Hoshimiya Shining Stage `hoshimiya-ichigo-shining-stage`
 
@@ -174,7 +182,7 @@ Portrait and decoration assets carry separate authorization identifiers and sour
 
 ### Windows Setup (recommended)
 
-1. Download `OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.3.1](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.1).
+1. Download `OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.3.2](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.2).
 2. Verify SHA-256, then run Setup. It installs for the current user under `%LOCALAPPDATA%\Programs\OpenChatGPTSkin` and does not request administrator privileges.
 3. Start OpenChatGPTSkin from the Start menu. The production Theme Studio opens in your default browser only after its local health check succeeds.
 
@@ -182,16 +190,16 @@ The installer is unsigned, so Windows SmartScreen may warn. Download only from t
 
 ### Windows portable ZIP
 
-Download `OpenChatGPTSkin_0.3.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
+Download `OpenChatGPTSkin_0.3.2_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
 
 ### macOS DMG (unsigned developer preview)
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.3.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.3.1_macos_x64.dmg`. Each target is built on its own native runner and passes automated acceptance.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.3.2_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.3.2_macos_x64.dmg`. Each target is built on its own native runner and passes automated acceptance.
 2. Verify SHA-256 as shown below, open the DMG, and drag `OpenChatGPTSkin.app` to Applications.
 3. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt. Do not disable Gatekeeper or use `xattr` to remove quarantine metadata.
 4. Theme Studio opens in the default browser after its health check succeeds. Replacing or deleting the `.app` keeps personal themes, drafts, and Runtime state under `~/Library/Application Support/OpenChatGPTSkin`.
 
-Developers can also download `OpenChatGPTSkin_0.3.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.3.1_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
+Developers can also download `OpenChatGPTSkin_0.3.2_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.3.2_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
 
 Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. Three native runners build and accept the Go Host, then merge the result as `go-release-combined`. A manual run never creates a tag or GitHub Release.
 
@@ -200,17 +208,17 @@ Maintainers can open **Actions → Build and Release → Run workflow** and manu
 Run from the download directory:
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.3.1_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.2_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS Terminal:
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.3.1_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.2_macos_arm64.dmg
 # On Intel:
-shasum -a 256 OpenChatGPTSkin_0.3.1_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.2_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -229,7 +237,7 @@ npm ci
 npm run verify:foundation
 ```
 
-`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all six built-in themes. Source-mode commands run from the repository root.
+`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all seven built-in themes in the current source. Source-mode commands run from the repository root.
 
 ### One-command local Windows build
 
@@ -315,13 +323,13 @@ npm run runtime -- restore
 - `restore` restores the official appearance and waits for a normal managed-Codex exit to finish cleanup.
 - Do not use Task Manager to force-close Codex while restore is pending.
 
-See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. The three native runners verify package structure, the single Go Host, Theme Studio, all six built-ins in the current source, and the Node-free manifest. Real-Codex visual and lifecycle acceptance still follows the manual checklist on each target platform.
+See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. The three native runners verify package structure, the single Go Host, Theme Studio, all seven built-ins in the current source, and the Node-free manifest. Real-Codex visual and lifecycle acceptance still follows the manual checklist on each target platform.
 
 ### Real-app acceptance after a Codex update
 
 The old Node Host commands `runtime:probe` and `runtime:acceptance` were removed during the Go cutover and are no longer executable entry points. After a Codex update, use a test workspace with no private projects or sensitive chats and:
 
-1. Fully quit regular Codex and check all six built-ins, a custom theme, `pause`, `resume`, and `restore`.
+1. Fully quit regular Codex and check all seven built-ins, a custom theme, `pause`, `resume`, and `restore`.
 2. Quit the managed instance from the Codex menu and verify Controller/control-endpoint cleanup.
 3. Start official Codex normally and verify that it has no inherited remote-debugging flags and keeps the official appearance.
 4. Record Codex/OpenChatGPTSkin/OS versions, results, and sanitized screenshots.
@@ -396,7 +404,8 @@ UI adaptation changes must include deterministic page fixtures/tests. Theme cont
 
 ## Documentation
 
-- [v0.3.1 Release Notes](docs/releases/v0.3.1.md)
+- [v0.3.2 Release Notes](docs/releases/v0.3.2.md)
+- [v0.3.1 Historical Release Notes](docs/releases/v0.3.1.md)
 - [v0.3.0 Historical Release Notes](docs/releases/v0.3.0.md)
 - [v0.3.0-alpha.1 Historical Release Notes](docs/releases/v0.3.0-alpha.1.md)
 - [v0.2.0 Historical Release Notes](docs/releases/v0.2.0.md)

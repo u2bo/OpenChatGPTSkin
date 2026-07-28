@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 4,
+  "kind": "theme",
+  "appearance": "dark",
+  "id": "goku-saiyan-engine",
+  "name": "孙悟空·赛亚引擎",
+  "description": "深空蓝、电光青与战斗橙构成的高能赛亚人创作主题。",
+  "version": "1.0.0",
+  "author": "OpenChatGPTSkin",
+  "metadata": {
+    "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localized": {
+      "en": {
+        "name": "Goku Saiyan Engine",
+        "description": "A high-energy creative theme shaped by deep-space blue, electric cyan, and battle orange."
+      }
+    }
+  },
+  "assets": {
+    "background": "assets/background.webp",
+    "profileAvatar": "assets/profile-avatar.webp",
+    "suggestionIcons": {
+      "card1": "assets/suggestion-card1.webp",
+      "card2": "assets/suggestion-card2.webp",
+      "card3": "assets/suggestion-card3.webp",
+      "card4": "assets/suggestion-card4.webp"
+    },
+    "projectIcons": [
+      "assets/suggestion-card4.webp",
+      "assets/suggestion-card1.webp",
+      "assets/suggestion-card3.webp",
+      "assets/suggestion-card2.webp"
+    ]
+  },
+  "colors": {
+    "accent": "#18c2ff",
+    "secondary": "#ffb83d",
+    "text": "#eef9ff",
+    "muted": "#7193bd",
+    "panel": "#020b1d",
+    "border": "rgba(24, 194, 255, 0.72)",
+    "success": "#61f0bf",
+    "warning": "#ffd163",
+    "danger": "#ff805d",
+    "info": "#53c9ff",
+    "textSecondary": "#b9d9f7",
+    "link": "#63deff",
+    "inputText": "#f0fbff",
+    "placeholder": "#85a7d2",
+    "codeText": "#b9f2ff"
+  },
+  "typography": {
+    "uiFamily": "Microsoft YaHei UI",
+    "codeFamily": "Cascadia Code",
+    "scale": 1,
+    "uiSize": 14,
+    "codeSize": 13,
+    "uiWeight": 500,
+    "codeWeight": 400,
+    "lineHeight": 1.5,
+    "displayFamily": "Microsoft YaHei UI",
+    "displaySize": 46,
+    "displayWeight": 700,
+    "displayLineHeight": 1.28,
+    "displayLetterSpacing": 0.02
+  },
+  "background": {
+    "positionX": 1,
+    "positionY": 0.5,
+    "scale": 1,
+    "blur": 0,
+    "brightness": 1.06,
+    "overlay": 0,
+    "safeArea": "none",
+    "taskMode": "full",
+    "taskOpacity": 0.14
+  },
+  "surfaces": {
+    "baseOpacity": 0.12,
+    "elevatedOpacity": 0.48,
+    "terminalOpacity": 0.66,
+    "blur": 0
+  },
+  "decorations": [
+    {
+      "type": "sparkles",
+      "enabled": true,
+      "intensity": 0.52,
+      "placement": "background",
+      "opacity": 0.7,
+      "scale": 1.1
+    }
+  ],
+  "layout": {
+    "heroHeight": 400,
+    "cardColumns": 4,
+    "composerWidth": 0.76,
+    "sidebarDensity": "comfortable",
+    "moduleGap": 16,
+    "modules": [
+      {
+        "id": "sidebar",
+        "order": 0,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "topbar",
+        "order": 1,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "hero",
+        "order": 2,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "suggestions",
+        "order": 3,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "project-picker",
+        "order": 4,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "composer",
+        "order": 5,
+        "visible": true,
+        "size": "regular",
+        "align": "center",
+        "spacing": 12
+      },
+      {
+        "id": "task-background",
+        "order": 6,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 0
+      },
+      {
+        "id": "content-layer",
+        "order": 7,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      }
+    ]
+  },
+  "rights": {
+    "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied",
+    "attribution": "User-supplied character background and original vector interface assets prepared for OpenChatGPTSkin",
+    "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localOnly": false
+  },
+  "interfaceImages": {
+    "profileAvatarSize": 26,
+    "suggestionIconSize": 56,
+    "projectIconSize": 20
+  },
+  "home": {
+    "welcome": {
+      "localized": {
+        "zh-CN": {
+          "lines": [
+            "我们应该在「{projectName}」",
+            "中构建什么？"
+          ]
+        },
+        "en": {
+          "lines": [
+            "What should we build",
+            "in \"{projectName}\"?"
+          ]
+        }
+      },
+      "layout": {
+        "anchor": "top-left",
+        "positionX": 0.05,
+        "positionY": 0.27,
+        "width": 0.58,
+        "textAlign": "center",
+        "hideNativeIcon": true
+      }
+    }
+  },
+  "composition": {
+    "layers": []
+  }
+}

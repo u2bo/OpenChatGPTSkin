@@ -15,7 +15,7 @@ func writeBuiltin(t *testing.T, root string) {
 		t.Fatal(err)
 	}
 	catalog := `{"schemaVersion":1,"builtins":[{"id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","kind":"theme","path":"builtin/mountain-mist","ready":true,"localOnly":false,"licenseId":"LicenseRef-Test","preview":"builtin/mountain-mist/preview.webp"}],"recipes":[]}`
-	theme := `{"schemaVersion":4,"kind":"theme","appearance":"light","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","assets":{"background":"assets/background.webp"},"colors":{},"typography":{},"background":{},"decorations":[],"layout":{},"rights":{"localOnly":false}}`
+	theme := `{"schemaVersion":4,"kind":"theme","appearance":"light","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","metadata":{"thumbnail":{"positionX":0.8,"positionY":0.35}},"assets":{"background":"assets/background.webp"},"colors":{},"typography":{},"background":{},"decorations":[],"layout":{},"rights":{"localOnly":false}}`
 	if err := os.WriteFile(filepath.Join(root, "catalog.json"), []byte(catalog), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -46,6 +46,11 @@ func TestRepositoryListsBuiltinsAndReadsDeclaredPreview(t *testing.T) {
 	}
 	if len(library.Themes) != 1 || library.Themes[0].Source != "builtin" {
 		t.Fatalf("library = %+v", library)
+	}
+	if library.Themes[0].ThumbnailPosition == nil ||
+		library.Themes[0].ThumbnailPosition.PositionX != 0.8 ||
+		library.Themes[0].ThumbnailPosition.PositionY != 0.35 {
+		t.Fatalf("thumbnail position = %+v", library.Themes[0].ThumbnailPosition)
 	}
 	asset, err := repository.Preview("builtin", Ref{ID: "mountain-mist", Version: "1.3.0"})
 	if err != nil || asset.MIMEType != "image/webp" {

@@ -24,6 +24,21 @@
       "preview": "builtin/glacier-aurora/preview.webp"
     },
     {
+      "id": "goku-saiyan-engine",
+      "name": "孙悟空·赛亚引擎",
+      "version": "1.0.0",
+      "kind": "theme",
+      "path": "builtin/goku-saiyan-engine",
+      "ready": true,
+      "localOnly": false,
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied",
+      "preview": "builtin/goku-saiyan-engine/preview.webp",
+      "thumbnailPosition": {
+        "positionX": 1,
+        "positionY": 0.5
+      }
+    },
+    {
       "id": "hoshimiya-ichigo-shining-stage",
       "name": "星宫莓·闪耀舞台",
       "version": "1.0.0",
@@ -32,7 +47,11 @@
       "ready": true,
       "localOnly": false,
       "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied",
-      "preview": "builtin/hoshimiya-ichigo-shining-stage/preview.webp"
+      "preview": "builtin/hoshimiya-ichigo-shining-stage/preview.webp",
+      "thumbnailPosition": {
+        "positionX": 1,
+        "positionY": 0.5
+      }
     },
     {
       "id": "mountain-mist",
@@ -65,7 +84,11 @@
       "ready": true,
       "localOnly": false,
       "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-Authorized",
-      "preview": "builtin/yua-mikami-starlight/preview.webp"
+      "preview": "builtin/yua-mikami-starlight/preview.webp",
+      "thumbnailPosition": {
+        "positionX": 1,
+        "positionY": 0.5
+      }
     }
   ],
   "recipes": []

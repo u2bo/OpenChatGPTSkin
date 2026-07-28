@@ -11,9 +11,14 @@ import (
 	"errors"
 	"io"
 	"sort"
+	"time"
 )
 
-const adapterAssetChunkBytes = 192 * 1024
+const (
+	adapterAssetChunkBytes = 192 * 1024
+	restoreVerifyTimeout   = 5 * time.Second
+	restoreVerifyInterval  = 100 * time.Millisecond
+)
 
 //go:embed generated/adapter-manifest.json
 var embeddedAdapterManifest []byte
@@ -126,14 +131,28 @@ func (connection *Connection) RestoreTheme(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	official, err := connection.evaluateAdapterSource(ctx, "verifyOfficial")
-	if err != nil {
-		return err
+
+	// ChatGPT can still be committing its initial surface while a failed apply is
+	// being cleaned up. Keep cleanup strict, but allow that bounded transition to
+	// settle before declaring the official surface unverifiable.
+	deadline := time.Now().Add(restoreVerifyTimeout)
+	for {
+		official, err := connection.evaluateAdapterSource(ctx, "verifyOfficial")
+		if err != nil {
+			return err
+		}
+		if err := connection.expectAdapterMethodTrue(ctx, "validateRestore", removed, official); err == nil {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return Error{Code: "THEME_CLEANUP_FAILED", Message: "Official appearance verification failed"}
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(restoreVerifyInterval):
+		}
 	}
-	if err := connection.expectAdapterMethodTrue(ctx, "validateRestore", removed, official); err != nil {
-		return Error{Code: "THEME_CLEANUP_FAILED", Message: "Official appearance verification failed"}
-	}
-	return nil
 }
 
 func (connection *Connection) evaluateAdapterSource(ctx context.Context, name string) (json.RawMessage, error) {

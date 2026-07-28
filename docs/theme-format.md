@@ -39,8 +39,9 @@ The document is strict: unknown properties fail validation.
 | `metadata.homepage` | optional HTTPS theme or project page, at most 500 characters |
 | `metadata.localized.zh-CN` | optional localized `name` and `description` overrides |
 | `metadata.localized.en` | optional localized `name` and `description` overrides |
+| `metadata.thumbnail` | optional Theme Studio card focal point: `positionX` and `positionY` are both `0`–`1` |
 
-The root `name` and `description` remain the canonical fallback. Localized metadata only overrides presentation for the matching Theme Studio language, so packages keep one source of truth and remain readable by clients that do not implement localization.
+The root `name` and `description` remain the canonical fallback. Localized metadata only overrides presentation for the matching Theme Studio language, so packages keep one source of truth and remain readable by clients that do not implement localization. `metadata.thumbnail` controls cropping in the Theme Studio library and detail cards only; it does not alter the Runtime background position.
 
 ### Assets
 
@@ -149,11 +150,14 @@ PNG, JPEG, WebP, and WOFF2 signatures are checked; changing an executable's exte
 
 Public themes are ready immediately after a clean checkout:
 
+For built-in themes, `catalog.json` may define `thumbnailPosition` with the same `positionX` and `positionY` range. It is a Theme Studio presentation override for the library and detail cards, and lets a maintained catalog improve card cropping without changing a frozen historical theme package. When absent, Theme Studio uses `metadata.thumbnail`; when neither is present, it centers the preview.
+
 - `future-idol-cyan`
 - `rose-carpet-star`
 - `mountain-mist`
 - `glacier-aurora`
 - `hoshimiya-ichigo-shining-stage`
+- `goku-saiyan-engine`
 - `yua-mikami-starlight`
 
 Asset-free recipes require a user-authorized local image and are never public-ready:

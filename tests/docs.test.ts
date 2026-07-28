@@ -8,12 +8,12 @@ describe("project documentation", () => {
     }
   });
 
-  it("documents format limits, rights, and all six catalog IDs", async () => {
+  it("documents format limits, rights, and all seven catalog IDs", async () => {
     const format = await readFile("docs/theme-format.md", "utf8");
     for (const required of [
       ".ocskin", "50 MB", "32 MB", "16 MB", "5 MB", "localOnly", "manifest.json",
       "sidebar", "topbar", "composer", "content-layer", "future-idol-cyan", "rose-carpet-star",
-      "mountain-mist", "glacier-aurora", "hoshimiya-ichigo-shining-stage",
+      "mountain-mist", "glacier-aurora", "goku-saiyan-engine", "hoshimiya-ichigo-shining-stage",
       "yua-mikami-starlight",
     ]) {
       expect(format).toContain(required);
@@ -22,18 +22,18 @@ describe("project documentation", () => {
     expect(format).not.toContain("dilraba-local");
   });
 
-  it("documents the Go-only v0.3.1 release and current developer commands", async () => {
+  it("documents the Go-only v0.3.2 release and current developer commands", async () => {
     const [readme, readmeEn, notes, windows, mac, macEn, studio] = await Promise.all([
       readFile("README.md", "utf8"), readFile("README.en.md", "utf8"),
-      readFile("docs/releases/v0.3.1.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
+      readFile("docs/releases/v0.3.2.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"), readFile("docs/runtime-macos.en.md", "utf8"),
       readFile("docs/theme-studio.md", "utf8"),
     ]);
     for (const document of [readme, readmeEn]) {
-      expect(document).toContain("v0.3.1");
-      expect(document).toContain("OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe");
-      expect(document).toContain("OpenChatGPTSkin_0.3.1_macos_arm64.dmg");
-      expect(document).toContain("OpenChatGPTSkin_0.3.1_macos_x64.dmg");
+      expect(document).toContain("v0.3.2");
+      expect(document).toContain("OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe");
+      expect(document).toContain("OpenChatGPTSkin_0.3.2_macos_arm64.dmg");
+      expect(document).toContain("OpenChatGPTSkin_0.3.2_macos_x64.dmg");
       expect(document).toContain("npm run runtime -- list-themes");
       expect(document).toContain("npm run runtime -- import --theme-file");
       expect(document).toContain("npm run runtime -- restore");
@@ -44,8 +44,8 @@ describe("project documentation", () => {
     expect(`${windows}\n${mac}\n${macEn}`).not.toContain("@open-chatgpt-skin/windows-runtime");
     expect(windows).toContain("release-manifest.json");
     expect(windows).toContain("Node/Go 双写");
-    expect(mac).toContain("六主题结果");
-    expect(macEn).toContain("six-theme results");
+    expect(mac).toContain("七主题结果");
+    expect(macEn).toContain("seven-theme results");
     expect(studio).toContain("单一 Go Host");
     expect(studio).toContain("OpenChatGPTSkin.exe");
     expect(notes).toContain("跨平台 Go Host");
@@ -62,6 +62,7 @@ describe("project documentation", () => {
       "README.en.md", "docs/custom-theme-guide.md", "docs/assets/screenshots/theme-studio.webp",
       "docs/assets/screenshots/index1.webp", "docs/assets/screenshots/index2.webp",
       "docs/assets/screenshots/hoshimiya-ichigo-shining-stage-real.png",
+      "docs/assets/screenshots/goku-saiyan-engine-real.png",
       "docs/assets/concepts/super-saiyan-goku.png",
       "CONTRIBUTING.md", "MIT License",
     ]) expect(readme).toContain(required);
@@ -75,7 +76,7 @@ describe("project documentation", () => {
       "{projectName}", "profile-avatar.webp", "suggestion-card1.webp", "project-icon1.webp",
       "display.woff2", "themes/builtin/yua-mikami-starlight/theme.json",
       "viewport/main/home-hero/suggestions", "future-idol-cyan",
-      "hoshimiya-ichigo-shining-stage", "yua-mikami-starlight",
+      "goku-saiyan-engine", "hoshimiya-ichigo-shining-stage", "yua-mikami-starlight",
     ]) {
       expect(guide).toContain(required);
       expect(guideEn).toContain(required);
@@ -87,6 +88,8 @@ describe("project documentation", () => {
     for (const name of [
       "theme-studio.webp", "index1.webp", "index2.webp", "future-idol-cyan.webp",
       "rose-carpet-star.webp", "mountain-mist.webp", "glacier-aurora.webp",
+      "goku-saiyan-engine.webp",
+      "goku-saiyan-engine-real.png",
       "hoshimiya-ichigo-shining-stage.webp", "hoshimiya-ichigo-shining-stage-real.png",
       "yua-mikami-starlight.webp",
       "surface-chatgpt-work.webp", "surface-plugins.webp", "surface-settings.webp",

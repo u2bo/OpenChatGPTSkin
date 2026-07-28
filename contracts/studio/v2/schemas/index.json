@@ -770,6 +770,26 @@
                             ]
                           },
                           "type": "object"
+                        },
+                        "thumbnail": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "positionX": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "positionY": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "positionX",
+                            "positionY"
+                          ],
+                          "type": "object"
                         }
                       },
                       "type": "object"
@@ -2207,6 +2227,26 @@
                         ]
                       },
                       "type": "object"
+                    },
+                    "thumbnail": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "positionX": {
+                          "maximum": 1,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "positionY": {
+                          "maximum": 1,
+                          "minimum": 0,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "positionX",
+                        "positionY"
+                      ],
+                      "type": "object"
                     }
                   },
                   "type": "object"
@@ -3612,6 +3652,26 @@
                             ]
                           },
                           "type": "object"
+                        },
+                        "thumbnail": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "positionX": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "positionY": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "positionX",
+                            "positionY"
+                          ],
+                          "type": "object"
                         }
                       },
                       "type": "object"
@@ -4004,6 +4064,26 @@
                       "recipe"
                     ],
                     "type": "string"
+                  },
+                  "thumbnailPosition": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "positionX": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "positionY": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "positionX",
+                      "positionY"
+                    ],
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -4745,6 +4825,26 @@
                           "en"
                         ]
                       },
+                      "type": "object"
+                    },
+                    "thumbnail": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "positionX": {
+                          "maximum": 1,
+                          "minimum": 0,
+                          "type": "number"
+                        },
+                        "positionY": {
+                          "maximum": 1,
+                          "minimum": 0,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "positionX",
+                        "positionY"
+                      ],
                       "type": "object"
                     }
                   },

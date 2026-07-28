@@ -123,11 +123,35 @@ function deferred<T>(): {
 }
 
 describe("Theme Studio home", () => {
-  it("opens on the localized theme home with six built-in themes and metadata details", async () => {
+  it("uses the saved thumbnail focal point for card crops", async () => {
+    const studioBridge = bridge();
+    vi.mocked(studioBridge.listThemes).mockResolvedValueOnce({
+      themes: [{
+        ref: { id: "focused-theme", version: "1.0.0" },
+        name: "Focused theme",
+        author: "OpenChatGPTSkin",
+        homepage: null,
+        source: "builtin",
+        ready: true,
+        localOnly: false,
+        previewUrl: "/api/theme-preview?source=builtin&id=focused-theme&version=1.0.0",
+        thumbnailPosition: { positionX: 1, positionY: 0.5 },
+      }],
+    });
+
+    render(<ThemeStudioAppRoot bootstrap={bootstrap} bridge={studioBridge} />);
+
+    expect((await screen.findByRole("button", { name: /Focused theme/ }))
+      .querySelector<HTMLElement>(".home-theme-image")?.style.backgroundPosition)
+      .toBe("100% 50%");
+  });
+
+  it("opens on the localized theme home with seven built-in themes and metadata details", async () => {
     const studioBridge = bridge();
     const themes = [
       ["future-idol-cyan", "未来歌姬"],
       ["glacier-aurora", "冰川极光"],
+      ["goku-saiyan-engine", "Goku Saiyan Engine"],
       ["hoshimiya-ichigo-shining-stage", "Ichigo Hoshimiya Shining Stage"],
       ["mountain-mist", "山岚云海"],
       ["rose-carpet-star", "玫瑰星光"],
@@ -150,7 +174,7 @@ describe("Theme Studio home", () => {
     expect(await screen.findByRole("heading", { name: "给工作台，换一种心情。" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "我的主题" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "更多主题" })).toBeVisible();
-    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(6);
+    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(7);
     expect(screen.getAllByText("OpenChatGPTSkin").length).toBeGreaterThan(0);
     expect(screen.getAllByText("v1.2.2").length).toBeGreaterThan(0);
     expect(document.querySelector(".home-product-logo")).toBeInTheDocument();

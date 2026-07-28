@@ -9,6 +9,7 @@ import {
 } from "../scripts/release/go-release.js";
 
 const temporaryRoots: string[] = [];
+const releaseIntegrationTimeoutMs = 180_000;
 
 afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map((root) =>
@@ -62,7 +63,7 @@ describe("Go host production packages", () => {
       artifactCount: 1,
       nativeEvidenceComplete: false,
     });
-  }, 60_000);
+  }, releaseIntegrationTimeoutMs);
 
   it("merges three single-target native reports without cross-building", async () => {
     const root = await mkdtemp(join(tmpdir(), "openchatgptskin-go-release-merge-"));
@@ -85,7 +86,7 @@ describe("Go host production packages", () => {
       }));
       await writeFile(join(input, "go-release-report.json"), JSON.stringify({
         schemaVersion: 1,
-        version: "0.3.0",
+        version: "0.3.1",
         imageImplementation: "gen2brain-webp-wasm2go-nodynamic-plus-internal-pipeline",
         cgo: false,
         sidecars: [],

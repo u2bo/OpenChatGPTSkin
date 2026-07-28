@@ -123,11 +123,12 @@ function deferred<T>(): {
 }
 
 describe("Theme Studio home", () => {
-  it("opens on the localized theme home with five built-in themes and metadata details", async () => {
+  it("opens on the localized theme home with six built-in themes and metadata details", async () => {
     const studioBridge = bridge();
     const themes = [
       ["future-idol-cyan", "未来歌姬"],
       ["glacier-aurora", "冰川极光"],
+      ["hoshimiya-ichigo-shining-stage", "Ichigo Hoshimiya Shining Stage"],
       ["mountain-mist", "山岚云海"],
       ["rose-carpet-star", "玫瑰星光"],
       ["yua-mikami-starlight", "Yua Mikami Starlight"],
@@ -149,7 +150,7 @@ describe("Theme Studio home", () => {
     expect(await screen.findByRole("heading", { name: "给工作台，换一种心情。" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "我的主题" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "更多主题" })).toBeVisible();
-    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(5);
+    expect(await screen.findAllByRole("button", { name: /主题描述/ })).toHaveLength(6);
     expect(screen.getAllByText("OpenChatGPTSkin").length).toBeGreaterThan(0);
     expect(screen.getAllByText("v1.2.2").length).toBeGreaterThan(0);
     expect(document.querySelector(".home-product-logo")).toBeInTheDocument();

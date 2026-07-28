@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-	"strings"
+	"strconv"
 	"testing"
 )
 
@@ -16,19 +16,46 @@ type stubRunner struct {
 	err      error
 }
 
+type stubApplicationActivator struct {
+	appUserModelID string
+	arguments      string
+	processID      uint32
+	err            error
+}
+
 func (runner stubRunner) Run(context.Context, string) ([]byte, error) {
 	return runner.contents, runner.err
+}
+
+func (activator *stubApplicationActivator) ActivateApplication(appUserModelID, arguments string) (uint32, error) {
+	activator.appUserModelID = appUserModelID
+	activator.arguments = arguments
+	return activator.processID, activator.err
 }
 
 func validInstall() Install {
 	return Install{
 		PackageRoot:  `C:\Program Files\WindowsApps\OpenAI.Codex_26.721.3404.0_x64__2p2nqsd0c76g0`,
 		EntryPath:    `C:\Program Files\WindowsApps\OpenAI.Codex_26.721.3404.0_x64__2p2nqsd0c76g0\app\ChatGPT.exe`,
-		IdentityName: expectedIdentity, PackageVersion: "26.721.3404.0", PackagePublisher: expectedPublisher,
+		IdentityName: expectedIdentity, PackageFamilyName: expectedFamily, PackageVersion: "26.721.3404.0", PackagePublisher: expectedPublisher,
 		AppID: "App", EntryRelativePath: expectedEntry, EntryPoint: "Windows.FullTrustApplication",
 		PackageSignatureStatus: "Valid", PackageSignerCommonName: expectedSigner,
 		CatalogSignatureStatus: "Valid", CatalogSignerCommonName: expectedSigner,
 		EntryBlockMapValid: true, ResourceSignatureStatus: "Valid", ResourceSignerCommonName: expectedResource,
+	}
+}
+
+func TestManagedActivationUsesVerifiedAppxIdentityAndCDPArguments(t *testing.T) {
+	activator := &stubApplicationActivator{processID: 321}
+	processID, err := activateOfficialCodex(validInstall(), 9222, activator)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if processID != 321 || activator.appUserModelID != expectedFamily+"!App" {
+		t.Fatalf("pid=%d appUserModelID=%q", processID, activator.appUserModelID)
+	}
+	if activator.arguments != "--remote-debugging-address=127.0.0.1 --remote-debugging-port=9222" {
+		t.Fatalf("arguments=%q", activator.arguments)
 	}
 }
 
@@ -87,7 +114,7 @@ func TestRefuseUnmanagedCodexUsesTheRootProcessBoundary(t *testing.T) {
 }
 
 func TestPortInspectionRejectsMissingOwner(t *testing.T) {
-	_, err := parsePortInspection([]byte(`{"host":"127.0.0.1","port":9222,"owningPid":0,"ancestors":[]}`), 9222)
+	_, err := validatePortInspection(portInspection{Host: "127.0.0.1", Port: 9222}, 9222)
 	var runtimeError Error
 	if !errors.As(err, &runtimeError) || runtimeError.Code != "CDP_NOT_READY" {
 		t.Fatalf("error=%v", err)
@@ -95,15 +122,26 @@ func TestPortInspectionRejectsMissingOwner(t *testing.T) {
 }
 
 func TestPortInspectionAcceptsLoopbackOwnerInItsTree(t *testing.T) {
-	actual, err := parsePortInspection([]byte(`{"host":"127.0.0.1","port":9222,"owningPid":202,"ancestors":[202,101,1]}`), 9222)
+	actual, err := validatePortInspection(portInspection{
+		Host: "127.0.0.1", Port: 9222, OwningPID: 202, Ancestors: []int{202, 101, 1},
+	}, 9222)
 	if err != nil || actual.OwningPID != 202 {
 		t.Fatalf("inspection=%+v error=%v", actual, err)
 	}
 }
 
-func TestPortInspectionScriptUsesTheDocumentedOwningProcessProperty(t *testing.T) {
-	if strings.Contains(portScript, "OwningProcessID") || strings.Count(portScript, "OwningProcess") != 2 {
-		t.Fatalf("port inspection script has an unsafe owner field: %s", portScript)
+func TestProcessAncestryStopsAtManagedRootBeforeParentCycle(t *testing.T) {
+	ancestors, err := buildProcessAncestors(202, 101, map[int]int{202: 101, 101: 101})
+	if err != nil || len(ancestors) != 2 || ancestors[0] != 202 || ancestors[1] != 101 {
+		t.Fatalf("ancestors=%v error=%v", ancestors, err)
+	}
+}
+
+func TestProcessAncestryRejectsCycleBeforeManagedRoot(t *testing.T) {
+	_, err := buildProcessAncestors(202, 101, map[int]int{202: 303, 303: 202})
+	var runtimeError Error
+	if !errors.As(err, &runtimeError) || runtimeError.Code != "CDP_ENDPOINT_UNSAFE" {
+		t.Fatalf("error=%v", err)
 	}
 }
 
@@ -133,6 +171,28 @@ func TestLiveClosedCodexHasNoUnmanagedRoot(t *testing.T) {
 	}
 	if err := RefuseUnmanagedCodex(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestLiveCDPPortInspection(t *testing.T) {
+	value := os.Getenv("OPENCHATGPTSKIN_CDP_PORT")
+	if value == "" {
+		t.Skip("set OPENCHATGPTSKIN_CDP_PORT to a managed loopback CDP port")
+	}
+	port, err := strconv.Atoi(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner, err := loopbackTCPPortOwner(port)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inspection, err := inspectPort(context.Background(), port, owner)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inspection.Port != port || inspection.Host != "127.0.0.1" || inspection.OwningPID < 1 {
+		t.Fatalf("inspection=%+v", inspection)
 	}
 }
 

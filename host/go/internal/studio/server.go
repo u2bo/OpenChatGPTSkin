@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	viteScriptOpenTag = regexp.MustCompile(`(?i)<script\b[^>]*>`)
+	viteScriptOpenTag  = regexp.MustCompile(`(?i)<script\b[^>]*>`)
 	viteNonceAttribute = regexp.MustCompile(`(?i)\bnonce\s*=`)
 )
 
@@ -48,6 +48,13 @@ type RuntimeStatus struct {
 	Operation           *string        `json:"operation"`
 	NextAction          string         `json:"nextAction"`
 }
+
+type RuntimeError struct {
+	Code    string
+	Message string
+}
+
+func (err RuntimeError) Error() string { return err.Message }
 
 func StoppedRuntimeStatus() RuntimeStatus {
 	return RuntimeStatus{
@@ -803,6 +810,16 @@ func (state *handlerState) writeError(response http.ResponseWriter, err error) {
 		}
 		if workspaceErr.Code == "STUDIO_DRAFT_CONFLICT" {
 			status = http.StatusConflict
+		}
+	}
+	var runtimeErr RuntimeError
+	if errors.As(err, &runtimeErr) {
+		status, code, message = http.StatusUnprocessableEntity, runtimeErr.Code, runtimeErr.Message
+		if runtimeErr.Code == "CODEX_ALREADY_RUNNING_UNMANAGED" {
+			status = http.StatusConflict
+		}
+		if runtimeErr.Code == "RUNTIME_CONTROL_UNAVAILABLE" || runtimeErr.Code == "RUNTIME_STATUS_UNAVAILABLE" {
+			status = http.StatusServiceUnavailable
 		}
 	}
 	state.writeJSON(response, status, map[string]any{"error": map[string]string{"code": code, "message": message}})

@@ -153,6 +153,7 @@ Public themes are ready immediately after a clean checkout:
 - `rose-carpet-star`
 - `mountain-mist`
 - `glacier-aurora`
+- `hoshimiya-ichigo-shining-stage`
 - `yua-mikami-starlight`
 
 Asset-free recipes require a user-authorized local image and are never public-ready:

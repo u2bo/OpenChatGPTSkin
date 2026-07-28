@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/control"
@@ -38,17 +39,33 @@ func applyStudioTheme(ctx context.Context, dataRoot string, ref themerepo.Ref) (
 	}
 	response, err := runRuntime(ctx, []string{command, "--data-root", dataRoot, "--theme", ref.ID, "--theme-version", ref.Version})
 	if err != nil {
-		return studio.RuntimeStatus{}, err
+		return studio.RuntimeStatus{}, studioRuntimeError(err)
 	}
-	return studioStatusFromResponse(response)
+	return studioRuntimeStatus(response)
 }
 
 func restoreStudioTheme(ctx context.Context, dataRoot string) (studio.RuntimeStatus, error) {
 	response, err := runRuntime(ctx, []string{"restore", "--data-root", dataRoot})
 	if err != nil {
-		return studio.RuntimeStatus{}, err
+		return studio.RuntimeStatus{}, studioRuntimeError(err)
 	}
-	return studioStatusFromResponse(response)
+	return studioRuntimeStatus(response)
+}
+
+func studioRuntimeStatus(response control.Response) (studio.RuntimeStatus, error) {
+	status, err := studioStatusFromResponse(response)
+	if err != nil {
+		return studio.RuntimeStatus{}, studioRuntimeError(err)
+	}
+	return status, nil
+}
+
+func studioRuntimeError(err error) error {
+	var command commandError
+	if errors.As(err, &command) {
+		return studio.RuntimeError{Code: command.code, Message: command.message}
+	}
+	return err
 }
 
 func studioRequestID() string {

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "themeId": "hoshimiya-ichigo-shining-stage",
+  "themeVersion": "1.0.0",
+  "files": {
+    "theme.json": {
+      "bytes": 5008,
+      "sha256": "4d4a4a16e32fe909a869016712d041d1b42c602da2c1fdca2c2b03f979725c90"
+    },
+    "assets/background.webp": {
+      "bytes": 280902,
+      "sha256": "8e31d2066181f27bd9d018eaae43d3c8d9de0f8e89e843a675507d5952fa36f2"
+    },
+    "assets/profile-avatar.webp": {
+      "bytes": 20698,
+      "sha256": "dc3504b7e1501f13b2a2c29eda2e285a8a56d46b24cb2f323be351c32ded87f0"
+    },
+    "assets/suggestion-card1.webp": {
+      "bytes": 9030,
+      "sha256": "09ec6fe6267853dae5ebd9c1a8ed4ff2d8e755f09554a53ec85037abb9533aac"
+    },
+    "assets/suggestion-card2.webp": {
+      "bytes": 8034,
+      "sha256": "c250c529c7592fa13ae8193e9ab34b4ae75b5112a2be8f507aa6e4c496f3d73d"
+    },
+    "assets/suggestion-card3.webp": {
+      "bytes": 8706,
+      "sha256": "45bf8243ccb5340dafa1f376d6ea214a4de5baefbbdd97c521e2252011c6c3f1"
+    },
+    "assets/suggestion-card4.webp": {
+      "bytes": 6554,
+      "sha256": "acbde5449d6d2e6a4a33d6af8ebbeb8038c491c8d6d5ac432f52676d8b9351b3"
+    },
+    "preview.webp": {
+      "bytes": 87280,
+      "sha256": "b21f3d1b8d66b995c2f035b7cc24a11c5d837104e5c7bffafaa07910da109746"
+    }
+  }
+}

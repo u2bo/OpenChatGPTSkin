@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import { verifyFrozenBaseline } from "../../scripts/contracts/baseline.js";
 
 describe("v0.2.0 Go migration baseline", () => {
-  it("verifies the frozen release, contract, stage, and theme evidence read-only", async () => {
+  it("accepts catalog additions while retaining the frozen five-theme evidence", async () => {
     const report = await verifyFrozenBaseline(process.cwd());
+    const currentCatalog = JSON.parse(await readFile("themes/catalog.json", "utf8")) as {
+      readonly builtins: readonly unknown[];
+    };
 
     expect(report).toEqual({
       baselineVersion: "0.2.0",
@@ -13,6 +16,7 @@ describe("v0.2.0 Go migration baseline", () => {
       themeCount: 5,
       verified: true,
     });
+    expect(currentCatalog.builtins).toHaveLength(6);
   });
 
   it("exposes the verifier through the documented package command", async () => {

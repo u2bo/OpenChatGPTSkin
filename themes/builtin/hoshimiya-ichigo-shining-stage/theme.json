@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 4,
+  "kind": "theme",
+  "appearance": "dark",
+  "id": "hoshimiya-ichigo-shining-stage",
+  "name": "星宫莓·闪耀舞台",
+  "description": "莓红、粉金霓虹与偶像舞台灯光构成的明亮沉浸主题。",
+  "version": "1.0.0",
+  "author": "OpenChatGPTSkin",
+  "metadata": {
+    "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localized": {
+      "en": {
+        "name": "Ichigo Hoshimiya Shining Stage",
+        "description": "A bright immersive idol-stage theme shaped by strawberry red, pink-gold neon, and sparkling lights."
+      }
+    }
+  },
+  "assets": {
+    "background": "assets/background.webp",
+    "profileAvatar": "assets/profile-avatar.webp",
+    "suggestionIcons": {
+      "card1": "assets/suggestion-card1.webp",
+      "card2": "assets/suggestion-card2.webp",
+      "card3": "assets/suggestion-card3.webp",
+      "card4": "assets/suggestion-card4.webp"
+    },
+    "projectIcons": [
+      "assets/suggestion-card4.webp",
+      "assets/suggestion-card1.webp",
+      "assets/suggestion-card3.webp",
+      "assets/suggestion-card2.webp"
+    ]
+  },
+  "colors": {
+    "accent": "#ff4f91",
+    "secondary": "#ffd166",
+    "text": "#fff6e8",
+    "muted": "#dba0b4",
+    "panel": "#5a0b2d",
+    "border": "rgba(255, 209, 102, 0.68)",
+    "success": "#7ee6a1",
+    "warning": "#ffd166",
+    "danger": "#ff668e",
+    "info": "#9ad9ff",
+    "textSecondary": "#ffd8d0",
+    "link": "#ffe082",
+    "inputText": "#fff6e8",
+    "placeholder": "#f1b2c7",
+    "codeText": "#ffe4cf"
+  },
+  "typography": {
+    "uiFamily": "Microsoft YaHei UI",
+    "codeFamily": "Cascadia Code",
+    "scale": 1,
+    "uiSize": 14,
+    "codeSize": 13,
+    "uiWeight": 500,
+    "codeWeight": 400,
+    "lineHeight": 1.5,
+    "displayFamily": "Microsoft YaHei UI",
+    "displaySize": 48,
+    "displayWeight": 700,
+    "displayLineHeight": 1.28,
+    "displayLetterSpacing": 0.02
+  },
+  "background": {
+    "positionX": 0.5,
+    "positionY": 0.5,
+    "scale": 1,
+    "blur": 0,
+    "brightness": 1.08,
+    "overlay": 0,
+    "safeArea": "none",
+    "taskMode": "full",
+    "taskOpacity": 0.16
+  },
+  "surfaces": {
+    "baseOpacity": 0.14,
+    "elevatedOpacity": 0.52,
+    "terminalOpacity": 0.68,
+    "blur": 0
+  },
+  "decorations": [
+    {
+      "type": "sparkles",
+      "enabled": true,
+      "intensity": 0.72,
+      "placement": "background",
+      "opacity": 0.78,
+      "scale": 1.1
+    },
+    {
+      "type": "ribbon",
+      "enabled": true,
+      "intensity": 0.48
+    }
+  ],
+  "layout": {
+    "heroHeight": 420,
+    "cardColumns": 4,
+    "composerWidth": 0.76,
+    "sidebarDensity": "comfortable",
+    "moduleGap": 16,
+    "modules": [
+      {
+        "id": "sidebar",
+        "order": 0,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "topbar",
+        "order": 1,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "hero",
+        "order": 2,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "suggestions",
+        "order": 3,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "project-picker",
+        "order": 4,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "composer",
+        "order": 5,
+        "visible": true,
+        "size": "regular",
+        "align": "center",
+        "spacing": 12
+      },
+      {
+        "id": "task-background",
+        "order": 6,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 0
+      },
+      {
+        "id": "content-layer",
+        "order": 7,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      }
+    ]
+  },
+  "rights": {
+    "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied",
+    "attribution": "User-supplied character background and MIT-licensed Phosphor icon derivatives prepared for OpenChatGPTSkin",
+    "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localOnly": false
+  },
+  "interfaceImages": {
+    "profileAvatarSize": 26,
+    "suggestionIconSize": 52,
+    "projectIconSize": 20
+  },
+  "home": {
+    "welcome": {
+      "localized": {
+        "zh-CN": {
+          "lines": [
+            "我们应该在",
+            "「{projectName}」中构建什么？"
+          ]
+        },
+        "en": {
+          "lines": [
+            "What should we build",
+            "in \"{projectName}\"?"
+          ]
+        }
+      },
+      "layout": {
+        "anchor": "top-left",
+        "positionX": 0.05,
+        "positionY": 0.22,
+        "width": 0.62,
+        "textAlign": "center",
+        "hideNativeIcon": true
+      }
+    }
+  },
+  "composition": {
+    "layers": []
+  }
+}

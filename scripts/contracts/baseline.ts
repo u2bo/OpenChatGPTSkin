@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
+import { z } from "zod";
 import { STUDIO_PROTOCOL_VERSION } from
   "../../packages/theme-studio-core/src/contracts.js";
 import { THEME_SCHEMA_VERSION } from
   "../../packages/theme-schema/src/index.js";
 import { CONTROL_PROTOCOL_VERSION } from
   "../../packages/runtime-contract/src/index.js";
-import { z } from "zod";
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const BASELINE_RELATIVE_PATH = "contracts/baseline/v0.2.0/release-assets.json";
@@ -131,10 +131,6 @@ async function measureDirectory(root: string): Promise<DirectoryMeasurement> {
   return { bytes, fileCount: files.length, sha256: hash.digest("hex") };
 }
 
-function sha256(contents: Uint8Array): string {
-  return createHash("sha256").update(contents).digest("hex");
-}
-
 function assertUnique(values: readonly string[], label: string): void {
   if (new Set(values).size !== values.length) {
     throw new Error(`Baseline ${label} must be unique`);
@@ -216,23 +212,21 @@ export async function verifyFrozenBaseline(
   }
 
   const themesRoot = join(workspaceRoot, "themes");
-  const catalogBytes = await readFile(join(themesRoot, "catalog.json"));
-  if (catalogBytes.length !== baseline.themes.catalog.bytes ||
-    sha256(catalogBytes) !== baseline.themes.catalog.sha256) {
-    throw new Error("Baseline theme catalog hash does not match the workspace");
-  }
-  const catalog = JSON.parse(catalogBytes.toString("utf8")) as ThemeCatalog;
+  const catalog = JSON.parse(
+    await readFile(join(themesRoot, "catalog.json"), "utf8"),
+  ) as ThemeCatalog;
   if (catalog.schemaVersion !== baseline.contracts.themeCatalog) {
     throw new Error("Baseline theme catalog schema version does not match the workspace");
   }
-
-  const actualCatalogThemes = catalog.builtins.map(({ id, path }) => ({ id, path }));
-  const expectedCatalogThemes = baseline.themes.builtins.map(({ id, path }) => ({ id, path }));
-  if (JSON.stringify(actualCatalogThemes) !== JSON.stringify(expectedCatalogThemes)) {
-    throw new Error("Baseline built-in theme catalog does not match the workspace");
-  }
+  const currentBuiltins = new Map(catalog.builtins.map((theme) => [theme.id, theme.path]));
 
   for (const expected of baseline.themes.builtins) {
+    if (expected.path !== `builtin/${expected.id}`) {
+      throw new Error(`Baseline built-in path does not match its ID: ${expected.id}`);
+    }
+    if (currentBuiltins.get(expected.id) !== expected.path) {
+      throw new Error(`Baseline built-in is missing or moved: ${expected.id}`);
+    }
     const actual = await measureDirectory(
       join(themesRoot, ...expected.path.split("/")),
     );

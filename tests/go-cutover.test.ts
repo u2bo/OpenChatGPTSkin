@@ -7,7 +7,7 @@ describe("Go production cutover", () => {
       readonly version: string;
       readonly scripts: Readonly<Record<string, string>>;
     };
-    expect(packageJson.version).toBe("0.3.0");
+    expect(packageJson.version).toBe("0.3.1");
     expect(packageJson.scripts["studio:dev"]).toContain("go:cdp-adapter:build");
     expect(packageJson.scripts["go:verify"]).toContain("go:cdp-adapter:verify");
     expect(packageJson.scripts.runtime).toContain("host/go");
@@ -36,8 +36,8 @@ describe("Go production cutover", () => {
       expect(text).not.toContain("release:node");
       expect(text).not.toContain("OpenChatGPTSkin.cmd");
     }
-    expect(readme).toContain("OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe");
-    expect(readmeEn).toContain("OpenChatGPTSkin_0.3.0_windows_x64_Setup.exe");
+    expect(readme).toContain("OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe");
+    expect(readmeEn).toContain("OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe");
     expect(workflow).toContain("npm run release:build -- --native-only");
   });
 

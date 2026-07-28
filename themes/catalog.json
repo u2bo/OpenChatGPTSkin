@@ -24,6 +24,17 @@
       "preview": "builtin/glacier-aurora/preview.webp"
     },
     {
+      "id": "hoshimiya-ichigo-shining-stage",
+      "name": "星宫莓·闪耀舞台",
+      "version": "1.0.0",
+      "kind": "theme",
+      "path": "builtin/hoshimiya-ichigo-shining-stage",
+      "ready": true,
+      "localOnly": false,
+      "licenseId": "LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied",
+      "preview": "builtin/hoshimiya-ichigo-shining-stage/preview.webp"
+    },
+    {
       "id": "mountain-mist",
       "name": "山岚云海",
       "version": "1.3.1",

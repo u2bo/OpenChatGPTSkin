@@ -17,25 +17,34 @@ import { CharacterThemeTemplateSchema } from
   "../scripts/character-theme-template.js";
 
 describe("built-in catalog", () => {
-  it("ships five complete public themes without local authorization recipes", async () => {
+  it("ships six complete public themes without local authorization recipes", async () => {
     const catalog = await loadThemeCatalog(resolve("themes"));
     expect(catalog.builtins.map((entry) => entry.id)).toEqual([
       "future-idol-cyan",
       "glacier-aurora",
+      "hoshimiya-ichigo-shining-stage",
       "mountain-mist",
       "rose-carpet-star",
       "yua-mikami-starlight",
     ]);
     expect(catalog.recipes).toEqual([]);
     expect(catalog.builtins.every((entry) => entry.ready)).toBe(true);
-    expect(catalog.builtins.filter((entry) => entry.id !== "yua-mikami-starlight")
+    const authorizedCharacterIds = new Set([
+      "hoshimiya-ichigo-shining-stage",
+      "yua-mikami-starlight",
+    ]);
+    expect(catalog.builtins.filter((entry) => !authorizedCharacterIds.has(entry.id))
       .every((entry) => entry.licenseId === "LicenseRef-OpenChatGPTSkin-Original"))
       .toBe(true);
+    expect(catalog.builtins.find((entry) =>
+      entry.id === "hoshimiya-ichigo-shining-stage")?.licenseId)
+      .toBe("LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied");
     expect(catalog.builtins.find((entry) => entry.id === "yua-mikami-starlight")?.licenseId)
       .toBe("LicenseRef-OpenChatGPTSkin-Mixed-Authorized");
     expect((await readdir(resolve("themes", "sources"))).sort()).toEqual([
       "future-idol-cyan",
       "glacier-aurora",
+      "hoshimiya-ichigo-shining-stage",
       "mountain-mist",
       "rose-carpet-star",
       "yua-mikami-starlight",
@@ -67,9 +76,13 @@ describe("built-in catalog", () => {
       expect(license).toContain("Source SHA-256");
       expect(license).toContain("Background SHA-256");
       expect(license).toContain("Prompt:");
-      expect(license).toContain(entry.id === "yua-mikami-starlight"
-        ? "Authorized portrait background supplied by the OpenChatGPTSkin project owner"
-        : "Original AI-generated background supplied by the OpenChatGPTSkin project owner");
+      expect(license).toContain(
+        entry.id === "yua-mikami-starlight"
+          ? "Authorized portrait background supplied by the OpenChatGPTSkin project owner"
+          : entry.id === "hoshimiya-ichigo-shining-stage"
+            ? "Character stage background supplied by the OpenChatGPTSkin project owner"
+            : "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
+      );
       const sourceDirectory = resolve("themes", "sources", entry.id);
       const template = CharacterThemeTemplateSchema.parse(JSON.parse(
         await readFile(join(sourceDirectory, "template.json"), "utf8"),
@@ -99,17 +112,19 @@ describe("built-in catalog", () => {
           blur: 0,
           brightness: entry.id === "future-idol-cyan" ? 1.1 :
             entry.id === "glacier-aurora" ? 1.05 :
-              entry.id === "mountain-mist" || entry.id === "rose-carpet-star" ? 1.08 : 1,
+              ["hoshimiya-ichigo-shining-stage", "mountain-mist", "rose-carpet-star"]
+                .includes(entry.id) ? 1.08 : 1,
           overlay: 0,
           safeArea: "none",
           taskMode: "full",
-          taskOpacity: 0.18,
+          taskOpacity: entry.id === "hoshimiya-ichigo-shining-stage" ? 0.16 : 0.18,
         },
         surfaces: { blur: 0 },
       });
       expect(theme.surfaces.baseOpacity, entry.id).toBe(
         entry.id === "yua-mikami-starlight" ? 0.18 :
-          entry.id === "future-idol-cyan" ? 0.14 :
+          ["future-idol-cyan", "hoshimiya-ichigo-shining-stage"].includes(entry.id)
+            ? 0.14 :
             entry.id === "glacier-aurora" ? 0.2 : 0.16,
       );
       if (entry.id === "yua-mikami-starlight") {
@@ -148,6 +163,40 @@ describe("built-in catalog", () => {
           "assets/corner-signature.webp",
           "assets/vertical-tag.webp",
           "assets/love-code-create.webp",
+        ]) {
+          const metadata = await sharp(join(directory, ...path.split("/"))).metadata();
+          expect(metadata.hasAlpha, path).toBe(true);
+        }
+      } else if (entry.id === "hoshimiya-ichigo-shining-stage") {
+        expect(theme).toMatchObject({
+          version: "1.0.0",
+          background: { scale: 1, taskOpacity: 0.16 },
+          interfaceImages: {
+            profileAvatarSize: 26,
+            suggestionIconSize: 52,
+            projectIconSize: 20,
+          },
+          assets: {
+            projectIcons: [
+              "assets/suggestion-card4.webp",
+              "assets/suggestion-card1.webp",
+              "assets/suggestion-card3.webp",
+              "assets/suggestion-card2.webp",
+            ],
+          },
+          home: {
+            welcome: {
+              localized: {
+                "zh-CN": { lines: ["我们应该在", "「{projectName}」中构建什么？"] },
+              },
+            },
+          },
+        });
+        for (const path of [
+          "assets/suggestion-card1.webp",
+          "assets/suggestion-card2.webp",
+          "assets/suggestion-card3.webp",
+          "assets/suggestion-card4.webp",
         ]) {
           const metadata = await sharp(join(directory, ...path.split("/"))).metadata();
           expect(metadata.hasAlpha, path).toBe(true);

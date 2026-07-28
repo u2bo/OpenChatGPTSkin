@@ -117,6 +117,28 @@ func TestStudioServesOnlyLoopbackSecureSessionAndThemeLibrary(t *testing.T) {
 	}
 }
 
+func TestStudioPreservesRuntimeFailureCodeAndMessage(t *testing.T) {
+	response := httptest.NewRecorder()
+	state := &handlerState{}
+	state.writeError(response, RuntimeError{
+		Code:    "CODEX_LAUNCH_FAILED",
+		Message: "Windows could not activate the verified ChatGPT application",
+	})
+	if response.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	var body struct {
+		Error map[string]string `json:"error"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Error["code"] != "CODEX_LAUNCH_FAILED" ||
+		body.Error["message"] != "Windows could not activate the verified ChatGPT application" {
+		t.Fatalf("body=%s", response.Body.String())
+	}
+}
+
 func TestStudioRejectsReplayCrossOriginAndUnauthenticatedAPI(t *testing.T) {
 	server, err := Start(context.Background(), studioFixture(t))
 	if err != nil {

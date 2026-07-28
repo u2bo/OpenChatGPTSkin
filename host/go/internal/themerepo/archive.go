@@ -261,6 +261,7 @@ func (repository *Repository) listPersonal() ([]ListItem, error) {
 				Ref: ref, Name: header.Name, Description: header.Description, Author: header.Author,
 				Homepage: header.Metadata.Homepage, Localized: header.Metadata.Localized,
 				Source: "personal", Ready: true, LocalOnly: header.Rights.LocalOnly, PreviewURL: previewURL,
+				ThumbnailPosition: header.Metadata.Thumbnail,
 			})
 		}
 	}

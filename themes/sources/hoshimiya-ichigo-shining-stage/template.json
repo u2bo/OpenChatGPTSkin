@@ -149,6 +149,9 @@
       "layers": []
     }
   },
+  "presentation": {
+    "thumbnailPosition": { "positionX": 1, "positionY": 0.5 }
+  },
   "outputs": {
     "assets/background.webp": { "kind": "file", "file": "assets/background.png" },
     "assets/profile-avatar.webp": { "kind": "background-crop", "positionX": 0.73, "positionY": 0.24 },

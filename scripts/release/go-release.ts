@@ -677,6 +677,7 @@ export async function acceptGoReleasePackages(
       "themes/catalog.json",
       "themes/builtin/future-idol-cyan/theme.json",
       "themes/builtin/glacier-aurora/theme.json",
+      "themes/builtin/goku-saiyan-engine/theme.json",
       "themes/builtin/hoshimiya-ichigo-shining-stage/theme.json",
       "themes/builtin/mountain-mist/theme.json",
       "themes/builtin/rose-carpet-star/theme.json",

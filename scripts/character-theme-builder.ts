@@ -34,6 +34,7 @@ const MAX_SOURCE_FONT_BYTES = 5 * 1024 * 1024;
 
 const TemplateEnvelopeSchema = z.object({
   theme: z.unknown(),
+  presentation: z.unknown().optional(),
   outputs: z.record(z.string(), z.unknown()),
   provenance: z.array(z.unknown()),
 }).strict();
@@ -461,5 +462,6 @@ export async function buildCharacterTheme(
     localOnly: template.theme.rights.localOnly,
     licenseId: template.theme.rights.licenseId,
     preview: `builtin/${template.theme.id}/preview.webp`,
+    thumbnailPosition: template.presentation?.thumbnailPosition,
   };
 }

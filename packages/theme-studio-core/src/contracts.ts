@@ -74,6 +74,10 @@ export const StudioThemeListItemSchema = z.object({
   ready: z.boolean(),
   localOnly: z.boolean(),
   previewUrl: z.string().startsWith("/api/").nullable(),
+  thumbnailPosition: z.object({
+    positionX: z.number().min(0).max(1),
+    positionY: z.number().min(0).max(1),
+  }).strict().optional(),
 }).strict();
 
 export const StudioThemeLibrarySchema = z.object({

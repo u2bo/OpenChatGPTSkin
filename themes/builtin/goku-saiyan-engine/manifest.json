@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "themeId": "goku-saiyan-engine",
+  "themeVersion": "1.0.0",
+  "files": {
+    "theme.json": {
+      "bytes": 4880,
+      "sha256": "c77146f2dbcfc85750a2bb41d21a5b50b66721ebcc5826d303a107177c9893d9"
+    },
+    "assets/background.webp": {
+      "bytes": 275842,
+      "sha256": "18aa5ec6ec4c08a241dda7789948b312d005b3cf599f319f468c658a1ef87ef1"
+    },
+    "assets/profile-avatar.webp": {
+      "bytes": 24298,
+      "sha256": "a00669d75447963a0b39a31781a8baa98bf7990e6ed96d48c28f033b17319e5d"
+    },
+    "assets/suggestion-card1.webp": {
+      "bytes": 18460,
+      "sha256": "f56b7c050d5c98314154e730e3d8363a280bcd21dea55a95b861b3b406371be9"
+    },
+    "assets/suggestion-card2.webp": {
+      "bytes": 8140,
+      "sha256": "a7872dc0e1915e183f0ac9caa1438825a252e9ee7013a6b01a3009d8fa8d7705"
+    },
+    "assets/suggestion-card3.webp": {
+      "bytes": 5704,
+      "sha256": "aec34b5590f1f83b0309436454f1692def78737567afdfa302cf0bd1d6c2c6cc"
+    },
+    "assets/suggestion-card4.webp": {
+      "bytes": 9562,
+      "sha256": "8cea699e86ad63ae6fe119adaae238735746376fb992323f0909f104443734ee"
+    },
+    "preview.webp": {
+      "bytes": 80008,
+      "sha256": "d04e6ee3f729b1de9c9c253f83e6f7e69c52e10b07ef14146414d4b8fc4a3bc5"
+    }
+  }
+}

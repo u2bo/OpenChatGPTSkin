@@ -72,6 +72,12 @@ function ThemeCard({
 }) {
   const t = studioCopy(locale);
   const localized = localizedTheme(theme, locale);
+  const thumbnailStyle = theme.previewUrl ? {
+    backgroundImage: `url("${theme.previewUrl}")`,
+    backgroundPosition: theme.thumbnailPosition
+      ? `${theme.thumbnailPosition.positionX * 100}% ${theme.thumbnailPosition.positionY * 100}%`
+      : undefined,
+  } : undefined;
   return (
     <button
       type="button"
@@ -84,7 +90,7 @@ function ThemeCard({
           ? <span
               className="home-theme-image"
               aria-hidden="true"
-              style={{ backgroundImage: `url("${theme.previewUrl}")` }}
+              style={thumbnailStyle}
             />
           : <span className="home-theme-fallback"><PaintBrushBroad weight="duotone" /></span>}
         {active ? <small className="home-card-badge active"><Check weight="bold" />{t.current}</small>
@@ -123,6 +129,12 @@ export function StudioHome(props: StudioHomeProps) {
       ? `url(${JSON.stringify(selectedTheme.previewUrl)})`
       : "none",
   } as CSSProperties;
+  const selectedThumbnailStyle = selectedTheme?.previewUrl ? {
+    backgroundImage: `url("${selectedTheme.previewUrl}")`,
+    backgroundPosition: selectedTheme.thumbnailPosition
+      ? `${selectedTheme.thumbnailPosition.positionX * 100}% ${selectedTheme.thumbnailPosition.positionY * 100}%`
+      : undefined,
+  } : undefined;
 
   return (
     <main className="studio-home-shell" style={homeStyle}>
@@ -220,7 +232,7 @@ export function StudioHome(props: StudioHomeProps) {
                 ? <span
                     className="home-detail-image"
                     aria-hidden="true"
-                    style={{ backgroundImage: `url("${selectedTheme.previewUrl}")` }}
+                    style={selectedThumbnailStyle}
                   />
                 : <PaintBrushBroad weight="duotone" />}</div>
               <dl>

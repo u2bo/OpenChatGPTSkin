@@ -11,6 +11,7 @@ import {
 
 const RUNTIME_THEME_IDS = [
   "future-idol-cyan",
+  "goku-saiyan-engine",
   "hoshimiya-ichigo-shining-stage",
   "rose-carpet-star",
   "mountain-mist",

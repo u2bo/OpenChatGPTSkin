@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -53,6 +54,7 @@ func TestSelectCodexTargetRejectsAmbiguousPages(t *testing.T) {
 }
 
 func TestConnectionEvaluatesOnlyOverVerifiedLoopbackSocket(t *testing.T) {
+	var restoreChecks atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		if request.URL.Path == "/json/list" {
 			endpoint := testEndpoint(t, "http://"+request.Host)
@@ -98,6 +100,12 @@ func TestConnectionEvaluatesOnlyOverVerifiedLoopbackSocket(t *testing.T) {
 			value := `{"main":true,"navigation":true,"composer":true}`
 			if strings.Contains(message.Params.Expression, "__openChatGPTSkinAdapter.source(") {
 				value = `"true"`
+			} else if strings.Contains(message.Params.Expression, `"validateRestore"`) {
+				if restoreChecks.Add(1) > 1 {
+					value = "true"
+				} else {
+					value = "false"
+				}
 			} else if message.Params.Expression == "true" || len(payload) > 64*1024 || strings.Contains(message.Params.Expression, "__openChatGPTSkinAdapter") {
 				value = "true"
 			}
@@ -143,6 +151,9 @@ func TestConnectionEvaluatesOnlyOverVerifiedLoopbackSocket(t *testing.T) {
 	}
 	if err := connection.RestoreTheme(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	if restoreChecks.Load() != 2 {
+		t.Fatalf("restore checks=%d, want 2", restoreChecks.Load())
 	}
 }
 

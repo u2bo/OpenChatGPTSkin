@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -35,17 +36,23 @@ type Localized struct {
 	Description string `json:"description,omitempty"`
 }
 
+type ThumbnailPosition struct {
+	PositionX float64 `json:"positionX"`
+	PositionY float64 `json:"positionY"`
+}
+
 type ListItem struct {
-	Ref         Ref                  `json:"ref"`
-	Name        string               `json:"name"`
-	Description string               `json:"description,omitempty"`
-	Author      string               `json:"author"`
-	Homepage    *string              `json:"homepage"`
-	Localized   map[string]Localized `json:"localized,omitempty"`
-	Source      string               `json:"source"`
-	Ready       bool                 `json:"ready"`
-	LocalOnly   bool                 `json:"localOnly"`
-	PreviewURL  *string              `json:"previewUrl"`
+	Ref               Ref                  `json:"ref"`
+	Name              string               `json:"name"`
+	Description       string               `json:"description,omitempty"`
+	Author            string               `json:"author"`
+	Homepage          *string              `json:"homepage"`
+	Localized         map[string]Localized `json:"localized,omitempty"`
+	Source            string               `json:"source"`
+	Ready             bool                 `json:"ready"`
+	LocalOnly         bool                 `json:"localOnly"`
+	PreviewURL        *string              `json:"previewUrl"`
+	ThumbnailPosition *ThumbnailPosition   `json:"thumbnailPosition,omitempty"`
 }
 
 type Library struct {
@@ -69,15 +76,16 @@ type catalog struct {
 }
 
 type catalogEntry struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Version   string `json:"version"`
-	Kind      string `json:"kind"`
-	Path      string `json:"path"`
-	Ready     bool   `json:"ready"`
-	LocalOnly bool   `json:"localOnly"`
-	LicenseID string `json:"licenseId"`
-	Preview   string `json:"preview,omitempty"`
+	ID                string             `json:"id"`
+	Name              string             `json:"name"`
+	Version           string             `json:"version"`
+	Kind              string             `json:"kind"`
+	Path              string             `json:"path"`
+	Ready             bool               `json:"ready"`
+	LocalOnly         bool               `json:"localOnly"`
+	LicenseID         string             `json:"licenseId"`
+	Preview           string             `json:"preview,omitempty"`
+	ThumbnailPosition *ThumbnailPosition `json:"thumbnailPosition,omitempty"`
 }
 
 type themeHeader struct {
@@ -91,6 +99,7 @@ type themeHeader struct {
 	Metadata      struct {
 		Homepage  *string              `json:"homepage"`
 		Localized map[string]Localized `json:"localized,omitempty"`
+		Thumbnail *ThumbnailPosition   `json:"thumbnail,omitempty"`
 	} `json:"metadata,omitempty"`
 	Rights struct {
 		LocalOnly bool `json:"localOnly"`
@@ -232,6 +241,10 @@ func validateCatalogEntry(entry catalogEntry) error {
 	if !validRef(Ref{ID: entry.ID, Version: entry.Version}) || entry.Name == "" || entry.LicenseID == "" {
 		return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme catalog entry is invalid"}
 	}
+	if thumbnail := entry.ThumbnailPosition; thumbnail != nil &&
+		(!finiteUnit(thumbnail.PositionX) || !finiteUnit(thumbnail.PositionY)) {
+		return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme catalog thumbnail focal point is invalid"}
+	}
 	if entry.Kind == "theme" {
 		expectedPath := filepath.ToSlash(filepath.Join("builtin", entry.ID))
 		expectedPreview := filepath.ToSlash(filepath.Join(expectedPath, "preview.webp"))
@@ -266,17 +279,22 @@ func (repository *Repository) libraryItem(entry catalogEntry) (ListItem, error) 
 		value := "/api/theme-preview?source=builtin&id=" + entry.ID + "&version=" + entry.Version
 		previewURL = &value
 	}
+	thumbnail := entry.ThumbnailPosition
+	if thumbnail == nil {
+		thumbnail = header.Metadata.Thumbnail
+	}
 	return ListItem{
-		Ref:         Ref{ID: entry.ID, Version: entry.Version},
-		Name:        header.Name,
-		Description: header.Description,
-		Author:      header.Author,
-		Homepage:    header.Metadata.Homepage,
-		Localized:   header.Metadata.Localized,
-		Source:      map[bool]string{true: "builtin", false: "recipe"}[entry.Kind == "theme"],
-		Ready:       entry.Ready,
-		LocalOnly:   entry.LocalOnly,
-		PreviewURL:  previewURL,
+		Ref:               Ref{ID: entry.ID, Version: entry.Version},
+		Name:              header.Name,
+		Description:       header.Description,
+		Author:            header.Author,
+		Homepage:          header.Metadata.Homepage,
+		Localized:         header.Metadata.Localized,
+		Source:            map[bool]string{true: "builtin", false: "recipe"}[entry.Kind == "theme"],
+		Ready:             entry.Ready,
+		LocalOnly:         entry.LocalOnly,
+		PreviewURL:        previewURL,
+		ThumbnailPosition: thumbnail,
 	}, nil
 }
 
@@ -323,7 +341,15 @@ func (repository *Repository) readHeader(entry catalogEntry) (themeHeader, error
 	if header.SchemaVersion != 4 || !validRef(Ref{ID: header.ID, Version: header.Version}) || header.Name == "" || header.Author == "" {
 		return themeHeader{}, Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme metadata is invalid"}
 	}
+	if thumbnail := header.Metadata.Thumbnail; thumbnail != nil &&
+		(!finiteUnit(thumbnail.PositionX) || !finiteUnit(thumbnail.PositionY)) {
+		return themeHeader{}, Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme thumbnail focal point is invalid"}
+	}
 	return header, nil
+}
+
+func finiteUnit(value float64) bool {
+	return !math.IsNaN(value) && !math.IsInf(value, 0) && value >= 0 && value <= 1
 }
 
 func (repository *Repository) safePath(relative string) (string, error) {

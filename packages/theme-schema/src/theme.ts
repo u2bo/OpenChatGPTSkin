@@ -151,6 +151,10 @@ export const ThemeMetadataSchema = z.object({
     name: z.string().trim().min(1).max(80).optional(),
     description: z.string().trim().min(1).max(240).optional(),
   }).strict()).optional(),
+  thumbnail: z.object({
+    positionX: z.number().min(0).max(1),
+    positionY: z.number().min(0).max(1),
+  }).strict().optional(),
 }).strict();
 
 function isColor(value: string): boolean {

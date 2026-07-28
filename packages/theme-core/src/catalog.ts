@@ -5,6 +5,10 @@ import { ThemeIdSchema, ThemeVersionSchema } from "@open-chatgpt-skin/theme-sche
 
 const catalogPath = z.string().regex(/^(?:builtin|recipes)\/[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const previewPath = z.string().regex(/^builtin\/[a-z0-9]+(?:-[a-z0-9]+)*\/preview\.webp$/);
+const thumbnailPosition = z.object({
+  positionX: z.number().min(0).max(1),
+  positionY: z.number().min(0).max(1),
+}).strict();
 
 export const ThemeCatalogEntrySchema = z.object({
   id: ThemeIdSchema,
@@ -16,6 +20,7 @@ export const ThemeCatalogEntrySchema = z.object({
   localOnly: z.boolean(),
   licenseId: z.string().trim().min(1).max(100),
   preview: z.string().optional(),
+  thumbnailPosition: thumbnailPosition.optional(),
 }).strict().superRefine((entry, context) => {
   const expectedPath = `${entry.kind === "theme" ? "builtin" : "recipes"}/${entry.id}`;
   if (entry.path !== expectedPath) {
@@ -42,7 +47,7 @@ export const ThemeCatalogEntrySchema = z.object({
     return;
   }
 
-  if (entry.ready || !entry.localOnly || entry.preview) {
+  if (entry.ready || !entry.localOnly || entry.preview || entry.thumbnailPosition) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       message: "local recipe catalog entry is inconsistent",

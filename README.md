@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-v0.3.1-2ea44f)
+![Status](https://img.shields.io/badge/status-v0.3.2-2ea44f)
 ![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
 ![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
@@ -32,17 +32,17 @@
 
 ## 概念探索
 
-下面的概念图用于探索 OpenChatGPTSkin 在高能科幻方向上的可定制空间，图片保持原始宽高比，不做裁切。已经落地的“星宫莓·闪耀舞台”不再列为概念，请在[内置主题](#内置主题)中查看真实应用截图。
+下面的概念图用于探索 OpenChatGPTSkin 在高能科幻方向上的可定制空间，图片保持原始宽高比，不做裁切。“星宫莓·闪耀舞台”和“孙悟空·赛亚引擎”均已在正式包发布；请在[内置主题](#内置主题)查看真实应用截图。
 
 > [!NOTE]
-> 概念图不代表与相关人物、作品或权利人的官方合作，也不表示该主题已经进入发布包。
+> 概念图不代表与相关人物、作品或权利人的官方合作。“孙悟空·赛亚引擎”已随 `v0.3.2` 发布；角色主题素材不自动纳入项目 MIT License。
 
 ### 赛亚人引擎主题概念
 
 <img src="docs/assets/concepts/super-saiyan-goku.png" width="100%" alt="赛亚人孙悟空 OpenChatGPTSkin 完整主题概念图">
 
 > [!IMPORTANT]
-> `v0.3.1` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置六个 Theme Schema v4 主题。该版本正式加入“星宫莓·闪耀舞台”，并适配新版 Windows ChatGPT 的 AppX 启动与 Runtime 进程识别。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
+> `v0.3.2` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置七个 Theme Schema v4 主题。该版本正式加入“孙悟空·赛亚引擎”，并改善 Runtime 在 ChatGPT 初始界面切换期间的恢复校验与 Theme Studio 人物主题缩略图焦点。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
 
 ## 目录
 
@@ -74,7 +74,7 @@ OpenChatGPTSkin 由三个相互约束的部分组成：
 | 能力 | 状态 |
 |---|---|
 | Theme Schema v4、`.ocskin` 校验/迁移/打包/解包 | 已完成 |
-| 六个可直接使用的内置主题 | `v0.3.1` 正式版已包含 |
+| 七个可直接使用的内置主题 | `v0.3.2` 正式包已包含 |
 | Windows Runtime 启动、切换、暂停、恢复 | 正式版 |
 | Windows x64 便携 ZIP 与用户级 Setup | 正式版 |
 | macOS ARM64/x64 DMG、Runtime 启动/切换/恢复 | 未签名预览，双架构实机验收通过 |
@@ -128,13 +128,21 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ## 内置主题
 
-当前源码中的六个内置主题均包含完整主题配置、预览图、来源记录和 SHA-256，可以在干净检出后直接使用。前四个通用主题使用项目原创 AI 背景；两个角色主题使用项目维护者单独提供的素材及独立授权标识，不继承项目 MIT License。
+当前源码中的七个内置主题均包含完整主题配置、预览图、来源记录和 SHA-256，可以在干净检出后直接使用。前四个通用主题使用项目原创 AI 背景；三个角色主题使用项目维护者单独提供的素材及独立授权标识，不继承项目 MIT License。
 
 ### 未来歌姬 `future-idol-cyan`
 
 清透的青蓝、银白和少量洋红强调色，适合喜欢明亮科幻氛围的用户；主视觉位于右侧，左侧保留文字安全区。
 
 ![未来歌姬主题](docs/assets/screenshots/future-idol-cyan.webp)
+
+### 孙悟空·赛亚引擎 `goku-saiyan-engine`
+
+深空蓝、电光青与战斗橙组成的高能创作主题。它保留右侧人物主视觉与左侧动态欢迎语安全区，配置雷达、能量、侦测器与七星能量球四张建议卡图标，以及项目图标和账户头像。
+
+![孙悟空·赛亚引擎在真实 ChatGPT 桌面中的应用效果](docs/assets/screenshots/goku-saiyan-engine-real.png)
+
+该角色背景及衍生裁剪使用独立授权标识，不自动纳入 MIT License，也不代表与原作品权利方存在官方合作。
 
 ### 星宫莓·闪耀舞台 `hoshimiya-ichigo-shining-stage`
 
@@ -174,7 +182,7 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows Setup（推荐）
 
-1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.1) 下载 `OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe` 和 `checksums.txt`。
+1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.2) 下载 `OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe` 和 `checksums.txt`。
 2. 校验 SHA-256 后双击 Setup。安装范围为当前用户，默认目录是 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限。
 3. 从开始菜单启动 OpenChatGPTSkin；生产 Theme Studio 健康启动后会自动打开默认浏览器。
 
@@ -182,16 +190,16 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows 便携 ZIP
 
-下载 `OpenChatGPTSkin_0.3.1_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
+下载 `OpenChatGPTSkin_0.3.2_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
 
 ### macOS DMG（未签名开发者预览）
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.1_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.1_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.2_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.2_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
 2. 先按下方命令核对 SHA-256，再打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 3. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。不要关闭 Gatekeeper，也不要使用 `xattr` 移除隔离属性。
 4. Theme Studio 健康启动后会自动打开默认浏览器。替换或删除 `.app` 不会删除 `~/Library/Application Support/OpenChatGPTSkin` 下的个人主题、草稿和 Runtime 状态。
 
-开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.1_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.1_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
+开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.2_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.2_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
 
 维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。三个原生 Runner 会分别构建并验收 Go Host，随后合并为 `go-release-combined`；手动运行不会创建 Tag 或 GitHub Release。
 
@@ -200,17 +208,17 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 在下载目录运行：
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.3.1_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.3.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.2_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS 终端：
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.3.1_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.2_macos_arm64.dmg
 # Intel Mac 使用：
-shasum -a 256 OpenChatGPTSkin_0.3.1_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.2_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -229,7 +237,7 @@ npm ci
 npm run verify:foundation
 ```
 
-`verify:foundation` 会重建主题目录、运行测试、执行类型检查、构建工作区，并校验六个内置主题。源码模式的命令都从仓库根目录运行。
+`verify:foundation` 会重建主题目录、运行测试、执行类型检查、构建工作区，并校验当前源码中的七个内置主题。源码模式的命令都从仓库根目录运行。
 
 ### Windows 本地一键构建
 
@@ -315,13 +323,13 @@ npm run runtime -- restore
 - `restore`：恢复官方外观，并等待用户正常退出受管理 Codex 完成清理；
 - 不要使用任务管理器强制结束恢复中的 Codex。
 
-完整安全边界见 [Windows Runtime 说明](docs/runtime-windows.md) 与 [macOS Runtime 说明](docs/runtime-macos.md)。三个原生 Runner 会验证包结构、单一 Go Host、Theme Studio、当前源码中的六个内置主题及 Node-free manifest；真实 Codex 的视觉和生命周期闭环仍按对应平台文档在真实设备手动验收。
+完整安全边界见 [Windows Runtime 说明](docs/runtime-windows.md) 与 [macOS Runtime 说明](docs/runtime-macos.md)。三个原生 Runner 会验证包结构、单一 Go Host、Theme Studio、当前源码中的七个内置主题及 Node-free manifest；真实 Codex 的视觉和生命周期闭环仍按对应平台文档在真实设备手动验收。
 
 ### Codex 更新后的真实验收
 
 旧 Node Host 的 `runtime:probe` 与 `runtime:acceptance` 已随 Go cutover 删除，不再作为可执行入口。Codex 升级后，在无私人项目或敏感聊天的测试工作区完成以下检查：
 
-1. 完全退出普通 Codex，依次检查六个内置主题、自定义主题、`pause`、`resume` 与 `restore`；
+1. 完全退出普通 Codex，依次检查七个内置主题、自定义主题、`pause`、`resume` 与 `restore`；
 2. 从 Codex 菜单正常退出受管理实例，确认 Controller 和本地控制端点完成清理；
 3. 正常启动官方 Codex，确认未继承远程调试参数且保持官方外观；
 4. 记录 Codex/OpenChatGPTSkin/系统版本、结果和脱敏截图。
@@ -377,7 +385,7 @@ packages/theme-core/        校验、目录、打包、存储
 packages/cdp-adapter/       Codex UI surface 识别与主题编译
 packages/theme-studio-core/ Theme Studio 合约与校验
 host/go/                    单一 Go Studio、Controller、Runtime 与平台适配
-themes/builtin/             六个内置主题及素材来源记录
+themes/builtin/             七个内置主题及素材来源记录
 tests/                      Schema、Runtime、UI 和文档测试
 ```
 
@@ -396,7 +404,8 @@ npm run build
 
 ## 更多文档
 
-- [v0.3.1 发布说明](docs/releases/v0.3.1.md)
+- [v0.3.2 发布说明](docs/releases/v0.3.2.md)
+- [v0.3.1 历史发布说明](docs/releases/v0.3.1.md)
 - [v0.3.0 历史发布说明](docs/releases/v0.3.0.md)
 - [v0.3.0-alpha.1 历史发布说明](docs/releases/v0.3.0-alpha.1.md)
 - [v0.2.0 历史发布说明](docs/releases/v0.2.0.md)

@@ -51,8 +51,16 @@ export const SourceProvenanceSchema = z.object({
   generationPrompt: z.string().min(1).optional(),
 }).strict();
 
+const CharacterThemePresentationSchema = z.object({
+  thumbnailPosition: z.object({
+    positionX: z.number().min(0).max(1),
+    positionY: z.number().min(0).max(1),
+  }).strict(),
+}).strict();
+
 export const CharacterThemeTemplateSchema = z.object({
   theme: z.preprocess((value) => parseThemeDocument(value), ThemeDraftDocumentSchema),
+  presentation: CharacterThemePresentationSchema.optional(),
   outputs: z.record(OutputPathSchema, CharacterThemeOutputSourceSchema),
   provenance: z.array(SourceProvenanceSchema).min(1),
 }).strict();

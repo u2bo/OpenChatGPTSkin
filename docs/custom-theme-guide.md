@@ -111,9 +111,9 @@ Theme Schema v4 主题和 .ocskin 文件，不要修改 Runtime、Theme Studio �
     使用安全表面、唯一 ID 和非交互层，不得遮挡 ChatGPT 操作。
 12. rights 必须真实反映授权。不确定时设置 licenseId=LicenseRef-User-Supplied、
    localOnly=true，且不要声称可公开再分发。
-13. 先运行 npm run build，再运行：
-   node packages/theme-core/dist/cli.js validate --dir <主题目录>
-   node packages/theme-core/dist/cli.js pack --dir <主题目录> --out <主题ID>-1.0.0.ocskin
+13. 直接使用最终构建物（macOS 时替换为 App 内的原生程序路径）：
+   .\OpenChatGPTSkin.exe theme validate --dir <主题目录>
+   .\OpenChatGPTSkin.exe theme pack --dir <主题目录> --out <主题ID>-1.0.0.ocskin
 14. 输出验证结果、生成文件路径、主题配置摘要和仍需我确认的授权风险。
 
 不要吞掉校验错误；任何失败都应保留原始错误码并修复根因后重新验证。
@@ -158,13 +158,56 @@ my-theme/
 
 `manifest.json` 由打包命令根据实际文件、字节数和 SHA-256 生成，不需要手工维护。
 
+### CLI 创建和配置
+
+安装版和便携版已经把 CLI 内置在与 Theme Studio、Runtime 相同的 Node-free 可执行文件中。智能体可以直接调用，并只解析 JSON 输出：
+
+```powershell
+.\OpenChatGPTSkin.exe theme help
+.\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "我的主题" --author "Theme Agent" --appearance dark --background D:\Assets\background.png
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+```
+
+macOS 安装版直接调用 App 内的原生程序：
+
+```bash
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme help
+```
+
+`create` 不覆盖已有目录。传入 `--background` 时，它会把本地 PNG/JPEG/WebP 复制到主题目录并立即校验；不传背景图时会创建一个可继续编辑的 Schema v4 草稿，此时使用 `validate --draft`。
+
+需要修改配置时，准备一个 RFC 7396 JSON Merge Patch 文件：
+
+```json
+{
+  "colors": {
+    "accent": "#7c3aed"
+  },
+  "background": {
+    "overlay": 0.45,
+    "safeArea": "left"
+  }
+}
+```
+
+```powershell
+.\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
+```
+
+对象会递归合并，数组会整体替换，`null` 会删除可选字段。CLI 会在写入前校验合并结果；补丁无效时保留原 `theme.json`。它不会下载、生成或猜测补丁中引用的素材。
+
+在源码检出中，`npm run --silent theme -- ...` 只是同一个 Go 角色的开发适配器。
+
 ### 5. 验证和打包
 
 ```powershell
-npm run build
-node packages/theme-core/dist/cli.js validate --dir D:\Themes\my-theme
-node packages/theme-core/dist/cli.js pack --dir D:\Themes\my-theme --out D:\Themes\my-theme-1.0.0.ocskin
+.\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme pack --dir D:\Themes\my-theme --out D:\Themes\my-theme-1.0.0.ocskin
 ```
+
+macOS 使用上文原生程序路径和相同的 `theme validate`、`theme pack` 参数。
 
 输出采用“只创建”策略。目标 `.ocskin` 已存在时命令会拒绝覆盖，请修改版本或输出文件名，不要删除旧版本伪装成原子更新。
 

@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-v0.3.2-2ea44f)
+![Status](https://img.shields.io/badge/status-v0.3.3-2ea44f)
 ![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
 ![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
@@ -31,7 +31,7 @@
 </details>
 
 > [!IMPORTANT]
-> `v0.3.2` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置七个 Theme Schema v4 主题。该版本正式加入“孙悟空·赛亚引擎”，并改善 Runtime 在 ChatGPT 初始界面切换期间的恢复校验与 Theme Studio 人物主题缩略图焦点。用户包只包含一个 Go 业务宿主，不捆绑 Node.js，也不要求安装 Git、Go 或开发依赖。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
+> `v0.3.3` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置七个 Theme Schema v4 主题。该版本将面向智能体的 Theme CLI 直接内置到最终可执行文件：Windows 使用 `OpenChatGPTSkin.exe theme ...`，macOS 使用 App 内原生程序；创建、配置、读取、校验、打包和解包均不依赖 Node.js。用户包只包含一个 Go 业务宿主，不要求安装 Git、Go 或开发依赖。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
 
 ## 目录
 
@@ -62,7 +62,7 @@ OpenChatGPTSkin 由三个相互约束的部分组成：
 | 能力 | 状态 |
 |---|---|
 | Theme Schema v4、`.ocskin` 校验/迁移/打包/解包 | 已完成 |
-| 七个可直接使用的内置主题 | `v0.3.2` 正式包已包含 |
+| 七个可直接使用的内置主题 | `v0.3.3` 正式包已包含 |
 | Windows Runtime 启动、切换、暂停、恢复 | 正式版 |
 | Windows x64 便携 ZIP 与用户级 Setup | 正式版 |
 | macOS ARM64/x64 DMG、Runtime 启动/切换/恢复 | 未签名预览，双架构实机验收通过 |
@@ -170,7 +170,7 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows Setup（推荐）
 
-1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.2) 下载 `OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe` 和 `checksums.txt`。
+1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.3) 下载 `OpenChatGPTSkin_0.3.3_windows_x64_Setup.exe` 和 `checksums.txt`。
 2. 校验 SHA-256 后双击 Setup。安装范围为当前用户，默认目录是 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限。
 3. 从开始菜单启动 OpenChatGPTSkin；生产 Theme Studio 健康启动后会自动打开默认浏览器。
 
@@ -178,16 +178,16 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows 便携 ZIP
 
-下载 `OpenChatGPTSkin_0.3.2_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
+下载 `OpenChatGPTSkin_0.3.3_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
 
 ### macOS DMG（未签名开发者预览）
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.2_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.2_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.3_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.3_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
 2. 先按下方命令核对 SHA-256，再打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 3. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。不要关闭 Gatekeeper，也不要使用 `xattr` 移除隔离属性。
 4. Theme Studio 健康启动后会自动打开默认浏览器。替换或删除 `.app` 不会删除 `~/Library/Application Support/OpenChatGPTSkin` 下的个人主题、草稿和 Runtime 状态。
 
-开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.2_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.2_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
+开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.3_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.3_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
 
 维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。三个原生 Runner 会分别构建并验收 Go Host，随后合并为 `go-release-combined`；手动运行不会创建 Tag 或 GitHub Release。
 
@@ -196,17 +196,17 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 在下载目录运行：
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.3.2_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.3_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.3.3_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS 终端：
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.3.2_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.3_macos_arm64.dmg
 # Intel Mac 使用：
-shasum -a 256 OpenChatGPTSkin_0.3.2_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.3.3_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -274,12 +274,34 @@ npm run runtime -- status
 
 ## 自定义主题
 
-请阅读完整的 [自定义主题指南](docs/custom-theme-guide.md)。它覆盖两条路径：
+请阅读完整的 [自定义主题指南](docs/custom-theme-guide.md)。它覆盖三条路径：
 
 1. **AI 封装**：把背景图、视觉目标和授权信息交给 Codex/其他编码 Agent，使用文档中的可复制提示词生成、校验并打包 `.ocskin`；
-2. **Theme Studio UI**：从内置主题开始，通过颜色、背景、字体、装饰和布局面板完成可视化定制。
+2. **Theme Studio UI**：从内置主题开始，通过颜色、背景、字体、装饰和布局面板完成可视化定制；
+3. **原生 Theme CLI**：让智能体直接调用最终 `OpenChatGPTSkin.exe` 或 macOS App 内的可执行文件创建、配置、检查、校验和打包主题。
 
 主题格式、安全边界和所有字段范围见 [主题格式说明](docs/theme-format.md)。
+
+### 通过最终构建物创建主题
+
+Windows Setup 安装目录或便携 ZIP 解压目录中的 `OpenChatGPTSkin.exe` 已直接包含 CLI，不依赖 Node.js、npm 或 Go：
+
+```powershell
+.\OpenChatGPTSkin.exe theme help
+.\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "我的主题" --author "Theme Agent" --background D:\Assets\background.png
+.\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme pack --dir D:\Themes\my-theme --out D:\Themes\my-theme.ocskin
+```
+
+macOS 安装版调用同一个 App 可执行文件：
+
+```bash
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme help
+```
+
+成功结果写入 stdout，失败时 stderr 输出 `{"error":{"code":"...","message":"..."}}`。不带 `--background` 的 `create` 会生成草稿，先用 `validate --draft`；`create`、`pack`、`unpack` 都不会覆盖已有目标。源码开发时可使用 `npm run --silent theme -- ...`，它只是同一个 Go CLI 的适配器。
 
 ### `.ocskin` 导入导出
 
@@ -372,7 +394,7 @@ packages/theme-schema/      Theme Schema v4、迁移与视觉模型
 packages/theme-core/        校验、目录、打包、存储
 packages/cdp-adapter/       Codex UI surface 识别与主题编译
 packages/theme-studio-core/ Theme Studio 合约与校验
-host/go/                    单一 Go Studio、Controller、Runtime 与平台适配
+host/go/                    单一 Go Studio、Controller、Runtime、Theme CLI 与平台适配
 themes/builtin/             七个内置主题及素材来源记录
 tests/                      Schema、Runtime、UI 和文档测试
 ```
@@ -392,7 +414,8 @@ npm run build
 
 ## 更多文档
 
-- [v0.3.2 发布说明](docs/releases/v0.3.2.md)
+- [v0.3.3 发布说明](docs/releases/v0.3.3.md)
+- [v0.3.2 历史发布说明](docs/releases/v0.3.2.md)
 - [v0.3.1 历史发布说明](docs/releases/v0.3.1.md)
 - [v0.3.0 历史发布说明](docs/releases/v0.3.0.md)
 - [v0.3.0-alpha.1 历史发布说明](docs/releases/v0.3.0-alpha.1.md)

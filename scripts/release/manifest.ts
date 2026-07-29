@@ -15,11 +15,16 @@ const ReleaseFileSchema = z.object({
 }).strict();
 
 export const ReleaseManifestSchema = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   product: z.literal("OpenChatGPTSkin"),
   version: z.string().regex(PRODUCT_VERSION_PATTERN),
   target: z.enum(["windows-x64", "macos-arm64", "macos-x64"]),
-  roles: z.tuple([z.literal("studio"), z.literal("controller"), z.literal("runtime")]),
+  roles: z.tuple([
+    z.literal("studio"),
+    z.literal("controller"),
+    z.literal("runtime"),
+    z.literal("theme"),
+  ]),
   host: z.object({
     language: z.literal("go"),
     goVersion: z.string().regex(/^go\d+\.\d+(?:\.\d+)?$/),

@@ -84,6 +84,40 @@ func NormalizeDraftDocument(contents []byte) ([]byte, Ref, error) {
 	return normalized, Ref{ID: header.ID, Version: header.Version}, nil
 }
 
+// LoadDirectory validates a complete theme project and all declared local files.
+func LoadDirectory(directory string) (Bundle, error) {
+	return readBundleDirectory(directory, Ref{})
+}
+
+// PackDirectory validates and packages a complete theme project.
+func PackDirectory(directory string) ([]byte, Ref, error) {
+	bundle, err := LoadDirectory(directory)
+	if err != nil {
+		return nil, Ref{}, err
+	}
+	contents, err := pack(bundle)
+	if err != nil {
+		return nil, Ref{}, err
+	}
+	return contents, bundle.Ref, nil
+}
+
+// UnpackToDirectory validates an archive before creating a new project directory.
+func UnpackToDirectory(contents []byte, directory string) (Ref, error) {
+	bundle, err := unpack(contents)
+	if err != nil {
+		return Ref{}, err
+	}
+	files, _, err := archiveFileTable(bundle)
+	if err != nil {
+		return Ref{}, err
+	}
+	if err := writeNewArchiveDirectory(directory, files); err != nil {
+		return Ref{}, err
+	}
+	return bundle.Ref, nil
+}
+
 // AssetPaths returns the complete declared asset set in stable order.
 func AssetPaths(document []byte) ([]string, error) {
 	return assetPaths(document)
@@ -383,10 +417,10 @@ func unpack(contents []byte) (Bundle, error) {
 	return bundle, nil
 }
 
-func pack(bundle Bundle) ([]byte, error) {
+func archiveFileTable(bundle Bundle) (map[string][]byte, Bundle, error) {
 	normalized, err := normalizeBundle(bundle)
 	if err != nil {
-		return nil, err
+		return nil, Bundle{}, err
 	}
 	files := make(map[string][]byte, len(normalized.Files)+1)
 	files["theme.json"] = normalized.Document
@@ -405,9 +439,17 @@ func pack(bundle Bundle) ([]byte, error) {
 	}
 	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
-		return nil, err
+		return nil, Bundle{}, err
 	}
 	files["manifest.json"] = append(manifestBytes, '\n')
+	return files, normalized, nil
+}
+
+func pack(bundle Bundle) ([]byte, error) {
+	files, _, err := archiveFileTable(bundle)
+	if err != nil {
+		return nil, err
+	}
 	var output bytes.Buffer
 	writer := zip.NewWriter(&output)
 	names := make([]string, 0, len(files))
@@ -487,7 +529,9 @@ func readBundleDirectory(directory string, expected Ref) (Bundle, error) {
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return Bundle{}, err
 	}
-	return Bundle{Ref: ref, Document: normalized, Files: files}, nil
+	return normalizeBundle(
+		Bundle{Ref: ref, Document: normalized, Files: files},
+	)
 }
 
 func writeBundleDirectory(directory string, bundle Bundle) error {
@@ -503,6 +547,52 @@ func writeBundleDirectory(directory string, bundle Bundle) error {
 			return err
 		}
 		if err := writeAtomicFile(path, contents); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeNewArchiveDirectory(
+	directory string,
+	files map[string][]byte,
+) (returnErr error) {
+	absolute, err := filepath.Abs(directory)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(absolute), 0o700); err != nil {
+		return err
+	}
+	if err := os.Mkdir(absolute, 0o700); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return Error{Code: "CLI_WRITE", Message: "Destination already exists"}
+		}
+		return err
+	}
+	defer func() {
+		if returnErr == nil {
+			return
+		}
+		if cleanupErr := os.RemoveAll(absolute); cleanupErr != nil {
+			returnErr = errors.Join(returnErr, cleanupErr)
+		}
+	}()
+
+	names := make([]string, 0, len(files))
+	for name := range files {
+		if name != "theme.json" && name != "manifest.json" && !safeAssetName(name) {
+			return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme file path is invalid"}
+		}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		path := filepath.Join(absolute, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			return err
+		}
+		if err := writeAtomicFile(path, files[name]); err != nil {
 			return err
 		}
 	}
@@ -857,6 +947,31 @@ func assetPaths(document []byte) ([]string, error) {
 	return output, nil
 }
 
+func startsWith(contents []byte, signature ...byte) bool {
+	if len(contents) < len(signature) {
+		return false
+	}
+	return bytes.Equal(contents[:len(signature)], signature)
+}
+
+func validAssetSignature(path string, contents []byte) bool {
+	lower := strings.ToLower(path)
+	switch {
+	case strings.HasSuffix(lower, ".png"):
+		return startsWith(contents, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+	case strings.HasSuffix(lower, ".jpg"), strings.HasSuffix(lower, ".jpeg"):
+		return startsWith(contents, 0xff, 0xd8, 0xff)
+	case strings.HasSuffix(lower, ".webp"):
+		return len(contents) >= 12 &&
+			string(contents[:4]) == "RIFF" &&
+			string(contents[8:12]) == "WEBP"
+	case strings.HasSuffix(lower, ".woff2"):
+		return startsWith(contents, 0x77, 0x4f, 0x46, 0x32)
+	default:
+		return false
+	}
+}
+
 func validateBundleAssets(bundle Bundle) error {
 	paths, err := assetPaths(bundle.Document)
 	if err != nil {
@@ -875,10 +990,16 @@ func validateBundleAssets(bundle Bundle) error {
 			if len(contents) == 0 || len(contents) > 2*1024*1024 {
 				return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme preview is invalid"}
 			}
+			if !validAssetSignature(path, contents) {
+				return Error{Code: "ASSET_SIGNATURE_INVALID", Message: "Theme preview signature is invalid"}
+			}
 			continue
 		}
 		if _, exists := declared[path]; !exists || len(contents) == 0 || len(contents) > assetLimit(path) {
 			return Error{Code: "THEME_SCHEMA_INVALID", Message: "Theme has an undeclared or oversized asset"}
+		}
+		if !validAssetSignature(path, contents) {
+			return Error{Code: "ASSET_SIGNATURE_INVALID", Message: "Theme asset signature is invalid"}
 		}
 	}
 	return nil

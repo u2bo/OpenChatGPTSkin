@@ -11,6 +11,7 @@ const (
 	RoleStudio     Role = "studio"
 	RoleController Role = "controller"
 	RoleRuntime    Role = "runtime"
+	RoleTheme      Role = "theme"
 	RoleContract   Role = "contract-baseline"
 )
 
@@ -41,7 +42,7 @@ func Parse(arguments []string) (Command, error) {
 	}
 	role := Role(arguments[0])
 	switch role {
-	case RoleStudio, RoleController, RoleRuntime, RoleContract:
+	case RoleStudio, RoleController, RoleRuntime, RoleTheme, RoleContract:
 		return Command{Role: role, Args: append([]string(nil), arguments[1:]...)}, nil
 	default:
 		return Command{}, commandError{code: "CLI_ARGUMENT_INVALID", message: fmt.Sprintf("unknown role: %s", arguments[0])}

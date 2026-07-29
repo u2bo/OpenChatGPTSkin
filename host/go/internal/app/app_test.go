@@ -45,6 +45,46 @@ func TestParseRejectsUnknownRole(t *testing.T) {
 	}
 }
 
+func TestParseAcceptsThemeRole(t *testing.T) {
+	command, err := Parse([]string{"theme", "help"})
+	if err != nil || command.Role != RoleTheme || len(command.Args) != 1 || command.Args[0] != "help" {
+		t.Fatalf("command=%+v error=%v", command, err)
+	}
+}
+
+func TestThemeRoleEmitsMachineReadableJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if code := Run(context.Background(), []string{"theme", "help"}, &stdout, &stderr); code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, stderr.String())
+	}
+	var result struct {
+		Role            string         `json:"role"`
+		ProtocolVersion int            `json:"protocolVersion"`
+		Commands        map[string]any `json:"commands"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		t.Fatalf("stdout=%s error=%v", stdout.String(), err)
+	}
+	if result.Role != "theme" || result.ProtocolVersion != 1 || result.Commands["create"] == nil {
+		t.Fatalf("result=%+v", result)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("unexpected stderr=%s", stderr.String())
+	}
+}
+
+func TestThemeRoleUsesUsageExitCodeAndStructuredError(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if code := Run(context.Background(), []string{"theme", "unknown"}, &stdout, &stderr); code != 2 {
+		t.Fatalf("exit=%d stderr=%s", code, stderr.String())
+	}
+	if stdout.Len() != 0 || !bytes.Contains(stderr.Bytes(), []byte(`"code":"CLI_ARGUMENT_INVALID"`)) {
+		t.Fatalf("stdout=%s stderr=%s", stdout.String(), stderr.String())
+	}
+}
+
 func TestStudioDevRequiresAnExplicitLoopbackOrigin(t *testing.T) {
 	if _, err := parseStudioOptions([]string{"--dev"}); err == nil {
 		t.Fatal("--dev without a Vite origin was accepted")

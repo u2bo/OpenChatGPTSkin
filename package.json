@@ -1,6 +1,6 @@
 {
   "name": "open-chatgpt-skin",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "type": "module",
   "repository": {
@@ -30,6 +30,7 @@
     "release:acceptance": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-go-release.ts",
     "release:merge": "tsx --tsconfig tsconfig.scripts.json scripts/release/merge-go-release.ts",
     "typecheck": "tsc -b --pretty false",
+    "theme": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin theme",
     "test": "vitest run",
     "test:watch": "vitest",
     "runtime": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin runtime",

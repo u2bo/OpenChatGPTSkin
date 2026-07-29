@@ -111,9 +111,9 @@ Constraints:
     use a unique ID and safe surface, remain non-interactive, and never block ChatGPT controls.
 12. Make rights accurate. When uncertain, set licenseId=LicenseRef-User-Supplied and localOnly=true,
    and do not claim public redistribution rights.
-13. Run npm run build, then:
-   node packages/theme-core/dist/cli.js validate --dir <theme-directory>
-   node packages/theme-core/dist/cli.js pack --dir <theme-directory> --out <theme-id>-1.0.0.ocskin
+13. Invoke the final artifact directly (use the native executable path inside the app on macOS):
+   .\OpenChatGPTSkin.exe theme validate --dir <theme-directory>
+   .\OpenChatGPTSkin.exe theme pack --dir <theme-directory> --out <theme-id>-1.0.0.ocskin
 14. Report validation output, generated paths, a configuration summary, and unresolved rights risks.
 
 Do not swallow validation errors. Preserve the structured error code, fix the root cause, and validate again.
@@ -156,13 +156,56 @@ my-theme/
 
 The pack command generates `manifest.json` from the actual files, byte sizes, and SHA-256 values. Do not maintain it manually.
 
+### Create and configure through the CLI
+
+The installed and portable releases include the CLI in the same Node-free executable as Theme Studio and the Runtime. Agents can invoke it directly and consume JSON-only output:
+
+```powershell
+.\OpenChatGPTSkin.exe theme help
+.\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "My Theme" --author "Theme Agent" --appearance dark --background D:\Assets\background.png
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+```
+
+On macOS, call the executable inside the installed app bundle:
+
+```bash
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme help
+```
+
+`create` never overwrites an existing directory. With `--background`, it copies and immediately validates a local PNG/JPEG/WebP file. Without a background it creates an editable Schema v4 draft; use `validate --draft` until the theme is complete.
+
+To change configuration, prepare an RFC 7396 JSON Merge Patch file:
+
+```json
+{
+  "colors": {
+    "accent": "#7c3aed"
+  },
+  "background": {
+    "overlay": 0.45,
+    "safeArea": "left"
+  }
+}
+```
+
+```powershell
+.\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
+```
+
+Objects merge recursively, arrays replace the complete array, and `null` removes an optional property. The CLI validates the merged document before writing; an invalid patch leaves the previous `theme.json` unchanged. It never downloads, generates, or guesses referenced assets.
+
+In a source checkout, `npm run --silent theme -- ...` is only a development adapter to the same Go role.
+
 ### 5. Validate and pack
 
 ```powershell
-npm run build
-node packages/theme-core/dist/cli.js validate --dir D:\Themes\my-theme
-node packages/theme-core/dist/cli.js pack --dir D:\Themes\my-theme --out D:\Themes\my-theme-1.0.0.ocskin
+.\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme pack --dir D:\Themes\my-theme --out D:\Themes\my-theme-1.0.0.ocskin
 ```
+
+Use the same `theme validate` and `theme pack` arguments with the macOS executable path shown above.
 
 Outputs use create-only semantics. If the destination already exists, choose a new version or output name instead of overwriting an immutable version.
 

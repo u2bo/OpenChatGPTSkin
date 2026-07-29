@@ -168,21 +168,49 @@ Catalog paths are constrained to `builtin/<id>` or `recipes/<id>` and must match
 ## CLI
 
 ```powershell
-open-chatgpt-skin-theme catalog --root themes
-open-chatgpt-skin-theme validate --dir themes/builtin/mountain-mist
-open-chatgpt-skin-theme pack --dir themes/builtin/mountain-mist --out mountain-mist.ocskin
-open-chatgpt-skin-theme unpack --file mountain-mist.ocskin --out unpacked/mountain-mist
+.\OpenChatGPTSkin.exe theme help
+.\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "My Theme" --author "Theme Agent" --appearance dark --background D:\Assets\background.png
+.\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme pack --dir D:\Themes\my-theme --out D:\Themes\my-theme.ocskin
+.\OpenChatGPTSkin.exe theme unpack --file D:\Themes\my-theme.ocskin --out D:\Themes\unpacked\my-theme
 ```
 
-The CLI parses and validates `theme.json` before following any referenced path. Pack output is written to a same-directory temporary file and atomically published with a create-only hard link. Unpack output is written to a staging directory and atomically renamed. Existing output paths are never overwritten. Every failure is emitted as one JSON object in the form `{"error":{"code":"STABLE_CODE","message":"Readable explanation"}}`.
+The same commands are available without Node.js from an installed macOS app:
+
+```bash
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme help
+```
+
+In a source checkout, `npm run --silent theme -- ...` delegates to the same Go implementation. The original TypeScript `catalog` command remains a source-maintainer build tool and is not part of the installed executable.
+
+`help` prints the machine-readable command contract. `create` writes a normalized Theme Schema v4 project with safe local-only rights defaults. With `--background`, it copies the local PNG/JPEG/WebP file into `assets/`, validates its signature and size, and produces a complete theme. Without it, the result is an editable draft; use `validate --draft` until a real background is declared and present.
+
+`config --patch` accepts an RFC 7396 JSON Merge Patch file. Objects merge recursively, arrays replace the complete array, and `null` removes an optional property. The merged document is schema-validated before `theme.json` is replaced, so an invalid patch leaves the previous document unchanged. Referenced assets are never downloaded or synthesized. `show` prints the normalized draft for the next agent step.
+
+For example, `theme-patch.json` can contain:
+
+```json
+{
+  "colors": {
+    "accent": "#7c3aed",
+    "secondary": "#10a37f"
+  },
+  "background": {
+    "overlay": 0.45,
+    "safeArea": "left"
+  }
+}
+```
+
+The CLI parses and validates `theme.json` before following any referenced path. `create`, `pack`, and `unpack` claim new output paths and never overwrite existing files or directories. `config` validates the merged draft, writes and syncs a same-directory temporary file, and only then replaces `theme.json`. An archive is fully validated before `unpack` creates its destination; a failed write removes only the directory created by that command. Success is one JSON value on stdout. Every failure is one JSON object on stderr in the form `{"error":{"code":"STABLE_CODE","message":"Readable explanation"}}`.
 
 CLI exit codes:
 
 - `0`: success;
-- `64`: `CLI_USAGE`, command or option usage error;
-- `65`: a validation code such as `THEME_SCHEMA_INVALID` or `ARCHIVE_HASH_MISMATCH`;
-- `73`: `CLI_WRITE` or `FS_<errno>`, input/output path or permission error;
-- `70`: `INTERNAL_ERROR`, unexpected internal error.
+- `2`: command or option usage error with code `CLI_ARGUMENT_INVALID`;
+- `1`: validation, archive, input/output, or unexpected failure; use the stable `error.code` instead of parsing the message.
 
 ## Stable validation error codes
 

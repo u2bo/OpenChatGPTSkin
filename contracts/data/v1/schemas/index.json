@@ -3375,14 +3375,18 @@
                 {
                   "const": "runtime",
                   "type": "string"
+                },
+                {
+                  "const": "theme",
+                  "type": "string"
                 }
               ],
-              "maxItems": 3,
-              "minItems": 3,
+              "maxItems": 4,
+              "minItems": 4,
               "type": "array"
             },
             "schemaVersion": {
-              "const": 2,
+              "const": 3,
               "type": "number"
             },
             "sidecars": {

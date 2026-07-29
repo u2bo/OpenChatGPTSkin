@@ -1,6 +1,8 @@
+import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   acceptGoReleasePackages,
@@ -9,6 +11,7 @@ import {
 } from "../scripts/release/go-release.js";
 
 const temporaryRoots: string[] = [];
+const execFileAsync = promisify(execFile);
 const releaseIntegrationTimeoutMs = 180_000;
 
 afterEach(async () => {
@@ -55,9 +58,33 @@ describe("Go host production packages", () => {
     expect(report.artifacts.map(({ kind }) => kind)).toEqual([expectedTarget.artifact]);
     expect(report.artifacts[0]?.name).not.toContain("go-spike");
     expect(report.artifacts.every(({ bytes, baselineBytes }) => bytes < baselineBytes)).toBe(true);
-    await expect(readFile(join(
-      output, "stages", expectedTarget.target, "OpenChatGPTSkin", "release-manifest.json",
-    ), "utf8")).resolves.toContain('"language": "go"');
+    const stageRoot = join(output, "stages", expectedTarget.target, "OpenChatGPTSkin");
+    const manifest = JSON.parse(await readFile(
+      join(stageRoot, "release-manifest.json"),
+      "utf8",
+    )) as {
+      readonly schemaVersion?: unknown;
+      readonly roles?: unknown;
+      readonly host?: { readonly language?: unknown };
+    };
+    expect(manifest).toMatchObject({
+      schemaVersion: 3,
+      roles: ["studio", "controller", "runtime", "theme"],
+      host: { language: "go" },
+    });
+    const executable = join(
+      stageRoot,
+      process.platform === "win32" ? "OpenChatGPTSkin.exe" : "OpenChatGPTSkin",
+    );
+    const themeHelp = await execFileAsync(executable, ["theme", "help"], {
+      windowsHide: true,
+    });
+    expect(themeHelp.stderr).toBe("");
+    expect(JSON.parse(themeHelp.stdout)).toMatchObject({
+      role: "theme",
+      protocolVersion: 1,
+      commands: { create: expect.any(String), config: expect.any(String) },
+    });
     await expect(acceptGoReleasePackages(output, false)).resolves.toMatchObject({
       accepted: true,
       artifactCount: 1,

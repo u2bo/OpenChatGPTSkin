@@ -2,6 +2,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { acceptCommunityTooling } from "../scripts/release/accept-community-tooling.js";
 import { buildCommunityTooling } from "../scripts/release/community-tooling.js";
 import { writeReleaseChecksums } from "../scripts/release/checksums.js";
 
@@ -84,5 +85,50 @@ describe("community tooling release", () => {
       workspaceRoot: process.cwd(),
       outputDirectory: output,
     })).rejects.toThrow(/empty/i);
+  });
+
+  it("rejects unknown manifest fields and tampered archive bytes", async () => {
+    const output = await mkdtemp(join(tmpdir(), "community-tooling-"));
+    temporaryRoots.push(output);
+    const manifest = await buildCommunityTooling({
+      workspaceRoot: process.cwd(),
+      outputDirectory: output,
+    });
+    const manifestPath = join(output, "community-tooling.json");
+    const manifestText = await readFile(manifestPath, "utf8");
+    await writeFile(manifestPath, `${JSON.stringify({ ...manifest, unknown: true }, null, 2)}\n`, "utf8");
+    await expect(acceptCommunityTooling(output)).rejects.toThrow();
+
+    await writeFile(manifestPath, manifestText, "utf8");
+    const archivePath = join(output, manifest.packages[0]!.file);
+    await writeFile(archivePath, Buffer.concat([
+      await readFile(archivePath),
+      Buffer.from("tampered"),
+    ]));
+    await expect(acceptCommunityTooling(output)).rejects.toThrow(/size|checksum/i);
+  }, 60_000);
+
+  it("installs the tarballs in a clean external project and runs both CLIs", async () => {
+    const output = await mkdtemp(join(tmpdir(), "community-tooling-"));
+    temporaryRoots.push(output);
+    await buildCommunityTooling({ workspaceRoot: process.cwd(), outputDirectory: output });
+
+    await expect(acceptCommunityTooling(output)).resolves.toEqual({
+      accepted: true,
+      packageCount: 3,
+      cliValidated: true,
+    });
+  }, 120_000);
+
+  it("keeps build jobs read-only and publishes tooling only after verify", async () => {
+    const workflow = await readFile(".github/workflows/release.yml", "utf8");
+
+    expect(workflow).toMatch(/community-tooling:\r?\n\s+needs: verify/);
+    expect(workflow).toContain("release:community-tooling:accept");
+    expect(workflow).toContain("name: community-tooling");
+    expect(workflow).toContain("community-tooling.json");
+    expect(workflow).toContain("*.tgz");
+    expect(workflow).toContain("needs: [native-release, community-tooling]");
+    expect(workflow.match(/contents: write/g)).toHaveLength(1);
   });
 });

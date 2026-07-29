@@ -87,6 +87,18 @@ function npmInvocation(args: readonly string[]): { file: string; args: string[] 
   return { file: process.execPath, args: [adjacentCli, ...args] };
 }
 
+export async function runNpmCli(
+  args: readonly string[],
+  cwd: string,
+): Promise<{ readonly stdout: string; readonly stderr: string }> {
+  const invocation = npmInvocation(args);
+  return execFileAsync(invocation.file, invocation.args, {
+    cwd,
+    windowsHide: true,
+    maxBuffer: 4 * 1024 * 1024,
+  });
+}
+
 function parsePackResult(stdout: string, expected: PackageMetadata): NpmPackResult {
   const parsed: unknown = JSON.parse(stdout);
   if (!Array.isArray(parsed) || parsed.length !== 1 || !isObject(parsed[0])) {
@@ -161,17 +173,12 @@ export async function buildCommunityTooling(
         `Workspace version mismatch: ${metadata.name}@${metadata.version} != ${rootMetadata.version}`,
       );
     }
-    const invocation = npmInvocation([
+    const { stdout } = await runNpmCli([
       "pack",
       "--workspace", metadata.name,
       "--pack-destination", outputDirectory,
       "--json",
-    ]);
-    const { stdout } = await execFileAsync(invocation.file, invocation.args, {
-      cwd: workspaceRoot,
-      windowsHide: true,
-      maxBuffer: 4 * 1024 * 1024,
-    });
+    ], workspaceRoot);
     const packed = parsePackResult(stdout, metadata);
     const filePath = resolvePackedFile(outputDirectory, packed.filename);
     const info = await stat(filePath);

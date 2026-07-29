@@ -41,7 +41,8 @@
     "studio:dev": "npm run go:cdp-adapter:build && tsx scripts/dev/start-go-studio.ts",
     "verify": "npm run contracts:verify && npm run build && npm run test && npm run typecheck && npm run go:verify",
     "verify:foundation": "npm run themes:build && npm run build && npm run test && npm run typecheck && node packages/theme-core/dist/cli.js catalog --root themes",
-    "release:community-tooling": "npm run build && tsx --tsconfig tsconfig.scripts.json scripts/release/build-community-tooling.ts"
+    "release:community-tooling": "npm run build && tsx --tsconfig tsconfig.scripts.json scripts/release/build-community-tooling.ts",
+    "release:community-tooling:accept": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-community-tooling.ts"
   },
   "engines": {
     "node": ">=22.0.0"

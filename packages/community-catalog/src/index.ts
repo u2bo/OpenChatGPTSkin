@@ -10,3 +10,4 @@ export const COMMUNITY_CATALOG_PACKAGE_VERSION = packageMetadata.version;
 export * from "./schema.js";
 export * from "./errors.js";
 export * from "./validation.js";
+export * from "./cli.js";

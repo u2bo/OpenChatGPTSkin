@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from "fflate";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_LAYOUT_MODULES } from "@open-chatgpt-skin/theme-schema";
 import {
   createOcskinFiles,
@@ -71,6 +71,19 @@ describe("ocskin archive", () => {
   it("round-trips a validated theme", async () => {
     const bundle = validateThemeBundle(theme, new Map([["assets/background.png", png]]));
     expect((await unpackTheme(packTheme(bundle))).theme).toEqual(bundle.theme);
+  });
+
+  it("packs identical source bytes deterministically across build times", () => {
+    const bundle = validateThemeBundle(theme, new Map([["assets/background.png", png]]));
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+      const first = packTheme(bundle);
+      vi.setSystemTime(new Date("2027-01-01T00:00:00.000Z"));
+      expect(packTheme(bundle)).toEqual(first);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("round-trips shared and custom interface imagery without duplicating files", async () => {

@@ -3,6 +3,7 @@
   "references": [
     { "path": "./apps/theme-studio" },
     { "path": "./packages/theme-schema" },
+    { "path": "./packages/community-catalog" },
     { "path": "./packages/theme-core" },
     { "path": "./packages/cdp-adapter" },
     { "path": "./packages/theme-studio-core" },

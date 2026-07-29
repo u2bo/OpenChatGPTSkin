@@ -7,7 +7,7 @@ OpenChatGPTSkin now has a macOS Runtime adapter. Theme Studio, the theme engine,
 > [!WARNING]
 > The implementation passes TypeScript, unit tests, and macOS command-contract tests on Windows. It has not yet completed the visual Codex loop on a real Mac. Publish it as a developer preview; do not treat expected behavior in this document as real-device evidence.
 
-GitHub Actions builds the single Go Host on separate macOS x64 and ARM64 runners, then assembles the single-file Theme Studio and every theme in the current catalog. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. The `v0.3.2` Release contains all seven themes. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
+GitHub Actions builds the single Go Host on separate macOS x64 and ARM64 runners, then assembles the single-file Theme Studio and every theme in the current catalog. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. The `v0.3.3` Release contains all seven themes. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
 
 ## Requirements
 
@@ -38,7 +38,15 @@ Maintainers can manually run the **Build and Release** workflow through `workflo
 
 ## Usage
 
-Installed users start OpenChatGPTSkin from Applications, then apply, switch, or restore themes in the browser-based Theme Studio. Source-mode commands are the same on both platforms:
+Installed users start OpenChatGPTSkin from Applications, then apply, switch, or restore themes in the browser-based Theme Studio. The same native app executable directly exposes the agent-facing Theme CLI without Node.js:
+
+```bash
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme help
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme create --dir "$HOME/Themes/my-theme" --id my-theme --name "My Theme" --author "Theme Agent" --background "$HOME/Pictures/background.png"
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme validate --dir "$HOME/Themes/my-theme"
+```
+
+In source mode, `npm run --silent theme -- help` invokes the same Go Theme CLI. Studio and Runtime commands are otherwise identical on both platforms:
 
 ```bash
 npm run studio:dev
@@ -82,7 +90,7 @@ Enumerating macOS windows normally requires Accessibility consent. OpenChatGPTSk
 | Release-package acceptance | ZIP, Setup, and installer lifecycle | Payload, `.tar.gz`, `.app`, Mach-O, and DMG mount |
 | Real-Codex probe/visual acceptance | Available | Not automated; use the manual checklist below |
 
-Starting with `v0.3.0`, production Studio, Controller, and Runtime roles come from the same implementation under `host/go`. TypeScript remains only for the frontend, Theme/Contract authoring sources, and the CDP Adapter; there is no Node business host or platform fallback.
+Starting with `v0.3.0`, production Studio, Controller, Runtime, and Theme CLI roles come from the same implementation under `host/go`. TypeScript remains only for the frontend, Theme/Contract authoring sources, and the CDP Adapter; there is no Node business host or platform fallback.
 
 ## Real-Mac acceptance checklist
 

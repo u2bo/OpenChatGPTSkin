@@ -27,7 +27,7 @@ func studioFixture(t *testing.T) Config {
 		t.Fatal(err)
 	}
 	catalog := `{"schemaVersion":1,"builtins":[{"id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","kind":"theme","path":"builtin/mountain-mist","ready":true,"localOnly":false,"licenseId":"LicenseRef-Test","preview":"builtin/mountain-mist/preview.webp"}],"recipes":[]}`
-	theme := `{"schemaVersion":4,"kind":"theme","appearance":"light","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","assets":{"background":"assets/background.webp"},"colors":{},"typography":{},"background":{},"decorations":[],"layout":{},"rights":{"localOnly":false}}`
+	theme := `{"schemaVersion":4,"kind":"theme","appearance":"light","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","assets":{"background":"assets/background.png"},"colors":{},"typography":{},"background":{},"decorations":[],"layout":{},"rights":{"localOnly":false}}`
 	if err := os.WriteFile(filepath.Join(root, "themes", "catalog.json"), []byte(catalog), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func studioFixture(t *testing.T) Config {
 	if err := os.MkdirAll(filepath.Join(themeDirectory, "assets"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(themeDirectory, "assets", "background.webp"), fixturePNG(t), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(themeDirectory, "assets", "background.png"), fixturePNG(t), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return Config{

@@ -129,6 +129,59 @@ func TestRepositoryRejectsUnsafeArchiveEntry(t *testing.T) {
 	}
 }
 
+func TestPackDirectoryAndUnpackToDirectoryAreCreateOnly(t *testing.T) {
+	root := t.TempDir()
+	writeBuiltin(t, root)
+	source := filepath.Join(root, "builtin", "mountain-mist")
+	archive, ref, err := PackDirectory(source)
+	if err != nil || ref != (Ref{ID: "mountain-mist", Version: "1.3.0"}) {
+		t.Fatalf("packed ref=%+v error=%v", ref, err)
+	}
+
+	output := filepath.Join(t.TempDir(), "unpacked")
+	unpacked, err := UnpackToDirectory(archive, output)
+	if err != nil || unpacked != ref {
+		t.Fatalf("unpacked ref=%+v error=%v", unpacked, err)
+	}
+	for _, name := range []string{
+		"theme.json",
+		"manifest.json",
+		"preview.webp",
+		filepath.Join("assets", "background.webp"),
+	} {
+		if _, err := os.Stat(filepath.Join(output, name)); err != nil {
+			t.Fatalf("unpacked file %q: %v", name, err)
+		}
+	}
+
+	marker := filepath.Join(output, "keep.txt")
+	if err := os.WriteFile(marker, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := UnpackToDirectory(archive, output); ErrorCodeFrom(err) != "CLI_WRITE" {
+		t.Fatalf("existing destination error=%v code=%q", err, ErrorCodeFrom(err))
+	}
+	if contents, err := os.ReadFile(marker); err != nil || string(contents) != "keep" {
+		t.Fatalf("existing destination changed: contents=%q error=%v", contents, err)
+	}
+}
+
+func TestLoadDirectoryRejectsInvalidAssetSignature(t *testing.T) {
+	root := t.TempDir()
+	writeBuiltin(t, root)
+	directory := filepath.Join(root, "builtin", "mountain-mist")
+	if err := os.WriteFile(
+		filepath.Join(directory, "assets", "background.webp"),
+		[]byte("not-a-webp"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadDirectory(directory); ErrorCodeFrom(err) != "ASSET_SIGNATURE_INVALID" {
+		t.Fatalf("invalid signature error=%v code=%q", err, ErrorCodeFrom(err))
+	}
+}
+
 func TestRepositoryMigratesLegacyThemeAndRejectsUnknownFields(t *testing.T) {
 	legacy := []byte(`{"schemaVersion":1,"kind":"theme","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","assets":{"background":"assets/background.webp"},"colors":{"accent":"#000000","secondary":"#000000","text":"#000000","muted":"#000000","panel":"#000000","border":"#000000","success":"#000000","warning":"#000000","danger":"#000000","info":"#000000"},"typography":{"uiFamily":"Sans","codeFamily":"Mono","scale":1,"uiSize":14,"codeSize":13,"uiWeight":400,"codeWeight":400,"lineHeight":1.5},"background":{"positionX":0.5,"positionY":0.5,"scale":1,"blur":0,"brightness":1,"overlay":0},"decorations":[],"layout":{},"rights":{"licenseId":"LicenseRef-Test","localOnly":false}}`)
 	normalized, header, err := normalizeDocument(legacy)

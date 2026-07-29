@@ -232,6 +232,39 @@ function inspectExecutable(contents: Uint8Array): Target["executableFormat"] {
   throw new Error("Go release executable format is invalid");
 }
 
+function isCurrentNativeTarget(target: Target): boolean {
+  if (process.platform === "win32") {
+    return target.goos === "windows" && target.goarch === "amd64" && process.arch === "x64";
+  }
+  if (process.platform === "darwin") {
+    const architecture = process.arch === "arm64" ? "arm64" : process.arch === "x64" ? "amd64" : "";
+    return target.goos === "darwin" && target.goarch === architecture;
+  }
+  return false;
+}
+
+async function assertThemeCLI(executablePath: string, label: string): Promise<void> {
+  const result = await execFileAsync(executablePath, ["theme", "help"], { windowsHide: true });
+  if (result.stderr.trim() !== "") {
+    throw new Error(`${label} theme CLI wrote unexpected stderr`);
+  }
+  let value: {
+    readonly role?: unknown;
+    readonly protocolVersion?: unknown;
+    readonly commands?: Readonly<Record<string, unknown>>;
+  };
+  try {
+    value = JSON.parse(result.stdout) as typeof value;
+  } catch {
+    throw new Error(`${label} theme CLI did not return JSON`);
+  }
+  if (value.role !== "theme" || value.protocolVersion !== 1 ||
+    !value.commands?.create || !value.commands.config ||
+    !value.commands.validate || !value.commands.pack) {
+    throw new Error(`${label} theme CLI contract is invalid`);
+  }
+}
+
 async function readReleaseVersion(workspaceRoot: string): Promise<string> {
   const value = JSON.parse(await readFile(join(workspaceRoot, "package.json"), "utf8")) as {
     readonly version?: unknown;
@@ -294,6 +327,9 @@ async function stageTarget(
   if (executableFormat !== target.executableFormat) {
     throw new Error(`Go release target format mismatch: ${target.target}`);
   }
+  if (isCurrentNativeTarget(target)) {
+    await assertThemeCLI(executablePath, `Staged ${target.target} host`);
+  }
   const catalog = JSON.parse(await readFile(join(stageRoot, "themes", "catalog.json"), "utf8")) as ThemeCatalog & {
     readonly schemaVersion?: unknown;
   };
@@ -302,11 +338,11 @@ async function stageTarget(
     return { path, bytes: contents.length, sha256: sha256(contents) };
   }));
   const manifest = ReleaseManifestSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     product: PRODUCT,
     version,
     target: target.target,
-    roles: ["studio", "controller", "runtime"],
+    roles: ["studio", "controller", "runtime", "theme"],
     host: {
       language: "go",
       goVersion: metadata.goVersion,
@@ -563,6 +599,7 @@ async function acceptWindowsSetup(setupPath: string): Promise<void> {
     const health = await execFileAsync(join(installRoot, "OpenChatGPTSkin.exe"), ["studio", "--health-once"], { windowsHide: true });
     const value = JSON.parse(health.stdout) as { readonly role?: unknown };
     if (value.role !== "studio") throw new Error("Installed Go release host health failed");
+    await assertThemeCLI(join(installRoot, "OpenChatGPTSkin.exe"), "Installed Windows host");
     await execFileAsync(join(installRoot, "unins000.exe"), [
       "/VERYSILENT",
       "/SUPPRESSMSGBOXES",

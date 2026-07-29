@@ -22,19 +22,20 @@ describe("project documentation", () => {
     expect(format).not.toContain("dilraba-local");
   });
 
-  it("documents the Go-only v0.3.2 release and current developer commands", async () => {
+  it("documents the Go-only v0.3.3 release and current developer commands", async () => {
     const [readme, readmeEn, notes, windows, mac, macEn, studio] = await Promise.all([
       readFile("README.md", "utf8"), readFile("README.en.md", "utf8"),
-      readFile("docs/releases/v0.3.2.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
+      readFile("docs/releases/v0.3.3.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"), readFile("docs/runtime-macos.en.md", "utf8"),
       readFile("docs/theme-studio.md", "utf8"),
     ]);
     for (const document of [readme, readmeEn]) {
-      expect(document).toContain("v0.3.2");
-      expect(document).toContain("OpenChatGPTSkin_0.3.2_windows_x64_Setup.exe");
-      expect(document).toContain("OpenChatGPTSkin_0.3.2_macos_arm64.dmg");
-      expect(document).toContain("OpenChatGPTSkin_0.3.2_macos_x64.dmg");
+      expect(document).toContain("v0.3.3");
+      expect(document).toContain("OpenChatGPTSkin_0.3.3_windows_x64_Setup.exe");
+      expect(document).toContain("OpenChatGPTSkin_0.3.3_macos_arm64.dmg");
+      expect(document).toContain("OpenChatGPTSkin_0.3.3_macos_x64.dmg");
       expect(document).toContain("npm run runtime -- list-themes");
+      expect(document).toContain("OpenChatGPTSkin.exe theme help");
       expect(document).toContain("npm run runtime -- import --theme-file");
       expect(document).toContain("npm run runtime -- restore");
       expect(document).not.toContain("npm run runtime:probe");
@@ -43,13 +44,16 @@ describe("project documentation", () => {
     }
     expect(`${windows}\n${mac}\n${macEn}`).not.toContain("@open-chatgpt-skin/windows-runtime");
     expect(windows).toContain("release-manifest.json");
+    expect(windows).toContain("OpenChatGPTSkin.exe theme help");
+    expect(mac).toContain("OpenChatGPTSkin theme help");
+    expect(macEn).toContain("OpenChatGPTSkin theme help");
     expect(windows).toContain("Node/Go 双写");
     expect(mac).toContain("七主题结果");
     expect(macEn).toContain("seven-theme results");
     expect(studio).toContain("单一 Go Host");
     expect(studio).toContain("OpenChatGPTSkin.exe");
-    expect(notes).toContain("跨平台 Go Host");
-    expect(notes).toContain("不捆绑 Node.js");
+    expect(notes).toContain("theme create");
+    expect(notes).toContain("schema v3");
   });
 
   it("ships bilingual custom-theme guidance, contribution rules, and screenshots", async () => {

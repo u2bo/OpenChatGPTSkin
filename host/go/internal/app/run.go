@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themecli"
 )
 
 func has(arguments []string, name string) bool {
@@ -144,6 +146,17 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 		}
 		_ = json.NewEncoder(stdout).Encode(response)
 		return 0
+	case RoleTheme:
+		result, themeErr := themecli.Execute(command.Args)
+		if themeErr != nil {
+			writeThemeCLIError(stderr, themeErr)
+			if themecli.IsUsage(themeErr) {
+				return 2
+			}
+			return 1
+		}
+		_ = json.NewEncoder(stdout).Encode(result)
+		return 0
 	case RoleContract:
 		result, contractErr := runContractBaseline(ctx, command.Args)
 		if contractErr != nil {
@@ -156,6 +169,12 @@ func Run(ctx context.Context, arguments []string, stdout, stderr io.Writer) int 
 		writeCLIError(stderr, commandError{code: "CLI_ARGUMENT_INVALID", message: "unknown role"})
 		return 2
 	}
+}
+
+func writeThemeCLIError(writer io.Writer, err error) {
+	_ = json.NewEncoder(writer).Encode(map[string]any{
+		"error": map[string]string{"code": themecli.ErrorCode(err), "message": err.Error()},
+	})
 }
 
 func writeCLIError(writer io.Writer, err error) {

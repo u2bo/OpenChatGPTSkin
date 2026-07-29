@@ -21,14 +21,14 @@ func writeBuiltin(t *testing.T, root string) {
 		t.Fatal(err)
 	}
 	catalog := `{"schemaVersion":1,"builtins":[{"id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","kind":"theme","path":"builtin/mountain-mist","ready":true,"localOnly":false,"licenseId":"LicenseRef-Test","preview":"builtin/mountain-mist/preview.webp"}],"recipes":[]}`
-	theme := `{"schemaVersion":4,"kind":"theme","appearance":"light","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","assets":{"background":"assets/background.webp"},"colors":{"accent":"#113355","secondary":"#224466","text":"#ffffff","muted":"#cccccc","panel":"#112233","border":"#223344","success":"#228855","warning":"#cc8822","danger":"#bb3344","info":"#4477cc","textSecondary":"#eeeeee","link":"#aaccee","inputText":"#ffffff","placeholder":"#cccccc","codeText":"#ffffff"},"typography":{"uiFamily":"Sans","codeFamily":"Mono","scale":1,"uiSize":14,"codeSize":13,"uiWeight":400,"codeWeight":400,"lineHeight":1.5,"displayFamily":"Sans","displaySize":28,"displayWeight":400,"displayLineHeight":1.5,"displayLetterSpacing":0},"background":{"positionX":0.5,"positionY":0.5,"scale":1,"blur":0,"brightness":1,"overlay":0},"decorations":[],"layout":{},"rights":{"licenseId":"LicenseRef-Test","attribution":"OpenChatGPTSkin","localOnly":false}}`
+	theme := `{"schemaVersion":4,"kind":"theme","appearance":"light","id":"mountain-mist","name":"Mountain Mist","version":"1.3.0","author":"OpenChatGPTSkin","assets":{"background":"assets/background.png"},"colors":{"accent":"#113355","secondary":"#224466","text":"#ffffff","muted":"#cccccc","panel":"#112233","border":"#223344","success":"#228855","warning":"#cc8822","danger":"#bb3344","info":"#4477cc","textSecondary":"#eeeeee","link":"#aaccee","inputText":"#ffffff","placeholder":"#cccccc","codeText":"#ffffff"},"typography":{"uiFamily":"Sans","codeFamily":"Mono","scale":1,"uiSize":14,"codeSize":13,"uiWeight":400,"codeWeight":400,"lineHeight":1.5,"displayFamily":"Sans","displaySize":28,"displayWeight":400,"displayLineHeight":1.5,"displayLetterSpacing":0},"background":{"positionX":0.5,"positionY":0.5,"scale":1,"blur":0,"brightness":1,"overlay":0},"decorations":[],"layout":{},"rights":{"licenseId":"LicenseRef-Test","attribution":"OpenChatGPTSkin","localOnly":false}}`
 	if err := os.WriteFile(filepath.Join(root, "catalog.json"), []byte(catalog), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(directory, "theme.json"), []byte(theme), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(directory, "assets", "background.webp"), uploadPNG(t), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(directory, "assets", "background.png"), uploadPNG(t), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(directory, "preview.webp"), []byte("RIFF0000WEBP"), 0o600); err != nil {

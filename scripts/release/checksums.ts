@@ -4,9 +4,12 @@ import { join, resolve } from "node:path";
 
 export async function writeReleaseChecksums(outputDirectoryInput: string): Promise<string> {
   const outputDirectory = resolve(outputDirectoryInput);
-  const releaseSuffixes = [".zip", ".tar.gz", ".exe", ".dmg"] as const;
+  const releaseSuffixes = [".zip", ".tar.gz", ".exe", ".dmg", ".tgz"] as const;
   const files = (await readdir(outputDirectory, { withFileTypes: true }))
-    .filter((entry) => entry.isFile() && releaseSuffixes.some((suffix) => entry.name.endsWith(suffix)))
+    .filter((entry) => entry.isFile() && (
+      entry.name === "community-tooling.json" ||
+      releaseSuffixes.some((suffix) => entry.name.endsWith(suffix))
+    ))
     .map((entry) => entry.name)
     .sort();
   if (files.length === 0) throw new Error("No Release artifacts are available for checksums");

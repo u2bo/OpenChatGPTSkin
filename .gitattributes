@@ -2,6 +2,7 @@
 *.ts text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+*.go text eol=lf
 *.png binary
 *.jpg binary
 *.jpeg binary

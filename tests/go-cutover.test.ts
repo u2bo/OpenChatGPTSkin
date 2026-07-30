@@ -2,6 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Go production cutover", () => {
+  it("keeps generated Go sources byte-stable on Windows checkouts", async () => {
+    const attributes = await readFile(".gitattributes", "utf8");
+    expect(attributes).toContain("*.go text eol=lf");
+  });
+
   it("makes Go the only default business host", async () => {
     const packageJson = JSON.parse(await readFile("package.json", "utf8")) as {
       readonly version: string;

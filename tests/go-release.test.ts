@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  acceptThemeCLIExecutable,
   acceptGoReleasePackages,
   buildGoReleasePackages,
   mergeGoReleasePackages,
@@ -84,6 +85,16 @@ describe("Go host production packages", () => {
       role: "theme",
       protocolVersion: 1,
       commands: { create: expect.any(String), config: expect.any(String) },
+    });
+    await expect(acceptThemeCLIExecutable(executable, "Vitest staged host")).resolves.toEqual({
+      accepted: true,
+      contractVersion: 1,
+      protocolVersion: 1,
+      themeSchemaVersion: 4,
+      workflow: [
+        "contract", "create", "config", "show",
+        "validate", "pack", "unpack", "validate",
+      ],
     });
     await expect(acceptGoReleasePackages(output, false)).resolves.toMatchObject({
       accepted: true,

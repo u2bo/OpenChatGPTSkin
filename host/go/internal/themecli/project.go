@@ -12,8 +12,6 @@ import (
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
 
-const maxThemeJSONBytes = 1024 * 1024
-
 var forbiddenPatchKeys = map[string]struct{}{
 	"__proto__":   {},
 	"constructor": {},
@@ -124,7 +122,7 @@ func createProject(input createInput) (_ createResult, returnErr error) {
 		if err != nil {
 			return createResult{}, err
 		}
-		backgroundContents, err = readRegularFile(input.background, 16*1024*1024, "CLI_READ")
+		backgroundContents, err = readRegularFile(input.background, maxThemeImageBytes, "CLI_READ")
 		if err != nil {
 			return createResult{}, err
 		}

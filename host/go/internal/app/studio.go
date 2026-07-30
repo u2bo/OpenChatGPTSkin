@@ -10,7 +10,7 @@ import (
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
 
-var goHostVersion = "0.4.0"
+var goHostVersion = "0.4.1"
 
 type RunningStudio = studio.RunningServer
 

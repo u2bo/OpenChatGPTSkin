@@ -2,7 +2,7 @@
 
 [返回 README](../README.md)
 
-`v0.4.0` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller、Runtime 与 Theme CLI 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
+`v0.4.1` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller、Runtime 与 Theme CLI 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
 
 ## 安装与数据目录
 
@@ -11,19 +11,24 @@
 - 用户数据位于 `%LOCALAPPDATA%\OpenChatGPTSkin`，覆盖安装和默认卸载不会删除个人主题、草稿或版本；
 - 未签名安装包可能触发 SmartScreen，只应从项目 GitHub Release 下载并先核对 `checksums.txt`。
 
-发布包必须包含 `release-manifest.json` schema v3。Manifest 记录 Go Host 版本/提交/入口 Hash、Contract Hash、CDP Adapter Hash、构建时 catalog 中的全部内置主题和 Stage 中每个文件的 SHA-256，并明确声明 `studio`、`controller`、`runtime`、`theme` 四个角色及空 sidecar；`v0.4.0` Release 记录七个主题。验收会拒绝 `node.exe`、`node` 或 `node_modules`。
+发布包必须包含 `release-manifest.json` schema v3。Manifest 记录 Go Host 版本/提交/入口 Hash、Contract Hash、CDP Adapter Hash、构建时 catalog 中的全部内置主题和 Stage 中每个文件的 SHA-256，并明确声明 `studio`、`controller`、`runtime`、`theme` 四个角色及空 sidecar；`v0.4.1` Release 记录七个主题。验收会拒绝 `node.exe`、`node` 或 `node_modules`。
 
 ## 发布包 Theme CLI
 
 Windows Setup 安装目录或便携 ZIP 解压目录中的 `OpenChatGPTSkin.exe` 可直接供智能体调用，不依赖 Node.js：
 
 ```powershell
+.\OpenChatGPTSkin.exe theme contract
 .\OpenChatGPTSkin.exe theme help
 .\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "My Theme" --author "Theme Agent" --background D:\Assets\background.png
+.\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
+.\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
 .\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
+.\OpenChatGPTSkin.exe theme pack --dir D:\Themes\my-theme --out D:\Themes\my-theme.ocskin
+.\OpenChatGPTSkin.exe theme unpack --file D:\Themes\my-theme.ocskin --out D:\Themes\my-theme-unpacked
 ```
 
-`create`、`pack`、`unpack` 不会覆盖已有目标；`config` 接受 RFC 7396 JSON Merge Patch，并在校验后原子更新主题文件。
+`theme contract` 提供版本化命令、JSON Schema、限制、退出码、输出流和稳定错误码。`create`、`pack`、`unpack` 不会覆盖已有目标；`config` 接受 RFC 7396 JSON Merge Patch，并在校验后原子更新主题文件。完整接入方式和可执行示例见 [面向智能体的原生 Theme CLI 指南](theme-cli-agent-guide.md)。
 
 ## 源码开发命令
 
@@ -65,7 +70,7 @@ npm run runtime -- restore
 
 ## 真实 Windows 验收清单
 
-在无私人项目或敏感聊天的测试工作区执行。当前 `v0.4.0` 的 Windows 原生构建物会执行 Theme CLI 的 `create → config → validate → pack → unpack` 烟测；ChatGPT 更新后仍必须重新执行本清单。
+在无私人项目或敏感聊天的测试工作区执行。当前 `v0.4.1` 的 Windows Stage 与 Setup 安装后原生构建物都会执行 Theme CLI 的 `contract → create → config → show → validate → pack → unpack → validate` 完整验收；ChatGPT 更新后仍必须重新执行本清单。
 
 1. 校验 Setup/ZIP SHA-256，分别完成安装/启动；确认 Theme Studio 能打开且用户数据不写入程序目录。
 2. 完全退出普通 Codex，依次应用七个内置主题；检查首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端。

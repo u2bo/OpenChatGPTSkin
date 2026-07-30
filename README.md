@@ -2,10 +2,10 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-[![Release v0.4.0](https://img.shields.io/badge/status-v0.4.0-2ea44f)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.0)
+[![Release v0.4.1](https://img.shields.io/badge/status-v0.4.1-2ea44f)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.1)
 [![浏览社区主题](https://img.shields.io/badge/community-browse%20themes-7c3aed)](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/themes)
 [![投稿主题](https://img.shields.io/badge/contribute-submit%20a%20theme-f97316)](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/submit)
-[![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.0)
+[![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.1)
 [![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)](https://go.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)](LICENSE)
@@ -33,7 +33,7 @@
 </details>
 
 > [!IMPORTANT]
-> `v0.4.0` 正式接入已上线的社区主题目录。用户可以从 Theme Studio 或上方徽章浏览双语主题页面、真实截图、兼容状态、版本记录、文件大小和 SHA-256，也可以通过 Pull Request 投稿主题。Release 同时发布版本一致的 Theme Schema、Theme Core 与 Community Catalog 校验工具，社区 CI 会从源目录可复现地构建 `.ocskin`，而 Theme Studio 仍负责最终本地导入和安全校验。Windows x64、macOS ARM64 与 macOS x64 的六类安装/便携产物继续内置七个主题和 Node-free Theme CLI。macOS 产物仍未使用 Developer ID 正式签名或公证；应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
+> `v0.4.1` 将原生 Theme CLI 固化为可供其他智能体直接发现和调用的正式接口。最终 Windows/macOS 可执行文件新增 `theme contract`，会输出版本化命令、JSON Schema、限制、退出码和稳定错误码；三平台发布产物及 Windows Setup 安装结果都会实际执行 `contract → create → config → show → validate → pack → unpack → validate`。最终用户不需要 Node.js、npm、Go 或 Git。此补丁不新增或变更社区主题目录功能。macOS 产物仍未使用 Developer ID 正式签名或公证；应用主题前，请保存工作并**完全退出普通 ChatGPT**。
 
 ## 目录
 
@@ -70,6 +70,7 @@ OpenChatGPTSkin 由三个相互约束的部分组成：
 | Windows x64 便携 ZIP 与用户级 Setup | 正式版 |
 | macOS ARM64/x64 DMG、Runtime 启动/切换/恢复 | 未签名预览，双架构实机验收通过 |
 | Theme Studio 编辑、预览、版本、导入导出、应用 | 正式版 |
+| 面向智能体的原生 Theme CLI 与机器可读 Contract | `v0.4.1` 正式发布 |
 | 安全模块化布局 | 已完成 |
 | 社区主题目录、投稿审核与可校验下载 | 已上线，由独立社区仓库维护 |
 | Community Catalog schema/CLI 与可复现发布工具 | `v0.4.0` 正式发布 |
@@ -189,7 +190,7 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows Setup（推荐）
 
-1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.0) 下载 `OpenChatGPTSkin_0.4.0_windows_x64_Setup.exe` 和 `checksums.txt`。
+1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.1) 下载 `OpenChatGPTSkin_0.4.1_windows_x64_Setup.exe` 和 `checksums.txt`。
 2. 校验 SHA-256 后双击 Setup。安装范围为当前用户，默认目录是 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限。
 3. 从开始菜单启动 OpenChatGPTSkin；生产 Theme Studio 健康启动后会自动打开默认浏览器。
 
@@ -197,16 +198,16 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows 便携 ZIP
 
-下载 `OpenChatGPTSkin_0.4.0_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
+下载 `OpenChatGPTSkin_0.4.1_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
 
 ### macOS DMG（未签名开发者预览）
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.4.0_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.4.0_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.4.1_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.4.1_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
 2. 先按下方命令核对 SHA-256，再打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 3. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。不要关闭 Gatekeeper，也不要使用 `xattr` 移除隔离属性。
 4. Theme Studio 健康启动后会自动打开默认浏览器。替换或删除 `.app` 不会删除 `~/Library/Application Support/OpenChatGPTSkin` 下的个人主题、草稿和 Runtime 状态。
 
-开发者还可以下载同架构的 `OpenChatGPTSkin_0.4.0_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.4.0_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
+开发者还可以下载同架构的 `OpenChatGPTSkin_0.4.1_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.4.1_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
 
 维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。三个原生 Runner 会分别构建并验收 Go Host，随后合并为 `go-release-combined`；手动运行不会创建 Tag 或 GitHub Release。
 
@@ -215,17 +216,17 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 在下载目录运行：
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.4.0_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.4.0_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.4.1_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.4.1_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS 终端：
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.4.0_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.4.1_macos_arm64.dmg
 # Intel Mac 使用：
-shasum -a 256 OpenChatGPTSkin_0.4.0_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.4.1_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -299,19 +300,21 @@ npm run runtime -- status
 2. **Theme Studio UI**：从内置主题开始，通过颜色、背景、字体、装饰和布局面板完成可视化定制；
 3. **原生 Theme CLI**：让智能体直接调用最终 `OpenChatGPTSkin.exe` 或 macOS App 内的可执行文件创建、配置、检查、校验和打包主题。
 
-主题格式、安全边界和所有字段范围见 [主题格式说明](docs/theme-format.md)。
+智能体接入请先阅读 [面向智能体的原生 Theme CLI 指南](docs/theme-cli-agent-guide.md)；主题格式、安全边界和所有字段范围见 [主题格式说明](docs/theme-format.md)。
 
 ### 通过最终构建物创建主题
 
 Windows Setup 安装目录或便携 ZIP 解压目录中的 `OpenChatGPTSkin.exe` 已直接包含 CLI，不依赖 Node.js、npm 或 Go：
 
 ```powershell
+.\OpenChatGPTSkin.exe theme contract
 .\OpenChatGPTSkin.exe theme help
 .\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "我的主题" --author "Theme Agent" --background D:\Assets\background.png
 .\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
 .\OpenChatGPTSkin.exe theme show --dir D:\Themes\my-theme
 .\OpenChatGPTSkin.exe theme validate --dir D:\Themes\my-theme
 .\OpenChatGPTSkin.exe theme pack --dir D:\Themes\my-theme --out D:\Themes\my-theme.ocskin
+.\OpenChatGPTSkin.exe theme unpack --file D:\Themes\my-theme.ocskin --out D:\Themes\my-theme-unpacked
 ```
 
 macOS 安装版调用同一个 App 可执行文件：
@@ -435,7 +438,8 @@ npm run build
 
 ## 更多文档
 
-- [v0.4.0 发布说明](docs/releases/v0.4.0.md)
+- [v0.4.1 发布说明](docs/releases/v0.4.1.md)
+- [v0.4.0 历史发布说明](docs/releases/v0.4.0.md)
 - [v0.3.3 历史发布说明](docs/releases/v0.3.3.md)
 - [v0.3.2 历史发布说明](docs/releases/v0.3.2.md)
 - [v0.3.1 历史发布说明](docs/releases/v0.3.1.md)
@@ -445,6 +449,7 @@ npm run build
 - [v0.1.0 历史发布说明](docs/releases/v0.1.0.md)
 - [v0.1.0-alpha.1 历史发布说明](docs/releases/v0.1.0-alpha.1.md)
 - [自定义主题指南](docs/custom-theme-guide.md)
+- [面向智能体的原生 Theme CLI 指南](docs/theme-cli-agent-guide.md)
 - [Theme Studio 开发说明](docs/theme-studio.md)
 - [主题格式与安全规则](docs/theme-format.md)
 - [Windows Runtime 与兼容性门](docs/runtime-windows.md)

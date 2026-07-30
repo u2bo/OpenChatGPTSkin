@@ -46,9 +46,44 @@ func TestHelpDescribesTheMachineReadableThemeRole(t *testing.T) {
 	if !ok {
 		t.Fatalf("commands=%T", value["commands"])
 	}
-	for _, name := range []string{"create", "config", "show", "validate", "pack", "unpack"} {
+	for _, name := range []string{"contract", "create", "config", "show", "validate", "pack", "unpack"} {
 		if _, exists := commands[name]; !exists {
 			t.Fatalf("help is missing %q: %+v", name, commands)
+		}
+	}
+}
+
+func TestContractExposesCommandsSchemasLimitsAndErrors(t *testing.T) {
+	result, err := Execute([]string{"contract"})
+	value := commandObject(t, result, err)
+	if value["role"] != "theme" ||
+		value["protocolVersion"] != float64(1) ||
+		value["contractVersion"] != float64(1) ||
+		value["themeSchemaVersion"] != float64(4) {
+		t.Fatalf("contract=%+v", value)
+	}
+	for _, key := range []string{
+		"commands", "limits", "exitCodes", "output", "errorCodes",
+		"themeSchema", "draftSchema", "archive",
+	} {
+		if value[key] == nil {
+			t.Fatalf("contract is missing %q: %+v", key, value)
+		}
+	}
+	errorCodes, ok := value["errorCodes"].([]any)
+	if !ok {
+		t.Fatalf("errorCodes=%T", value["errorCodes"])
+	}
+	for _, expected := range []string{"THEME_NOT_FOUND", "STUDIO_IMPORT_INVALID"} {
+		found := false
+		for _, code := range errorCodes {
+			if code == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("contract error codes are missing %q: %+v", expected, errorCodes)
 		}
 	}
 }

@@ -1,0 +1,9 @@
+{
+  "description": "Configured by an agent through the native Theme CLI",
+  "colors": {
+    "accent": "#7c3aed"
+  },
+  "background": {
+    "overlay": 0.45
+  }
+}

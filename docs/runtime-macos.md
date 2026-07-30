@@ -7,7 +7,7 @@ OpenChatGPTSkin 已实现 macOS Runtime 的平台适配：Theme Studio、主题�
 > [!WARNING]
 > 当前实现已在 Windows 上通过 TypeScript、单元测试和 macOS 命令契约测试，但尚未在真实 Mac 上完成 Codex 视觉闭环验收。发布时应标记为开发者预览，不能把本页的“预期”当作实机通过证据。
 
-GitHub Actions 会分别在 macOS x64 与 ARM64 Runner 构建单一 Go Host，组装单 HTML Theme Studio 和当前 catalog 的全部主题，生成对应架构的 DMG 与 `.tar.gz`，并执行 payload、便携归档、应用包、Mach-O 架构、DMG 挂载和完整 Theme Studio Release Acceptance。`v0.4.0` Release 包含七个主题。Tag 构建会把产物作为明确标注的未签名开发者预览附加到 GitHub Release；手动 `workflow_dispatch` 只上传测试产物，不创建 Release。
+GitHub Actions 会分别在 macOS x64 与 ARM64 Runner 构建单一 Go Host，组装单 HTML Theme Studio 和当前 catalog 的全部主题，生成对应架构的 DMG 与 `.tar.gz`，并执行 payload、便携归档、应用包、Mach-O 架构、DMG 挂载和完整 Theme Studio Release Acceptance。`v0.4.1` Release 包含七个主题，并对 App 内最终可执行文件执行完整 Theme CLI 工作流。Tag 构建会把产物作为明确标注的未签名开发者预览附加到 GitHub Release；手动 `workflow_dispatch` 只上传测试产物，不创建 Release。
 
 ## 前提
 
@@ -47,12 +47,13 @@ OpenChatGPTSkin 尚未使用 Developer ID 签名或公证。不要关闭 Gatekee
 安装版用户从 Applications 启动 OpenChatGPTSkin，并在浏览器 Theme Studio 中应用、切换或恢复主题。App 内的同一个原生可执行文件也直接提供面向智能体的 Theme CLI，不需要 Node.js：
 
 ```bash
+/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme contract
 /Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme help
 /Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme create --dir "$HOME/Themes/my-theme" --id my-theme --name "My Theme" --author "Theme Agent" --background "$HOME/Pictures/background.png"
 /Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin theme validate --dir "$HOME/Themes/my-theme"
 ```
 
-源码模式可使用 `npm run --silent theme -- help` 调用同一个 Go Theme CLI；Studio 与 Runtime 命令和 Windows 相同：
+`theme contract` 会输出版本化命令、JSON Schema、限制、退出码、输出流和稳定错误码；完整接入方式与 POSIX shell 示例见 [面向智能体的原生 Theme CLI 指南](theme-cli-agent-guide.md)。源码模式可使用 `npm run --silent theme -- contract` 调用同一个 Go Theme CLI；Studio 与 Runtime 命令和 Windows 相同：
 
 ```bash
 npm run studio:dev

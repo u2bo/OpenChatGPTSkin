@@ -22,18 +22,18 @@ describe("project documentation", () => {
     expect(format).not.toContain("dilraba-local");
   });
 
-  it("documents the v0.4.0 community release and current developer commands", async () => {
+  it("documents the v0.4.1 Theme CLI release and current developer commands", async () => {
     const [readme, readmeEn, notes, windows, mac, macEn, studio] = await Promise.all([
       readFile("README.md", "utf8"), readFile("README.en.md", "utf8"),
-      readFile("docs/releases/v0.4.0.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
+      readFile("docs/releases/v0.4.1.md", "utf8"), readFile("docs/runtime-windows.md", "utf8"),
       readFile("docs/runtime-macos.md", "utf8"), readFile("docs/runtime-macos.en.md", "utf8"),
       readFile("docs/theme-studio.md", "utf8"),
     ]);
     for (const document of [readme, readmeEn]) {
-      expect(document).toContain("v0.4.0");
-      expect(document).toContain("OpenChatGPTSkin_0.4.0_windows_x64_Setup.exe");
-      expect(document).toContain("OpenChatGPTSkin_0.4.0_macos_arm64.dmg");
-      expect(document).toContain("OpenChatGPTSkin_0.4.0_macos_x64.dmg");
+      expect(document).toContain("v0.4.1");
+      expect(document).toContain("OpenChatGPTSkin_0.4.1_windows_x64_Setup.exe");
+      expect(document).toContain("OpenChatGPTSkin_0.4.1_macos_arm64.dmg");
+      expect(document).toContain("OpenChatGPTSkin_0.4.1_macos_x64.dmg");
       expect(document).toContain("npm run runtime -- list-themes");
       expect(document).toContain("OpenChatGPTSkin.exe theme help");
       expect(document).toContain("npm run runtime -- import --theme-file");
@@ -52,13 +52,47 @@ describe("project documentation", () => {
     expect(macEn).toContain("seven-theme results");
     expect(studio).toContain("单一 Go Host");
     expect(studio).toContain("OpenChatGPTSkin.exe");
-    expect(notes).toContain("Community Catalog");
-    expect(notes).toContain("community-tooling.json");
+    expect(notes).toContain("Theme CLI Contract");
+    expect(notes).toContain("theme contract");
+    expect(notes).toContain("Node.js");
+    expect(notes).toContain("不新增或变更社区主题目录");
+    expect(notes).not.toContain("Community Catalog");
     expect(notes).toContain("OpenAI.Codex 26.721.4979.0");
     expect(notes).toContain("%LOCALAPPDATA%\\OpenChatGPTSkin");
     expect(notes).toContain("SmartScreen");
     expect(notes).toContain("Get-FileHash");
     expect(notes).toContain("shasum -a 256");
+  });
+
+  it("ships bilingual agent guidance and executable Theme CLI workflows", async () => {
+    const [guide, guideEn, patch, powershell, shell] = await Promise.all([
+      readFile("docs/theme-cli-agent-guide.md", "utf8"),
+      readFile("docs/theme-cli-agent-guide.en.md", "utf8"),
+      readFile("examples/theme-cli/theme-patch.json", "utf8"),
+      readFile("examples/theme-cli/agent-workflow.ps1", "utf8"),
+      readFile("examples/theme-cli/agent-workflow.sh", "utf8"),
+    ]);
+
+    expect(JSON.parse(patch)).toEqual({
+      description: "Configured by an agent through the native Theme CLI",
+      colors: { accent: "#7c3aed" },
+      background: { overlay: 0.45 },
+    });
+    for (const document of [guide, guideEn]) {
+      for (const required of [
+        "theme contract", "theme create", "theme config", "theme show", "theme validate",
+        "theme pack", "theme unpack", "protocolVersion", "stdout", "stderr", "Node.js",
+      ]) expect(document).toContain(required);
+    }
+    expect(guide).toContain("退出码 0 / 1 / 2");
+    expect(guideEn).toContain("exit codes 0 / 1 / 2");
+    for (const script of [powershell, shell]) {
+      for (const command of ["contract", "create", "config", "show", "validate", "pack", "unpack"]) {
+        expect(script).toContain(`theme ${command}`);
+      }
+    }
+    expect(powershell).not.toContain("Remove-Item");
+    expect(shell).not.toMatch(/\brm\b/);
   });
 
   it("ships bilingual custom-theme guidance, contribution rules, and screenshots", async () => {
@@ -84,8 +118,8 @@ describe("project documentation", () => {
     }
     expect(readme).toContain("https://linux.do/");
     expect(readmeEn).toContain("https://linux.do/");
-    expect(readme).toContain("[![Release v0.4.0]");
-    expect(readmeEn).toContain("[![Release v0.4.0]");
+    expect(readme).toContain("[![Release v0.4.1]");
+    expect(readmeEn).toContain("[![Release v0.4.1]");
     expect(readme).toContain("https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/themes");
     expect(readme).toContain("https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/submit");
     expect(readmeEn).toContain("https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes");

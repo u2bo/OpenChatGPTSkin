@@ -50,6 +50,7 @@ describe("cross-language contract generator", () => {
       "studio/v2/cases/http.json",
       "studio/v2/routes.json",
       "studio/v2/schemas/index.json",
+      "theme-cli/v1/contract.json",
       "theme/v4/archive-cases.json",
       "theme/v4/draft-schema.json",
       "theme/v4/migrations.json",
@@ -124,7 +125,7 @@ describe("cross-language contract generator", () => {
 
   it("verifies checked-in contracts without rewriting them", async () => {
     await expect(verifyGeneratedContracts(process.cwd())).resolves.toEqual({
-      fileCount: 13,
+      fileCount: 14,
       verified: true,
     });
   });
@@ -134,7 +135,7 @@ describe("cross-language contract generator", () => {
       readonly scripts?: Readonly<Record<string, string>>;
     };
     expect(packageJson.scripts?.["contracts:build"]).toBe(
-      "tsx --tsconfig tsconfig.scripts.json scripts/contracts/build.ts",
+      "tsx --tsconfig tsconfig.scripts.json scripts/contracts/build.ts && npm run go:theme-contract:build",
     );
     expect(packageJson.scripts?.["contracts:verify"]).toBe(
       "tsx --tsconfig tsconfig.scripts.json scripts/contracts/verify.ts",

@@ -66,6 +66,7 @@ import {
   PersistedDraftRecordSchema,
 } from "../../packages/theme-studio-core/src/index.js";
 import { ReleaseManifestSchema } from "../release/manifest.js";
+import { buildThemeCLIContract } from "./theme-cli.js";
 import type { ZodTypeAny } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -78,6 +79,7 @@ const GENERATED_FILES = [
   "studio/v2/cases/http.json",
   "studio/v2/routes.json",
   "studio/v2/schemas/index.json",
+  "theme-cli/v1/contract.json",
   "theme/v4/archive-cases.json",
   "theme/v4/draft-schema.json",
   "theme/v4/migrations.json",
@@ -85,7 +87,7 @@ const GENERATED_FILES = [
   "theme/v4/semantic-cases.json",
 ] as const;
 
-const GENERATED_ROOTS = ["studio/v2", "runtime/v1", "theme/v4", "data/v1"] as const;
+const GENERATED_ROOTS = ["studio/v2", "runtime/v1", "theme-cli/v1", "theme/v4", "data/v1"] as const;
 
 const DATA_COMPATIBILITY_CASES = [
   { name: "draft v1", valid: true, schema: "draftRecord", version: 1 },
@@ -168,6 +170,25 @@ export async function buildContracts(
     await rm(join(outputRoot, ...root.split("/")), { recursive: true, force: true });
   }
 
+  const themeSchemaContract = {
+    schemaVersion: THEME_SCHEMA_VERSION,
+    errorCodes: THEME_SCHEMA_ERROR_CODES,
+    schema: schema(ThemeDocumentSchema, "ThemeDocument"),
+  };
+  const themeDraftSchemaContract = {
+    schemaVersion: THEME_SCHEMA_VERSION,
+    schema: schema(ThemeDraftDocumentSchema, "ThemeDraftDocument"),
+  };
+  const themeArchiveContract = {
+    schemaVersion: 1,
+    limits: {
+      archiveBytes: OCSKIN_MAX_ARCHIVE_BYTES,
+      expandedBytes: OCSKIN_MAX_EXPANDED_BYTES,
+    },
+    manifestSchema: schema(OcskinManifestSchema, "OcskinManifest"),
+    cases: OCSKIN_ARCHIVE_SEMANTIC_CASES,
+  };
+
   await Promise.all([
     writeJson(outputRoot, "studio/v2/routes.json", {
       protocolVersion: STUDIO_PROTOCOL_VERSION,
@@ -212,15 +233,8 @@ export async function buildContracts(
       recoveryCases: RUNTIME_RECOVERY_SEMANTIC_CASES,
       stateTransitions: RUNTIME_STATE_TRANSITIONS,
     }),
-    writeJson(outputRoot, "theme/v4/schema.json", {
-      schemaVersion: THEME_SCHEMA_VERSION,
-      errorCodes: THEME_SCHEMA_ERROR_CODES,
-      schema: schema(ThemeDocumentSchema, "ThemeDocument"),
-    }),
-    writeJson(outputRoot, "theme/v4/draft-schema.json", {
-      schemaVersion: THEME_SCHEMA_VERSION,
-      schema: schema(ThemeDraftDocumentSchema, "ThemeDraftDocument"),
-    }),
+    writeJson(outputRoot, "theme/v4/schema.json", themeSchemaContract),
+    writeJson(outputRoot, "theme/v4/draft-schema.json", themeDraftSchemaContract),
     writeJson(outputRoot, "theme/v4/migrations.json", {
       ...THEME_MIGRATION_CONTRACT,
       sourceSchemas: {
@@ -234,15 +248,12 @@ export async function buildContracts(
       schemaVersion: THEME_SCHEMA_VERSION,
       cases: THEME_SEMANTIC_CASES,
     }),
-    writeJson(outputRoot, "theme/v4/archive-cases.json", {
-      schemaVersion: 1,
-      limits: {
-        archiveBytes: OCSKIN_MAX_ARCHIVE_BYTES,
-        expandedBytes: OCSKIN_MAX_EXPANDED_BYTES,
-      },
-      manifestSchema: schema(OcskinManifestSchema, "OcskinManifest"),
-      cases: OCSKIN_ARCHIVE_SEMANTIC_CASES,
-    }),
+    writeJson(outputRoot, "theme/v4/archive-cases.json", themeArchiveContract),
+    writeJson(outputRoot, "theme-cli/v1/contract.json", buildThemeCLIContract(
+      themeSchemaContract,
+      themeDraftSchemaContract,
+      themeArchiveContract,
+    )),
     writeJson(outputRoot, "data/v1/schemas/index.json", schemaIndex(1, {
       draftRecord: DraftRecordSchema,
       persistedDraftRecord: PersistedDraftRecordSchema,
@@ -263,7 +274,7 @@ export async function buildContracts(
 
 export async function verifyGeneratedContracts(
   workspaceRootInput: string,
-): Promise<{ readonly fileCount: 13; readonly verified: true }> {
+): Promise<{ readonly fileCount: 14; readonly verified: true }> {
   const workspaceRoot = resolve(workspaceRootInput);
   const expectedRoot = join(workspaceRoot, "contracts");
   const temporaryRoot = await mkdtemp(join(tmpdir(), "openchatgptskin-contracts-"));
@@ -293,7 +304,7 @@ export async function verifyGeneratedContracts(
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
-  return { fileCount: 13, verified: true };
+  return { fileCount: 14, verified: true };
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : "";

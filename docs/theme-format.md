@@ -169,7 +169,10 @@ Catalog paths are constrained to `builtin/<id>` or `recipes/<id>` and must match
 
 ## CLI
 
+Agent integrations should begin with the [Native Theme CLI Guide](theme-cli-agent-guide.en.md) or the [中文指南](theme-cli-agent-guide.md), then discover the exact executable contract at runtime:
+
 ```powershell
+.\OpenChatGPTSkin.exe theme contract
 .\OpenChatGPTSkin.exe theme help
 .\OpenChatGPTSkin.exe theme create --dir D:\Themes\my-theme --id my-theme --name "My Theme" --author "Theme Agent" --appearance dark --background D:\Assets\background.png
 .\OpenChatGPTSkin.exe theme config --dir D:\Themes\my-theme --patch D:\Assets\theme-patch.json
@@ -187,7 +190,7 @@ The same commands are available without Node.js from an installed macOS app:
 
 In a source checkout, `npm run --silent theme -- ...` delegates to the same Go implementation. The original TypeScript `catalog` command remains a source-maintainer build tool and is not part of the installed executable.
 
-`help` prints the machine-readable command contract. `create` writes a normalized Theme Schema v4 project with safe local-only rights defaults. With `--background`, it copies the local PNG/JPEG/WebP file into `assets/`, validates its signature and size, and produces a complete theme. Without it, the result is an editable draft; use `validate --draft` until a real background is declared and present.
+`contract` prints the complete versioned machine-readable contract, including JSON Schemas, limits, exit codes, streams, and stable error codes. `help` prints a compact command summary. `create` writes a normalized Theme Schema v4 project with safe local-only rights defaults. With `--background`, it copies the local PNG/JPEG/WebP file into `assets/`, validates its signature and size, and produces a complete theme. Without it, the result is an editable draft; use `validate --draft` until a real background is declared and present.
 
 `config --patch` accepts an RFC 7396 JSON Merge Patch file. Objects merge recursively, arrays replace the complete array, and `null` removes an optional property. The merged document is schema-validated before `theme.json` is replaced, so an invalid patch leaves the previous document unchanged. Referenced assets are never downloaded or synthesized. `show` prints the normalized draft for the next agent step.
 

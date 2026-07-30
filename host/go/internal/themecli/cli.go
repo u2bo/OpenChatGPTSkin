@@ -1,6 +1,7 @@
 package themecli
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,8 +11,6 @@ import (
 
 	"github.com/u2bo/OpenChatGPTSkin/host/go/internal/themerepo"
 )
-
-const maxArchiveBytes = 32 * 1024 * 1024
 
 type cliError struct {
 	code    string
@@ -92,18 +91,20 @@ func parseOptions(arguments []string, specs map[string]optionSpec) (map[string]s
 }
 
 func helpResult() map[string]any {
+	contract := contractResult()
 	return map[string]any{
-		"role":            "theme",
-		"protocolVersion": 1,
-		"commands": map[string]any{
-			"create":   "create --dir <path> --id <id> --name <name> --author <author> [--version <semver>] [--appearance <auto|light|dark>] [--background <file>]",
-			"config":   "config --dir <path> --patch <json-file>",
-			"show":     "show --dir <path>",
-			"validate": "validate --dir <path> [--draft]",
-			"pack":     "pack --dir <path> --out <file.ocskin>",
-			"unpack":   "unpack --file <file.ocskin> --out <path>",
-		},
+		"role":            contract["role"],
+		"protocolVersion": contract["protocolVersion"],
+		"commands":        contract["commands"],
 	}
+}
+
+func contractResult() map[string]any {
+	var result map[string]any
+	if err := json.Unmarshal([]byte(themeCLIContractJSON), &result); err != nil {
+		panic("generated Theme CLI contract is invalid: " + err.Error())
+	}
+	return result
 }
 
 // Execute runs a machine-readable command in the executable's theme role.
@@ -117,6 +118,11 @@ func Execute(arguments []string) (any, error) {
 	command := arguments[0]
 	rest := arguments[1:]
 	switch command {
+	case "contract":
+		if len(rest) != 0 {
+			return nil, usageError("contract does not accept options")
+		}
+		return contractResult(), nil
 	case "help":
 		if len(rest) != 0 {
 			return nil, usageError("help does not accept options")

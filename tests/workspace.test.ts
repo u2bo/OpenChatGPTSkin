@@ -6,7 +6,7 @@ import { THEME_SCHEMA_VERSION } from "@open-chatgpt-skin/theme-schema";
 describe("workspace packages", () => {
   it("exports stable foundation versions", () => {
     expect(THEME_SCHEMA_VERSION).toBe(4);
-    expect(THEME_CORE_VERSION).toBe("0.3.3");
+    expect(THEME_CORE_VERSION).toBe("0.4.0");
   });
 
   it("keeps Go as the only business host and TypeScript as authoring packages", async () => {
@@ -31,11 +31,11 @@ describe("workspace packages", () => {
     });
     expect(runtimeContractPackage.dependencies).toHaveProperty(
       "@open-chatgpt-skin/theme-schema",
-      "0.3.3",
+      "0.4.0",
     );
     expect(studioPackage.dependencies).toHaveProperty(
       "@open-chatgpt-skin/theme-schema",
-      "0.3.3",
+      "0.4.0",
     );
   });
 });

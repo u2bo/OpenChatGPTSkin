@@ -56,7 +56,7 @@ Stable CLI failures are:
 
 `--release-repository` must be exactly `https://github.com/OWNER/REPOSITORY`, without a trailing slash, query, or fragment. Every non-null archive URL must begin with that repository's `/releases/download/` path.
 
-`--site-origin` must be an HTTPS host with an optional fixed path and no trailing slash, query, or fragment. Preview and screenshot URLs must remain below that origin. Author homepages are untrusted display links and do not authorize archive or media downloads.
+`--site-origin` must be an HTTPS host with an optional fixed path and no trailing slash, query, or fragment. Preview, screenshot, and archive URLs are parsed and normalized before their origin and descendant path are checked; credentials, path escapes, percent-encoded paths, queries, and fragments are rejected. Author homepages are untrusted display links and do not authorize archive or media downloads.
 
 Catalog text is untrusted plain text. The contract does not permit HTML, CSS, JavaScript, executable content, DOM selectors, remote theme assets, or free-running code.
 
@@ -91,4 +91,4 @@ The same GitHub Release as the native application contains:
 
 ## Scope boundary
 
-This core tooling release does not implement or authorize the community website, submission workflow, moderation UI, remote installation, background download, automatic updates, or catalog signing. Those capabilities belong to the separate community repository and require their own implementation plan after immutable Release URLs and checksums exist.
+This core package defines validation and release tooling; the separate [OpenChatGPTSkin Community](https://github.com/u2bo/OpenChatGPTSkin-Community) repository owns the live website, submission workflow, review policy, and immutable theme Releases. The community site performs discovery and download only. Theme Studio remains the local import and validation boundary; background installation, automatic updates, accounts, ratings, and catalog signing are outside this contract.

@@ -183,6 +183,10 @@ describe("Theme Studio home", () => {
     expect(screen.getByRole("button", { name: "导出主题包" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "导出主题包" }))
       .toHaveAttribute("title", "只有已保存或已导入的个人主题可以导出。");
+    expect(screen.getByRole("link", { name: /浏览社区主题/ })).toHaveAttribute(
+      "href",
+      "https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/themes",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /冰川极光 冰川极光主题描述/ }));
     expect(screen.getByRole("heading", { name: "冰川极光" })).toBeVisible();
@@ -238,6 +242,10 @@ describe("Theme Studio home", () => {
     await screen.findByRole("heading", { name: "给工作台，换一种心情。" });
     fireEvent.click(screen.getByRole("button", { name: "EN" }));
     expect(screen.getByRole("heading", { name: "Give your workspace a new mood." })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Browse community themes/ })).toHaveAttribute(
+      "href",
+      "https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes",
+    );
     fireEvent.click(screen.getByRole("button", { name: /Dark/ }));
     expect(document.documentElement.dataset.studioTheme).toBe("dark");
     fireEvent.click(screen.getByRole("button", { name: /Start creating/ }));

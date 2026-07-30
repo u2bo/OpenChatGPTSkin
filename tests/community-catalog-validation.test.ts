@@ -107,6 +107,31 @@ describe("community catalog invariants", () => {
       .toThrow(CommunityCatalogValidationError);
   });
 
+  it("rejects normalized path escapes and non-canonical trusted URLs", () => {
+    const mediaEscape = cloneValidCommunityCatalog() as any;
+    mediaEscape.themes[0].versions[0].preview.url =
+      `${policy.siteOrigin}/media/../outside.webp`;
+    expect(() => validateCommunityCatalog(mediaEscape, policy))
+      .toThrow(CommunityCatalogValidationError);
+
+    const encodedEscape = cloneValidCommunityCatalog() as any;
+    encodedEscape.themes[0].versions[0].screenshots[0].url =
+      `${policy.siteOrigin}/media/%2e%2e/outside.webp`;
+    expect(() => validateCommunityCatalog(encodedEscape, policy))
+      .toThrow(CommunityCatalogValidationError);
+
+    const releaseEscape = cloneValidCommunityCatalog() as any;
+    releaseEscape.themes[0].versions[0].archive.url =
+      `${policy.releaseRepository}/releases/download/../outside.ocskin`;
+    expect(() => validateCommunityCatalog(releaseEscape, policy))
+      .toThrow(CommunityCatalogValidationError);
+
+    const query = cloneValidCommunityCatalog() as any;
+    query.themes[0].versions[0].preview.url += "?download=1";
+    expect(() => validateCommunityCatalog(query, policy))
+      .toThrow(CommunityCatalogValidationError);
+  });
+
   it("requires home plus task or conversation screenshots", () => {
     const catalog = cloneValidCommunityCatalog() as any;
     catalog.themes[0].versions[0].screenshots[1].kind = "dark";

@@ -22,6 +22,20 @@ const downloadableStatuses: ReadonlySet<string> = new Set([
   "needs-reverification",
 ]);
 
+function isTrustedDescendantUrl(value: string, trustedBase: string): boolean {
+  const candidate = new URL(value);
+  const base = new URL(`${trustedBase}/`);
+  return candidate.href === value &&
+    candidate.protocol === "https:" &&
+    candidate.username === "" &&
+    candidate.password === "" &&
+    candidate.origin === base.origin &&
+    candidate.pathname.startsWith(base.pathname) &&
+    !candidate.pathname.includes("%") &&
+    candidate.search === "" &&
+    candidate.hash === "";
+}
+
 function compareVersions(left: string, right: string): number {
   const leftParts = left.split(".").map(Number);
   const rightParts = right.split(".").map(Number);
@@ -41,8 +55,7 @@ export function validateCommunityCatalog(
   policy: CommunityCatalogTrustPolicy,
 ): CommunityCatalog {
   const trustedPolicy = parseCommunityCatalogTrustPolicy(policy);
-  const mediaPrefix = `${trustedPolicy.siteOrigin}/`;
-  const releasePrefix = `${trustedPolicy.releaseRepository}/releases/download/`;
+  const releaseBase = `${trustedPolicy.releaseRepository}/releases/download`;
   const shape = CommunityCatalogSchema.safeParse(input);
   if (!shape.success) {
     throw new CommunityCatalogValidationError(shape.error.issues.map((entry: z.ZodIssue) =>
@@ -83,11 +96,11 @@ export function validateCommunityCatalog(
         issues.push(issue(`${versionPath}/screenshots`, "screenshots require home and task or conversation"));
       }
       for (const [mediaIndex, media] of [version.preview, ...version.screenshots].entries()) {
-        if (!media.url.startsWith(mediaPrefix)) {
+        if (!isTrustedDescendantUrl(media.url, trustedPolicy.siteOrigin)) {
           issues.push(issue(`${versionPath}/media/${mediaIndex}/url`, "media URL is outside the trusted site origin"));
         }
       }
-      if (version.archive && !version.archive.url.startsWith(releasePrefix)) {
+      if (version.archive && !isTrustedDescendantUrl(version.archive.url, releaseBase)) {
         issues.push(issue(`${versionPath}/archive/url`, "archive URL is outside the trusted release repository"));
       }
       if (version.supportStatus === "yanked") {

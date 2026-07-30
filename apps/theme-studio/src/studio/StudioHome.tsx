@@ -3,6 +3,7 @@ import {
   Check,
   DownloadSimple,
   GithubLogo,
+  GlobeHemisphereWest,
   Moon,
   PaintBrushBroad,
   PlayCircle,
@@ -40,6 +41,12 @@ interface StudioHomeProps {
   readonly onRestore: () => void;
   readonly onExport: () => void;
   readonly onDelete: () => void;
+}
+
+const COMMUNITY_DIRECTORY_ORIGIN = "https://u2bo.github.io/OpenChatGPTSkin-Community";
+
+function communityDirectoryUrl(locale: StudioLocale): string {
+  return `${COMMUNITY_DIRECTORY_ORIGIN}/${locale}/themes`;
 }
 
 function runtimeHomeLabel(
@@ -218,9 +225,7 @@ export function StudioHome(props: StudioHomeProps) {
           <article className="home-community-card">
             <div><StarFour weight="duotone" /></div>
             <span><strong>{t.communityTitle}</strong><p>{t.communityDescription}</p></span>
-            {bootstrap.repositoryUrl
-              ? <a href={bootstrap.repositoryUrl} target="_blank" rel="noreferrer"><GithubLogo />{t.openGithub}<ArrowSquareOut /></a>
-              : <button type="button" disabled title={t.repositoryPending}><GithubLogo />{t.repositoryPending}</button>}
+            <a href={communityDirectoryUrl(locale)} target="_blank" rel="noreferrer"><GlobeHemisphereWest />{t.browseCommunity}<ArrowSquareOut /></a>
           </article>
         </section>
 

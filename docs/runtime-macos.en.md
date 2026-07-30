@@ -7,7 +7,7 @@ OpenChatGPTSkin now has a macOS Runtime adapter. Theme Studio, the theme engine,
 > [!WARNING]
 > The implementation passes TypeScript, unit tests, and macOS command-contract tests on Windows. It has not yet completed the visual Codex loop on a real Mac. Publish it as a developer preview; do not treat expected behavior in this document as real-device evidence.
 
-GitHub Actions builds the single Go Host on separate macOS x64 and ARM64 runners, then assembles the single-file Theme Studio and every theme in the current catalog. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. The `v0.3.3` Release contains all seven themes. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
+GitHub Actions builds the single Go Host on separate macOS x64 and ARM64 runners, then assembles the single-file Theme Studio and every theme in the current catalog. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. The `v0.4.0` Release contains all seven themes. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
 
 ## Requirements
 

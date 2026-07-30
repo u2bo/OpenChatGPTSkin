@@ -7,7 +7,7 @@ OpenChatGPTSkin 已实现 macOS Runtime 的平台适配：Theme Studio、主题�
 > [!WARNING]
 > 当前实现已在 Windows 上通过 TypeScript、单元测试和 macOS 命令契约测试，但尚未在真实 Mac 上完成 Codex 视觉闭环验收。发布时应标记为开发者预览，不能把本页的“预期”当作实机通过证据。
 
-GitHub Actions 会分别在 macOS x64 与 ARM64 Runner 构建单一 Go Host，组装单 HTML Theme Studio 和当前 catalog 的全部主题，生成对应架构的 DMG 与 `.tar.gz`，并执行 payload、便携归档、应用包、Mach-O 架构、DMG 挂载和完整 Theme Studio Release Acceptance。`v0.3.3` Release 包含七个主题。Tag 构建会把产物作为明确标注的未签名开发者预览附加到 GitHub Release；手动 `workflow_dispatch` 只上传测试产物，不创建 Release。
+GitHub Actions 会分别在 macOS x64 与 ARM64 Runner 构建单一 Go Host，组装单 HTML Theme Studio 和当前 catalog 的全部主题，生成对应架构的 DMG 与 `.tar.gz`，并执行 payload、便携归档、应用包、Mach-O 架构、DMG 挂载和完整 Theme Studio Release Acceptance。`v0.4.0` Release 包含七个主题。Tag 构建会把产物作为明确标注的未签名开发者预览附加到 GitHub Release；手动 `workflow_dispatch` 只上传测试产物，不创建 Release。
 
 ## 前提
 

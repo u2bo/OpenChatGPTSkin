@@ -18,6 +18,7 @@ import type { ValidatedThemeBundle } from "./types.js";
 
 export const OCSKIN_MAX_ARCHIVE_BYTES = 32 * 1024 * 1024;
 export const OCSKIN_MAX_EXPANDED_BYTES = 32 * 1024 * 1024;
+const OCSKIN_ARCHIVE_MTIME = new Date(1980, 0, 1, 0, 0, 0);
 
 export const OCSKIN_ARCHIVE_SEMANTIC_CASES = [
   { name: "valid archive", valid: true },
@@ -101,7 +102,10 @@ export function createOcskinFiles(
 }
 
 export function packTheme(bundle: ValidatedThemeBundle): Uint8Array {
-  const packed = zipSync(Object.fromEntries(createOcskinFiles(bundle)), { level: 9 });
+  const packed = zipSync(Object.fromEntries(createOcskinFiles(bundle)), {
+    level: 9,
+    mtime: OCSKIN_ARCHIVE_MTIME,
+  });
   if (packed.length > OCSKIN_MAX_ARCHIVE_BYTES) {
     throw new ThemeValidationError("PACKAGE_TOO_LARGE", "archive exceeds 32 MB");
   }

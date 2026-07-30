@@ -2,11 +2,13 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-![Status](https://img.shields.io/badge/status-v0.3.3-2ea44f)
-![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)
-![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
-![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)
+[![Release v0.4.0](https://img.shields.io/badge/status-v0.4.0-2ea44f)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.0)
+[![浏览社区主题](https://img.shields.io/badge/community-browse%20themes-7c3aed)](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/themes)
+[![投稿主题](https://img.shields.io/badge/contribute-submit%20a%20theme-f97316)](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/submit)
+[![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.0)
+[![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)](https://go.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)](LICENSE)
 [![LINUX DO 社区](https://img.shields.io/badge/community-LINUX%20DO-f0b90b)](https://linux.do/)
 
 **OpenChatGPTSkin 是一个面向 Codex Desktop 的开源主题系统：不仅修改首页，而是把统一的颜色、背景、字体、装饰和安全布局投影到当前 Runtime 能识别的全部 Codex UI 表面。**
@@ -31,13 +33,14 @@
 </details>
 
 > [!IMPORTANT]
-> `v0.3.3` 是统一 Go Host 正式版本，提供 Windows x64、macOS ARM64 与 macOS x64 六类安装/便携产物，并内置七个 Theme Schema v4 主题。该版本将面向智能体的 Theme CLI 直接内置到最终可执行文件：Windows 使用 `OpenChatGPTSkin.exe theme ...`，macOS 使用 App 内原生程序；创建、配置、读取、校验、打包和解包均不依赖 Node.js。用户包只包含一个 Go 业务宿主，不要求安装 Git、Go 或开发依赖。macOS 产物仍未使用 Developer ID 正式签名或公证；请按下文通过系统标准“右键 → 打开”确认，不要关闭 Gatekeeper。应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 只管理自己启动的 ChatGPT 实例，不会强制结束已有 ChatGPT，也不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
+> `v0.4.0` 正式接入已上线的社区主题目录。用户可以从 Theme Studio 或上方徽章浏览双语主题页面、真实截图、兼容状态、版本记录、文件大小和 SHA-256，也可以通过 Pull Request 投稿主题。Release 同时发布版本一致的 Theme Schema、Theme Core 与 Community Catalog 校验工具，社区 CI 会从源目录可复现地构建 `.ocskin`，而 Theme Studio 仍负责最终本地导入和安全校验。Windows x64、macOS ARM64 与 macOS x64 的六类安装/便携产物继续内置七个主题和 Node-free Theme CLI。macOS 产物仍未使用 Developer ID 正式签名或公证；应用主题前，请保存工作并**完全退出普通 ChatGPT**。OpenChatGPTSkin 不会修改 `WindowsApps`、`Codex.app`、`app.asar`、账号或 API 配置。
 
 ## 目录
 
 - [项目介绍](#项目介绍)
 - [主要能力](#主要能力)
 - [全 UI 适配](#全-ui-适配)
+- [社区主题与投稿](#社区主题与投稿)
 - [内置主题](#内置主题)
 - [安装](#安装)
 - [快速开始](#快速开始)
@@ -62,12 +65,14 @@ OpenChatGPTSkin 由三个相互约束的部分组成：
 | 能力 | 状态 |
 |---|---|
 | Theme Schema v4、`.ocskin` 校验/迁移/打包/解包 | 已完成 |
-| 七个可直接使用的内置主题 | `v0.3.3` 正式包已包含 |
+| 七个可直接使用的内置主题 | `v0.4.0` 正式包已包含 |
 | Windows Runtime 启动、切换、暂停、恢复 | 正式版 |
 | Windows x64 便携 ZIP 与用户级 Setup | 正式版 |
 | macOS ARM64/x64 DMG、Runtime 启动/切换/恢复 | 未签名预览，双架构实机验收通过 |
 | Theme Studio 编辑、预览、版本、导入导出、应用 | 正式版 |
-| 安全模块化布局、社区主题目录/市场 | 后续候选，尚未排定版本 |
+| 安全模块化布局 | 已完成 |
+| 社区主题目录、投稿审核与可校验下载 | 已上线，由独立社区仓库维护 |
+| Community Catalog schema/CLI 与可复现发布工具 | `v0.4.0` 正式发布 |
 | 自动更新、Windows/macOS 商业签名与公证 | 后续候选，需先建立发布信任链 |
 | 真正单文件便携版 | 已延期，现有 Setup/ZIP/DMG 继续作为稳定渠道 |
 | Codex 插件市场安装 | 受官方公开扩展能力限制，当前不可用 |
@@ -84,6 +89,7 @@ OpenChatGPTSkin 由三个相互约束的部分组成：
 - 属性修改保留在当前编辑状态，只有点击“保存版本”才生成个人主题版本；
 - 同一主题只保留一个草稿，重复打开时明确选择“加载已有草稿”或“覆盖现有草稿”；
 - 导入、导出和 Runtime 命令行安装 `.ocskin`；
+- 从 Theme Studio 直接打开社区目录，浏览、校验并投稿公开主题；
 - 应用失败时保留旧外观或进入明确的恢复状态。
 
 ## 全 UI 适配
@@ -113,6 +119,19 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 </table>
 
 > Codex 更新可能改变内部 DOM。Runtime 会拒绝未经兼容性验证的结构，而不是静默注入；新版本适配请先运行兼容性 Probe 并补充固定页面测试。
+
+## 社区主题与投稿
+
+[OpenChatGPTSkin Community](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/themes) 是独立部署、双语、无追踪的公开主题目录。目前已收录全部七个现有主题；每个版本都展示真实首页/任务页截图、兼容状态、权利声明、文件大小和 SHA-256，并从社区仓库的不可变 GitHub Release 下载。
+
+- [浏览社区主题](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/themes)：按关键词、明暗模式、兼容状态和标签筛选；
+- [查看导入指南](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/install)：下载后核对哈希，再通过 Theme Studio 手动导入；
+- [投稿一个主题](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/submit)：Fork 社区仓库，通过 Pull Request 接受公开审核；
+- [举报问题](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/report)：报告权利、隐私、安全或兼容问题。
+
+投稿时请提交可审查的 Theme Schema v4 源目录，而不是预先打包的 `.ocskin`。目录至少包含 `theme.json`、双语 `listing.json`、逐文件 `LICENSE.md`、封面以及真实首页和任务/会话截图。可信 CI 会统一校验素材边界、重新打包、回读归档并生成哈希；同一个 `theme-id + version` 一经发布不可覆盖，内容变化必须提升版本号。完整要求见[社区投稿指南](https://github.com/u2bo/OpenChatGPTSkin-Community/blob/main/CONTRIBUTING.md)。
+
+> 社区收录基于投稿者的权利声明，并不等于独立法律核验。目录只负责发现和下载，不会后台安装主题；最终导入仍经过本地 Theme Core 校验。
 
 ## 内置主题
 
@@ -170,7 +189,7 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows Setup（推荐）
 
-1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.3.3) 下载 `OpenChatGPTSkin_0.3.3_windows_x64_Setup.exe` 和 `checksums.txt`。
+1. 在 [GitHub Releases](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.0) 下载 `OpenChatGPTSkin_0.4.0_windows_x64_Setup.exe` 和 `checksums.txt`。
 2. 校验 SHA-256 后双击 Setup。安装范围为当前用户，默认目录是 `%LOCALAPPDATA%\Programs\OpenChatGPTSkin`，不请求管理员权限。
 3. 从开始菜单启动 OpenChatGPTSkin；生产 Theme Studio 健康启动后会自动打开默认浏览器。
 
@@ -178,16 +197,16 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 
 ### Windows 便携 ZIP
 
-下载 `OpenChatGPTSkin_0.3.3_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
+下载 `OpenChatGPTSkin_0.4.0_windows_x64.zip`，校验后解压到可写且稳定的目录，双击 `OpenChatGPTSkin.exe`。便携版不会注册安装信息，也不依赖全局 Node.js、Go 或 Git；个人主题仍写入 `%LOCALAPPDATA%\OpenChatGPTSkin`，不会写入程序目录。
 
 ### macOS DMG（未签名开发者预览）
 
-1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.3.3_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.3.3_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
+1. Apple Silicon（M 系列）下载 `OpenChatGPTSkin_0.4.0_macos_arm64.dmg`；Intel Mac 下载 `OpenChatGPTSkin_0.4.0_macos_x64.dmg`。两个架构均使用独立原生 Runner 构建并通过自动验收。
 2. 先按下方命令核对 SHA-256，再打开 DMG，将 `OpenChatGPTSkin.app` 拖入 Applications。
 3. 首次启动时按住 Control 点击或右键点击应用，选择“打开”，再确认 macOS 标准提示。不要关闭 Gatekeeper，也不要使用 `xattr` 移除隔离属性。
 4. Theme Studio 健康启动后会自动打开默认浏览器。替换或删除 `.app` 不会删除 `~/Library/Application Support/OpenChatGPTSkin` 下的个人主题、草稿和 Runtime 状态。
 
-开发者还可以下载同架构的 `OpenChatGPTSkin_0.3.3_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.3.3_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
+开发者还可以下载同架构的 `OpenChatGPTSkin_0.4.0_macos_arm64.tar.gz` 或 `OpenChatGPTSkin_0.4.0_macos_x64.tar.gz`。压缩包内同样是完整 `OpenChatGPTSkin.app`；普通用户优先使用 DMG。
 
 维护者可以进入仓库 **Actions → Build and Release → Run workflow** 手动触发 `workflow_dispatch`。三个原生 Runner 会分别构建并验收 Go Host，随后合并为 `go-release-combined`；手动运行不会创建 Tag 或 GitHub Release。
 
@@ -196,17 +215,17 @@ OpenChatGPTSkin 的目标不是在首页覆盖一张背景图。Runtime 使用�
 在下载目录运行：
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.3.3_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.3.3_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.4.0_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.4.0_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS 终端：
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.3.3_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.4.0_macos_arm64.dmg
 # Intel Mac 使用：
-shasum -a 256 OpenChatGPTSkin_0.3.3_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.4.0_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -401,7 +420,9 @@ tests/                      Schema、Runtime、UI 和文档测试
 
 ## 参与贡献
 
-欢迎参与主题、Codex 新版本适配、测试、文档、可访问性和安装体验建设。提交前请阅读 [贡献指南](CONTRIBUTING.md)。最小流程：
+欢迎参与 Codex 新版本适配、测试、文档、可访问性和安装体验建设。核心代码改动提交前请阅读 [贡献指南](CONTRIBUTING.md)。公开主题投稿请使用独立的[社区投稿流程](https://u2bo.github.io/OpenChatGPTSkin-Community/zh-CN/submit)，这样主题源码、权利声明、截图、审核记录和不可变 Release 会保存在同一条公开链路中。
+
+核心仓库最小验证流程：
 
 ```powershell
 npm ci
@@ -410,11 +431,12 @@ npm run typecheck
 npm run build
 ```
 
-提交 UI 适配时，请同时提供对应的固定页面 fixture/测试；提交主题时，请提供来源、授权、Prompt/创作说明和素材哈希。Issue 和 PR 中不要上传聊天内容、真实项目名称、用户名、路径、端口、令牌或其他敏感信息。
+提交 UI 适配时，请同时提供对应的固定页面 fixture/测试。主题投稿必须提供来源、授权、Prompt/创作说明和素材哈希；不确定公开再分发权时请保留 `localOnly: true`，不要投稿。Issue 和 PR 中不要上传聊天内容、真实项目名称、用户名、路径、端口、令牌或其他敏感信息。
 
 ## 更多文档
 
-- [v0.3.3 发布说明](docs/releases/v0.3.3.md)
+- [v0.4.0 发布说明](docs/releases/v0.4.0.md)
+- [v0.3.3 历史发布说明](docs/releases/v0.3.3.md)
 - [v0.3.2 历史发布说明](docs/releases/v0.3.2.md)
 - [v0.3.1 历史发布说明](docs/releases/v0.3.1.md)
 - [v0.3.0 历史发布说明](docs/releases/v0.3.0.md)

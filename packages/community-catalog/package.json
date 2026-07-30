@@ -1,15 +1,14 @@
 {
-  "name": "@open-chatgpt-skin/runtime-contract",
+  "name": "@open-chatgpt-skin/community-catalog",
   "version": "0.4.0",
   "type": "module",
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc -b"
+  "bin": {
+    "open-chatgpt-skin-community-catalog": "./dist/cli.js"
   },
+  "files": ["dist"],
+  "scripts": { "build": "tsc -b" },
   "dependencies": {
     "@open-chatgpt-skin/theme-schema": "0.4.0",
     "zod": "^3.25.76"

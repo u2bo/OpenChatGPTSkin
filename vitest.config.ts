@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@open-chatgpt-skin/theme-schema": fileURLToPath(new URL("./packages/theme-schema/src/index.ts", import.meta.url)),
+      "@open-chatgpt-skin/community-catalog": fileURLToPath(
+        new URL("./packages/community-catalog/src/index.ts", import.meta.url),
+      ),
       "@open-chatgpt-skin/theme-core": fileURLToPath(new URL("./packages/theme-core/src/index.ts", import.meta.url)),
       "@open-chatgpt-skin/cdp-adapter": fileURLToPath(
         new URL("./packages/cdp-adapter/src/index.ts", import.meta.url),

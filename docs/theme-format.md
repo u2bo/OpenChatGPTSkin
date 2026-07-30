@@ -2,6 +2,8 @@
 
 An OpenChatGPTSkin theme is a structured `.ocskin` ZIP archive. It contains data and media only; JavaScript, HTML, CSS, executables, absolute paths, path traversal, duplicate entries, symbolic-link extraction, and unknown top-level entries are not supported.
 
+Community directory metadata follows the separate [Community Catalog Contract](community-catalog-contract.md). A catalog entry, support status, or published checksum never weakens or replaces the `.ocskin` parsing, path, asset, hash, size, and Theme Schema validation defined here.
+
 ## Archive layout
 
 ```text

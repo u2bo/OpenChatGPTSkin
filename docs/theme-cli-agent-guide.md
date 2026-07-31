@@ -72,6 +72,22 @@ sh ./examples/theme-cli/agent-workflow.sh /Applications/OpenChatGPTSkin.app/Cont
 
 两个示例都拒绝删除或覆盖调用者已有目录与归档。若要重试，请由调用者选择新的目标路径或显式处理自己的旧产物。
 
+## 仓库维护者黑盒验收
+
+仓库维护者可以把任意 staged、便携版或已安装的原生可执行文件交给同一套黑盒验收：
+
+```powershell
+npm run theme:agent-acceptance -- --executable "D:\Apps\OpenChatGPTSkin\OpenChatGPTSkin.exe" --label "Windows portable Release"
+```
+
+```bash
+npm run theme:agent-acceptance -- --executable "/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin" --label "macOS installed Release"
+```
+
+该命令会通过真实进程边界运行完整工作流，并覆盖含中文和空格的路径。除成功链路外，它还验证六个稳定失败分支：缺少必填参数返回 `CLI_ARGUMENT_INVALID`，背景文件缺失返回 `CLI_READ`，重复创建项目或归档返回 `CLI_WRITE`，删除 Theme 必填字段的无效配置返回 `THEME_SCHEMA_INVALID`，重复解包到已有目录也返回 `CLI_WRITE`。每个失败都必须只向 stderr 写入一个 JSON 错误对象，并使用 Contract 声明的退出码。
+
+这个 npm 入口只供源码仓库中的发布与回归验证使用；发布应用本身仍不依赖 Node.js，智能体和最终用户只需原生 OpenChatGPTSkin 可执行文件。命令成功时会向 stdout 输出机器可读的验收证据，包含 Contract 版本、成功工作流、路径覆盖和失败场景。
+
 ## 智能体安全边界
 
 - 只把用户明确授权的本地素材传给 `--background`；不要扫描用户目录寻找图片。

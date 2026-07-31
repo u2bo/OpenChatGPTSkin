@@ -19,6 +19,9 @@ import { promisify } from "node:util";
 import { zipSync } from "fflate";
 import { generateMacIcon } from "./macos-icon.js";
 import { readReleaseManifest, ReleaseManifestSchema } from "./manifest.js";
+import { acceptThemeCLIExecutable } from "./theme-cli-agent-acceptance.js";
+
+export { acceptThemeCLIExecutable } from "./theme-cli-agent-acceptance.js";
 
 const execFileAsync = promisify(execFile);
 const PRODUCT = "OpenChatGPTSkin";
@@ -104,18 +107,6 @@ export interface BuildGoReleaseOptions {
   readonly nativeInstallers: boolean;
   readonly nativeArtifactsOnly?: boolean;
   readonly onProgress?: (message: string) => void;
-}
-
-type ThemeCLIAcceptanceCommand =
-  | "contract" | "create" | "config" | "show"
-  | "validate" | "pack" | "unpack";
-
-export interface ThemeCLIAcceptanceEvidence {
-  readonly accepted: true;
-  readonly contractVersion: 1;
-  readonly protocolVersion: 1;
-  readonly themeSchemaVersion: 4;
-  readonly workflow: readonly ThemeCLIAcceptanceCommand[];
 }
 
 interface GoReleaseBuildMetadata {
@@ -253,126 +244,6 @@ function isCurrentNativeTarget(target: Target): boolean {
     return target.goos === "darwin" && target.goarch === architecture;
   }
   return false;
-}
-
-function parseThemeCLIResult(stdout: string, label: string): Record<string, unknown> {
-  let value: unknown;
-  try {
-    value = JSON.parse(stdout);
-  } catch {
-    throw new Error(`${label} did not return JSON`);
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new Error(`${label} did not return a JSON object`);
-  }
-  return value as Record<string, unknown>;
-}
-
-export async function acceptThemeCLIExecutable(
-  executablePath: string,
-  label: string,
-): Promise<ThemeCLIAcceptanceEvidence> {
-  const root = await mkdtemp(join(tmpdir(), "openchatgptskin-theme-cli-acceptance-"));
-  const workflow: ThemeCLIAcceptanceCommand[] = [];
-  const run = async (
-    command: ThemeCLIAcceptanceCommand,
-    arguments_: readonly string[],
-  ): Promise<Record<string, unknown>> => {
-    const result = await execFileAsync(executablePath, ["theme", command, ...arguments_], {
-      windowsHide: true,
-      maxBuffer: 1024 * 1024,
-    });
-    if (result.stderr.trim() !== "") {
-      throw new Error(`${label} theme ${command} wrote unexpected stderr`);
-    }
-    workflow.push(command);
-    return parseThemeCLIResult(result.stdout, `${label} theme ${command}`);
-  };
-  try {
-    const background = join(root, "background.png");
-    const patch = join(root, "theme-patch.json");
-    const project = join(root, "agent-theme");
-    const archive = join(root, "agent-theme.ocskin");
-    const unpacked = join(root, "unpacked-theme");
-    await Promise.all([
-      writeFile(background, Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
-        "base64",
-      )),
-      writeFile(patch, `${JSON.stringify({
-        description: "Native release acceptance",
-        colors: { accent: "#abcdef" },
-        background: { overlay: 0.5 },
-      })}\n`, "utf8"),
-    ]);
-
-    const contract = await run("contract", []);
-    const commands = contract.commands;
-    if (contract.role !== "theme" || contract.contractVersion !== 1 || contract.protocolVersion !== 1 ||
-      contract.themeSchemaVersion !== 4 ||
-      typeof commands !== "object" || commands === null || Array.isArray(commands) ||
-      ["contract", "create", "config", "show", "validate", "pack", "unpack"].some(
-        (command) => typeof (commands as Record<string, unknown>)[command] !== "string",
-      ) ||
-      typeof contract.themeSchema !== "object" || contract.themeSchema === null ||
-      typeof contract.draftSchema !== "object" || contract.draftSchema === null ||
-      typeof contract.archive !== "object" || contract.archive === null ||
-      typeof contract.exitCodes !== "object" || contract.exitCodes === null ||
-      !Array.isArray(contract.errorCodes)) {
-      throw new Error(`${label} theme contract is invalid`);
-    }
-    const created = await run("create", [
-      "--dir", project,
-      "--id", "agent-theme",
-      "--name", "Agent Theme",
-      "--author", "Release Acceptance",
-      "--appearance", "dark",
-      "--background", background,
-    ]);
-    if (created.created !== true || created.complete !== true) {
-      throw new Error(`${label} theme create result is invalid`);
-    }
-    const configured = await run("config", ["--dir", project, "--patch", patch]);
-    if (configured.configured !== true) {
-      throw new Error(`${label} theme config result is invalid`);
-    }
-    const shown = await run("show", ["--dir", project]);
-    const theme = shown.theme;
-    if (typeof theme !== "object" || theme === null || Array.isArray(theme)) {
-      throw new Error(`${label} theme show result is invalid`);
-    }
-    const colors = (theme as Record<string, unknown>).colors;
-    if ((theme as Record<string, unknown>).description !== "Native release acceptance" ||
-      typeof colors !== "object" || colors === null || Array.isArray(colors) ||
-      (colors as Record<string, unknown>).accent !== "#abcdef") {
-      throw new Error(`${label} theme configuration was not observable through show`);
-    }
-    const validated = await run("validate", ["--dir", project]);
-    if (validated.valid !== true || validated.draft !== false) {
-      throw new Error(`${label} theme validate result is invalid`);
-    }
-    const packed = await run("pack", ["--dir", project, "--out", archive]);
-    if (packed.packed !== true) {
-      throw new Error(`${label} theme pack result is invalid`);
-    }
-    const unpackResult = await run("unpack", ["--file", archive, "--out", unpacked]);
-    if (unpackResult.unpacked !== true) {
-      throw new Error(`${label} theme unpack result is invalid`);
-    }
-    const unpackedValidation = await run("validate", ["--dir", unpacked]);
-    if (unpackedValidation.valid !== true || unpackedValidation.draft !== false) {
-      throw new Error(`${label} unpacked theme validation result is invalid`);
-    }
-    return {
-      accepted: true,
-      contractVersion: 1,
-      protocolVersion: 1,
-      themeSchemaVersion: 4,
-      workflow,
-    };
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
 }
 
 async function readReleaseVersion(workspaceRoot: string): Promise<string> {

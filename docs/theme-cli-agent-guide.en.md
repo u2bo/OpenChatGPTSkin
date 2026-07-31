@@ -72,6 +72,22 @@ sh ./examples/theme-cli/agent-workflow.sh /Applications/OpenChatGPTSkin.app/Cont
 
 Both examples refuse to delete or overwrite caller-owned directories and archives. To retry, the caller must choose fresh target paths or explicitly manage its own previous outputs.
 
+## Repository maintainer black-box acceptance
+
+A repository maintainer can run the same black-box acceptance against any staged, portable, or installed native executable:
+
+```powershell
+npm run theme:agent-acceptance -- --executable "D:\Apps\OpenChatGPTSkin\OpenChatGPTSkin.exe" --label "Windows portable Release"
+```
+
+```bash
+npm run theme:agent-acceptance -- --executable "/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin" --label "macOS installed Release"
+```
+
+The command invokes the real process boundary through the complete workflow and uses paths containing both spaces and non-ASCII characters. It also verifies six stable failures: a missing required option returns `CLI_ARGUMENT_INVALID`, a missing background returns `CLI_READ`, existing project or archive targets return `CLI_WRITE`, a patch that removes a required Theme field returns `THEME_SCHEMA_INVALID`, and unpacking to an existing directory also returns `CLI_WRITE`. Every failure must write exactly one JSON error object to stderr and use the exit code declared by the Contract.
+
+This npm entry point is only a source-repository release and regression tool; the released application itself remains Node-free, and agents or end users need only the native OpenChatGPTSkin executable. On success, the command writes machine-readable evidence to stdout with Contract versions, the successful workflow, path coverage, and failure scenarios.
+
 ## Agent safety boundary
 
 - Pass only user-authorized local media to `--background`; do not scan user directories for images.

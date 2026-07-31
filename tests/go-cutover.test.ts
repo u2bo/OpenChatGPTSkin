@@ -20,7 +20,10 @@ describe("Go production cutover", () => {
     expect(packageJson.scripts["release:build"]).toContain("build-go-release.ts");
     expect(packageJson.scripts["release:acceptance"]).toContain("accept-go-release.ts");
     expect(packageJson.scripts["release:merge"]).toContain("merge-go-release.ts");
+    expect(packageJson.scripts["theme:agent-acceptance"])
+      .toBe("tsx --tsconfig tsconfig.scripts.json scripts/release/accept-theme-cli-agent.ts");
     expect(packageJson.scripts["release:node"]).toBeUndefined();
+
   });
 
   it("keeps the checked-in Go adapter aligned with current surface rules", async () => {

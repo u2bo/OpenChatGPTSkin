@@ -33,6 +33,7 @@
     "release:merge": "tsx --tsconfig tsconfig.scripts.json scripts/release/merge-go-release.ts",
     "typecheck": "tsc -b --pretty false",
     "theme": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin theme",
+    "theme:agent-acceptance": "tsx --tsconfig tsconfig.scripts.json scripts/release/accept-theme-cli-agent.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "runtime": "go -C host/go run -buildvcs=false -tags nodynamic ./cmd/openchatgptskin runtime",

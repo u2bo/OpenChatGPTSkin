@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  acceptThemeCLIExecutable,
   acceptGoReleasePackages,
   buildGoReleasePackages,
   mergeGoReleasePackages,
@@ -14,6 +13,41 @@ import {
 const temporaryRoots: string[] = [];
 const execFileAsync = promisify(execFile);
 const releaseIntegrationTimeoutMs = 180_000;
+const agentAcceptanceEvidence = {
+  accepted: true,
+  contractVersion: 1,
+  protocolVersion: 1,
+  themeSchemaVersion: 4,
+  workflow: [
+    "contract", "create", "config", "show",
+    "validate", "pack", "unpack", "validate",
+  ],
+  pathCoverage: { spaces: true, unicode: true },
+  failureScenarios: [
+    { scenario: "missing-required-option", exitCode: 2, errorCode: "CLI_ARGUMENT_INVALID" },
+    { scenario: "missing-background", exitCode: 1, errorCode: "CLI_READ" },
+    { scenario: "existing-project", exitCode: 1, errorCode: "CLI_WRITE" },
+    { scenario: "invalid-config", exitCode: 1, errorCode: "THEME_SCHEMA_INVALID" },
+    { scenario: "existing-archive", exitCode: 1, errorCode: "CLI_WRITE" },
+    { scenario: "existing-unpack-directory", exitCode: 1, errorCode: "CLI_WRITE" },
+  ],
+} as const;
+
+function runAgentAcceptance(arguments_: readonly string[]) {
+  const npmExecPath = process.env.npm_execpath;
+  if (!npmExecPath) throw new Error("npm executable path is unavailable");
+  return execFileAsync(process.execPath, [
+    npmExecPath,
+    "run",
+    "--silent",
+    "theme:agent-acceptance",
+    "--",
+    ...arguments_,
+  ], {
+    windowsHide: true,
+    maxBuffer: 2 * 1024 * 1024,
+  });
+}
 
 afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map((root) =>
@@ -86,22 +120,37 @@ describe("Go host production packages", () => {
       protocolVersion: 1,
       commands: { create: expect.any(String), config: expect.any(String) },
     });
-    await expect(acceptThemeCLIExecutable(executable, "Vitest staged host")).resolves.toEqual({
-      accepted: true,
-      contractVersion: 1,
-      protocolVersion: 1,
-      themeSchemaVersion: 4,
-      workflow: [
-        "contract", "create", "config", "show",
-        "validate", "pack", "unpack", "validate",
-      ],
-    });
+    const agentAcceptance = await runAgentAcceptance([
+      "--executable", executable,
+      "--label", "Vitest staged host",
+    ]);
+    expect(agentAcceptance.stderr).toBe("");
+    expect(JSON.parse(agentAcceptance.stdout)).toEqual(agentAcceptanceEvidence);
     await expect(acceptGoReleasePackages(output, false)).resolves.toMatchObject({
       accepted: true,
       artifactCount: 1,
       nativeEvidenceComplete: false,
     });
   }, releaseIntegrationTimeoutMs);
+
+  it("does not expose a missing executable path in acceptance diagnostics", async () => {
+    const missingExecutable = join(tmpdir(), "Private User Path", "OpenChatGPTSkin.exe");
+    let failure: unknown;
+    try {
+      await runAgentAcceptance(["--executable", missingExecutable]);
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeDefined();
+    const result = failure as { readonly code?: unknown; readonly stdout?: unknown; readonly stderr?: unknown };
+    expect(result.code).toBe(1);
+    expect(result.stdout).toBe("");
+    const envelope = JSON.parse(String(result.stderr));
+    expect(envelope.error.message).not.toContain(missingExecutable);
+    expect(envelope).toMatchObject({
+      error: { code: "THEME_CLI_AGENT_ACCEPTANCE_FAILED" },
+    });
+  });
 
   it("merges three single-target native reports without cross-building", async () => {
     const root = await mkdtemp(join(tmpdir(), "openchatgptskin-go-release-merge-"));

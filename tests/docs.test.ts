@@ -82,10 +82,20 @@ describe("project documentation", () => {
       for (const required of [
         "theme contract", "theme create", "theme config", "theme show", "theme validate",
         "theme pack", "theme unpack", "protocolVersion", "stdout", "stderr", "Node.js",
+        "theme:agent-acceptance", "--executable", "CLI_ARGUMENT_INVALID", "CLI_READ",
+        "CLI_WRITE", "THEME_SCHEMA_INVALID",
       ]) expect(document).toContain(required);
     }
     expect(guide).toContain("退出码 0 / 1 / 2");
+    expect(guide).toContain("仓库维护者");
+    expect(guide).toContain("发布应用本身仍不依赖 Node.js");
     expect(guideEn).toContain("exit codes 0 / 1 / 2");
+    expect(guideEn).toContain("repository maintainer");
+    expect(guideEn).toContain("released application itself remains Node-free");
+    for (const document of [guide, guideEn]) {
+      expect(document).toContain('"D:\\Apps\\OpenChatGPTSkin\\OpenChatGPTSkin.exe"');
+      expect(document).toContain('"/Applications/OpenChatGPTSkin.app/Contents/MacOS/OpenChatGPTSkin"');
+    }
     for (const script of [powershell, shell]) {
       for (const command of ["contract", "create", "config", "show", "validate", "pack", "unpack"]) {
         expect(script).toContain(`theme ${command}`);

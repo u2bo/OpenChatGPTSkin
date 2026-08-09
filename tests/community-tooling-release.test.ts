@@ -25,7 +25,7 @@ describe("community tooling release", () => {
 
     expect(manifest).toMatchObject({
       schemaVersion: 1,
-      productVersion: "0.4.1",
+      productVersion: "0.4.2",
       nodeVersion: "22.18.0",
     });
     expect(manifest.packages.map(({ name }) => name)).toEqual([
@@ -34,7 +34,7 @@ describe("community tooling release", () => {
       "@open-chatgpt-skin/theme-schema",
     ]);
     expect(manifest.packages.every(({ version, bytes, sha256 }) =>
-      version === "0.4.1" && bytes > 0 && /^[a-f0-9]{64}$/.test(sha256))).toBe(true);
+      version === "0.4.2" && bytes > 0 && /^[a-f0-9]{64}$/.test(sha256))).toBe(true);
     expect((await readdir(output)).filter((name) => name.endsWith(".tgz"))).toHaveLength(3);
 
     const manifestText = await readFile(join(output, "community-tooling.json"), "utf8");

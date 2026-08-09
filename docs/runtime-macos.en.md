@@ -7,7 +7,7 @@ OpenChatGPTSkin now has a macOS Runtime adapter. Theme Studio, the theme engine,
 > [!WARNING]
 > The implementation passes TypeScript, unit tests, and macOS command-contract tests on Windows. It has not yet completed the visual Codex loop on a real Mac. Publish it as a developer preview; do not treat expected behavior in this document as real-device evidence.
 
-GitHub Actions builds the single Go Host on separate macOS x64 and ARM64 runners, then assembles the single-file Theme Studio and every theme in the current catalog. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. The `v0.4.1` Release contains all seven themes and runs the complete Theme CLI workflow against the final executable inside the app. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
+GitHub Actions builds the single Go Host on separate macOS x64 and ARM64 runners, then assembles the single-file Theme Studio and every theme in the current catalog. It creates architecture-specific DMGs and `.tar.gz` archives, then runs payload, portable-archive, app-bundle, Mach-O architecture, DMG mount, and full Theme Studio Release Acceptance. The `v0.4.2` Release contains all eight themes and runs the complete Theme CLI workflow against the final executable inside the app. Tag builds attach these artifacts to GitHub Releases as explicitly unsigned developer previews. Manual `workflow_dispatch` runs upload test artifacts but never create a Release.
 
 ## Requirements
 
@@ -107,12 +107,12 @@ Use a test account/workspace with no private projects or sensitive chats:
    /usr/sbin/spctl --assess --type execute --verbose=4 /Applications/Codex.app
    ```
 
-3. Run `launch` and six `switch` commands. Check all seven built-in themes across home, history, tasks, settings, plugins, menus, overlays, composers, sidebars, and terminal.
+3. Run `launch` and seven `switch` commands. Check all eight built-in themes across home, history, tasks, settings, plugins, menus, overlays, composers, sidebars, and terminal.
 4. Run `pause` and `resume`. Pause must remove projection; resume must reapply only the selected theme.
 5. Run `restore`, verify the official appearance, and quit from the Codex menu so cleanup can finish.
 6. During the run, `ls -l /tmp/OpenChatGPTSkin-*.sock` must show a current-user `srw-------` socket. The endpoint must disappear after Controller exit.
 7. Start official Codex normally. It must not inherit `--remote-debugging-address` or `--remote-debugging-port`, and the regular app must remain unthemed.
-8. Record Codex/macOS versions, seven-theme results, restore result, and sanitized screenshots. Do not record PIDs, ports, usernames, paths, command lines, project names, or chat content.
+8. Record Codex/macOS versions, eight-theme results, restore result, and sanitized screenshots. Do not record PIDs, ports, usernames, paths, command lines, project names, or chat content.
 
 The old Node Host commands `runtime:probe` and `runtime:acceptance` have been removed. Current acceptance combines Go unit/contract/native-package automation with the real-device observations in this checklist; no hidden fallback claims platform support.
 

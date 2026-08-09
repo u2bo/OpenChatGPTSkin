@@ -17,7 +17,7 @@ import { CharacterThemeTemplateSchema } from
   "../scripts/character-theme-template.js";
 
 describe("built-in catalog", () => {
-  it("ships seven complete public themes without local authorization recipes", async () => {
+  it("ships eight complete public themes without local authorization recipes", async () => {
     const catalog = await loadThemeCatalog(resolve("themes"));
     expect(catalog.builtins.map((entry) => entry.id)).toEqual([
       "future-idol-cyan",
@@ -26,6 +26,7 @@ describe("built-in catalog", () => {
       "hoshimiya-ichigo-shining-stage",
       "mountain-mist",
       "rose-carpet-star",
+      "tibo-cyber-core",
       "yua-mikami-starlight",
     ]);
     expect(catalog.recipes).toEqual([]);
@@ -33,6 +34,7 @@ describe("built-in catalog", () => {
     const authorizedCharacterIds = new Set([
       "goku-saiyan-engine",
       "hoshimiya-ichigo-shining-stage",
+      "tibo-cyber-core",
       "yua-mikami-starlight",
     ]);
     expect(catalog.builtins.filter((entry) => !authorizedCharacterIds.has(entry.id))
@@ -43,6 +45,8 @@ describe("built-in catalog", () => {
       .toBe("LicenseRef-OpenChatGPTSkin-Mixed-User-Supplied");
     expect(catalog.builtins.find((entry) => entry.id === "yua-mikami-starlight")?.licenseId)
       .toBe("LicenseRef-OpenChatGPTSkin-Mixed-Authorized");
+    expect(catalog.builtins.find((entry) => entry.id === "tibo-cyber-core")?.licenseId)
+      .toBe("LicenseRef-OpenChatGPTSkin-User-Supplied-Tibo");
     expect((await readdir(resolve("themes", "sources"))).sort()).toEqual([
       "future-idol-cyan",
       "glacier-aurora",
@@ -50,6 +54,7 @@ describe("built-in catalog", () => {
       "hoshimiya-ichigo-shining-stage",
       "mountain-mist",
       "rose-carpet-star",
+      "tibo-cyber-core",
       "yua-mikami-starlight",
     ]);
 
@@ -86,6 +91,8 @@ describe("built-in catalog", () => {
             ? "Character background supplied by the OpenChatGPTSkin project owner"
             : entry.id === "hoshimiya-ichigo-shining-stage"
               ? "Character stage background supplied by the OpenChatGPTSkin project owner"
+              : entry.id === "tibo-cyber-core"
+                ? "Tibo concept and portrait background supplied by the OpenChatGPTSkin project owner"
             : "Original AI-generated background supplied by the OpenChatGPTSkin project owner",
       );
       const sourceDirectory = resolve("themes", "sources", entry.id);
@@ -118,18 +125,21 @@ describe("built-in catalog", () => {
           brightness: entry.id === "future-idol-cyan" ? 1.1 :
             entry.id === "glacier-aurora" ? 1.05 :
               entry.id === "goku-saiyan-engine" ? 1.06 :
+              entry.id === "tibo-cyber-core" ? 1.04 :
               ["hoshimiya-ichigo-shining-stage", "mountain-mist", "rose-carpet-star"]
                 .includes(entry.id) ? 1.08 : 1,
           overlay: 0,
-          safeArea: "none",
+          safeArea: entry.id === "tibo-cyber-core" ? "left" : "none",
           taskMode: "full",
           taskOpacity: entry.id === "goku-saiyan-engine" ? 0.14 :
-            entry.id === "hoshimiya-ichigo-shining-stage" ? 0.16 : 0.18,
+            ["hoshimiya-ichigo-shining-stage", "tibo-cyber-core"]
+              .includes(entry.id) ? 0.16 : 0.18,
         },
         surfaces: { blur: 0 },
       });
       expect(theme.surfaces.baseOpacity, entry.id).toBe(
         entry.id === "goku-saiyan-engine" ? 0.12 :
+          entry.id === "tibo-cyber-core" ? 0.12 :
           entry.id === "yua-mikami-starlight" ? 0.18 :
           ["future-idol-cyan", "hoshimiya-ichigo-shining-stage"].includes(entry.id)
             ? 0.14 :
@@ -230,6 +240,63 @@ describe("built-in catalog", () => {
             welcome: {
               localized: {
                 "zh-CN": { lines: ["我们应该在", "「{projectName}」中构建什么？"] },
+              },
+            },
+          },
+        });
+        for (const path of [
+          "assets/suggestion-card1.webp",
+          "assets/suggestion-card2.webp",
+          "assets/suggestion-card3.webp",
+          "assets/suggestion-card4.webp",
+        ]) {
+          const metadata = await sharp(join(directory, ...path.split("/"))).metadata();
+          expect(metadata.hasAlpha, path).toBe(true);
+        }
+      } else if (entry.id === "tibo-cyber-core") {
+        expect(theme).toMatchObject({
+          version: "1.0.0",
+          colors: {
+            accent: "#22e6d1",
+            secondary: "#42b8ff",
+            panel: "#021018",
+            border: "rgba(34, 230, 209, 0.68)",
+          },
+          background: {
+            positionX: 0.72,
+            positionY: 0.46,
+            scale: 1,
+            brightness: 1.04,
+            taskOpacity: 0.16,
+          },
+          surfaces: {
+            baseOpacity: 0.12,
+            elevatedOpacity: 0.46,
+            terminalOpacity: 0.64,
+          },
+          typography: {
+            displayFamily: "ocs-display",
+            displayFontAssetKey: "display",
+          },
+          layout: { heroHeight: 540 },
+          interfaceImages: {
+            profileAvatarSize: 26,
+            suggestionIconSize: 56,
+            projectIconSize: 20,
+          },
+          assets: {
+            fonts: { display: "fonts/display.woff2" },
+            projectIcons: [
+              "assets/suggestion-card2.webp",
+              "assets/suggestion-card1.webp",
+              "assets/suggestion-card4.webp",
+              "assets/suggestion-card3.webp",
+            ],
+          },
+          home: {
+            welcome: {
+              localized: {
+                "zh-CN": { lines: ["欢迎回来，", "CODER · {projectName}"] },
               },
             },
           },

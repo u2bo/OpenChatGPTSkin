@@ -2,10 +2,10 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-[![Release v0.4.1](https://img.shields.io/badge/status-v0.4.1-2ea44f)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.1)
+[![Release v0.4.2](https://img.shields.io/badge/status-v0.4.2-2ea44f)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.2)
 [![Browse community themes](https://img.shields.io/badge/community-browse%20themes-7c3aed)](https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes)
 [![Submit a theme](https://img.shields.io/badge/contribute-submit%20a%20theme-f97316)](https://u2bo.github.io/OpenChatGPTSkin-Community/en/submit)
-[![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.1)
+[![Platform](https://img.shields.io/badge/release-Windows%20x64%20%7C%20macOS%20ARM64%20%7C%20x64-0078d4)](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.2)
 [![Go](https://img.shields.io/badge/Go-1.25.12-00ADD8)](https://go.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/code%20%26%20docs-MIT-2563eb)](LICENSE)
@@ -33,7 +33,7 @@
 </details>
 
 > [!IMPORTANT]
-> `v0.4.1` makes the native Theme CLI a production interface that other agents can discover and invoke directly. The final Windows/macOS executables add `theme contract`, which returns versioned commands, JSON Schemas, limits, exit codes, and stable error codes. Release artifacts on all three targets, plus the installed Windows Setup executable, run the real `contract → create → config → show → validate → pack → unpack → validate` workflow. End users need no Node.js, npm, Go, or Git. This patch adds or changes no community-directory feature. macOS artifacts remain unsigned and unnotarized; save your work and **fully quit the regular ChatGPT app** before applying a theme.
+> `v0.4.2` adds the eighth built-in theme, **Tibo Cyber Core**. Its near-black code cockpit, cyan-blue neon, localized welcome text, and four developer-oriented icons cover both the home and task workspaces. The theme is also published to the community directory with real home/task screenshots, file-by-file rights declarations, SHA-256, and an immutable `.ocskin` download. Windows x64, macOS ARM64, and macOS x64 artifacts all include it while retaining the production Theme CLI Contract introduced in `v0.4.1`. macOS artifacts remain unsigned and unnotarized; save your work and **fully quit regular Codex** before applying a theme.
 
 ## Contents
 
@@ -65,7 +65,7 @@ Themes are data, not arbitrary code. An `.ocskin` package cannot contain JavaScr
 | Capability | Status |
 |---|---|
 | Theme Schema v4 and `.ocskin` validation/migration/pack/unpack | Complete |
-| Seven ready-to-use built-in themes | Included in the stable `v0.4.0` release |
+| Eight ready-to-use built-in themes | Included in the stable `v0.4.2` release |
 | Windows Runtime launch/switch/pause/restore | Stable |
 | Windows x64 portable ZIP and per-user Setup | Stable |
 | macOS ARM64/x64 DMG and Runtime launch/switch/restore | Unsigned preview; both architectures accepted on real Macs |
@@ -123,7 +123,7 @@ OpenChatGPTSkin is not a home-page wallpaper overlay. The Runtime uses a shared 
 
 ## Community themes and contributions
 
-[OpenChatGPTSkin Community](https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes) is an independently deployed, bilingual, tracking-free public theme directory. It currently lists all seven existing themes. Every version includes real home/task screenshots, compatibility state, rights disclosures, file size, and SHA-256, with downloads served from immutable Releases in the community repository.
+[OpenChatGPTSkin Community](https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes) is an independently deployed, bilingual, tracking-free public theme directory. It lists all eight built-in themes, including Tibo Cyber Core introduced in `v0.4.2`. Every published version includes real home/task screenshots, compatibility state, rights disclosures, file size, and SHA-256, with downloads served from immutable Releases in the community repository.
 
 - [Browse community themes](https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes) by keyword, appearance, compatibility state, and tag.
 - [Read the import guide](https://u2bo.github.io/OpenChatGPTSkin-Community/en/install), verify the hash, then import manually through Theme Studio.
@@ -136,7 +136,7 @@ Submit a reviewable Theme Schema v4 source directory, not a prebuilt `.ocskin`. 
 
 ## Built-in themes
 
-Each built-in theme includes a complete theme document, preview, provenance record, and SHA-256 hashes. All seven in the current source are ready after a clean checkout. The four general themes use project-original AI backgrounds; the three character themes use separately supplied assets and license identifiers that are not covered by the project MIT License.
+Each built-in theme includes a complete theme document, preview, provenance record, and SHA-256 hashes. All eight in the current source are ready after a clean checkout. The four general themes use project-original AI backgrounds; the four character themes use separately supplied assets and license identifiers that are not covered by the project MIT License.
 
 ### Future Idol `future-idol-cyan`
 
@@ -151,6 +151,16 @@ A high-energy creative theme built from deep-space blue, electric cyan, and batt
 ![Goku Saiyan Engine applied in the real ChatGPT desktop app](docs/assets/screenshots/goku-saiyan-engine-real.png)
 
 The character background and derived crops carry a separate license identifier, are not automatically covered by the MIT License, and do not imply an official relationship with the original rights holder.
+
+### Tibo Cyber Core `tibo-cyber-core`
+
+A dark developer theme combining a near-black code cockpit, cyan-blue neon, and Tibo as the right-side focal subject. It preserves a low-distraction workspace on the left and carries the concept's visual language through localized welcome text, translucent dark panels, and code, box, shield, and rocket suggestion icons.
+
+![Tibo Cyber Core isolated preview](docs/assets/screenshots/tibo-cyber-core.webp)
+
+[View and download Tibo Cyber Core in the community directory](https://u2bo.github.io/OpenChatGPTSkin-Community/en/themes/tibo-cyber-core)
+
+The portrait background and derived crops carry a separate license identifier, are not automatically covered by the MIT License, and do not imply an official relationship with OpenAI, Codex, or any other rights holder.
 
 ### Ichigo Hoshimiya Shining Stage `hoshimiya-ichigo-shining-stage`
 
@@ -190,7 +200,7 @@ A dark navy, glacial cyan, and aurora-violet theme for low-light environments an
 
 ### Windows Setup (recommended)
 
-1. Download `OpenChatGPTSkin_0.4.1_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.4.1](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.1).
+1. Download `OpenChatGPTSkin_0.4.2_windows_x64_Setup.exe` and `checksums.txt` from [GitHub Release v0.4.2](https://github.com/u2bo/OpenChatGPTSkin/releases/tag/v0.4.2).
 2. Verify SHA-256, then run Setup. It installs for the current user under `%LOCALAPPDATA%\Programs\OpenChatGPTSkin` and does not request administrator privileges.
 3. Start OpenChatGPTSkin from the Start menu. The production Theme Studio opens in your default browser only after its local health check succeeds.
 
@@ -198,16 +208,16 @@ The installer is unsigned, so Windows SmartScreen may warn. Download only from t
 
 ### Windows portable ZIP
 
-Download `OpenChatGPTSkin_0.4.1_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
+Download `OpenChatGPTSkin_0.4.2_windows_x64.zip`, verify it, extract it to a stable writable directory, and double-click `OpenChatGPTSkin.exe`. The portable build does not register an installation and needs no global Node.js, Go, or Git. Personal themes remain under `%LOCALAPPDATA%\OpenChatGPTSkin`, outside the program directory.
 
 ### macOS DMG (unsigned developer preview)
 
-1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.4.1_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.4.1_macos_x64.dmg`. Each target is built on its own native runner and passes automated acceptance.
+1. On Apple Silicon (M-series), download `OpenChatGPTSkin_0.4.2_macos_arm64.dmg`. On an Intel Mac, download `OpenChatGPTSkin_0.4.2_macos_x64.dmg`. Each target is built on its own native runner and passes automated acceptance.
 2. Verify SHA-256 as shown below, open the DMG, and drag `OpenChatGPTSkin.app` to Applications.
 3. On first launch, Control-click the app, choose **Open**, and confirm the standard macOS prompt. Do not disable Gatekeeper or use `xattr` to remove quarantine metadata.
 4. Theme Studio opens in the default browser after its health check succeeds. Replacing or deleting the `.app` keeps personal themes, drafts, and Runtime state under `~/Library/Application Support/OpenChatGPTSkin`.
 
-Developers can also download `OpenChatGPTSkin_0.4.1_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.4.1_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
+Developers can also download `OpenChatGPTSkin_0.4.2_macos_arm64.tar.gz` or `OpenChatGPTSkin_0.4.2_macos_x64.tar.gz`. Each archive contains the complete `OpenChatGPTSkin.app`; most users should choose the DMG.
 
 Maintainers can open **Actions → Build and Release → Run workflow** and manually trigger `workflow_dispatch`. Three native runners build and accept the Go Host, then merge the result as `go-release-combined`. A manual run never creates a tag or GitHub Release.
 
@@ -216,17 +226,17 @@ Maintainers can open **Actions → Build and Release → Run workflow** and manu
 Run from the download directory:
 
 ```powershell
-Get-FileHash .\OpenChatGPTSkin_0.4.1_windows_x64.zip -Algorithm SHA256
-Get-FileHash .\OpenChatGPTSkin_0.4.1_windows_x64_Setup.exe -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.4.2_windows_x64.zip -Algorithm SHA256
+Get-FileHash .\OpenChatGPTSkin_0.4.2_windows_x64_Setup.exe -Algorithm SHA256
 Get-Content .\checksums.txt
 ```
 
 macOS Terminal:
 
 ```bash
-shasum -a 256 OpenChatGPTSkin_0.4.1_macos_arm64.dmg
+shasum -a 256 OpenChatGPTSkin_0.4.2_macos_arm64.dmg
 # On Intel:
-shasum -a 256 OpenChatGPTSkin_0.4.1_macos_x64.dmg
+shasum -a 256 OpenChatGPTSkin_0.4.2_macos_x64.dmg
 cat checksums.txt
 ```
 
@@ -245,7 +255,7 @@ npm ci
 npm run verify:foundation
 ```
 
-`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all seven built-in themes in the current source. Source-mode commands run from the repository root.
+`verify:foundation` rebuilds the catalog, runs tests and type checking, builds the workspace, and validates all eight built-in themes in the current source. Source-mode commands run from the repository root.
 
 ### One-command local Windows build
 
@@ -355,13 +365,13 @@ npm run runtime -- restore
 - `restore` restores the official appearance and waits for a normal managed-Codex exit to finish cleanup.
 - Do not use Task Manager to force-close Codex while restore is pending.
 
-See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. The three native runners verify package structure, the single Go Host, Theme Studio, all seven built-ins in the current source, and the Node-free manifest. Real-Codex visual and lifecycle acceptance still follows the manual checklist on each target platform.
+See [Windows Runtime and Compatibility](docs/runtime-windows.md) and [macOS Runtime and Acceptance](docs/runtime-macos.en.md) for the platform safety boundaries. The three native runners verify package structure, the single Go Host, Theme Studio, all eight built-ins in the current source, and the Node-free manifest. Real-Codex visual and lifecycle acceptance still follows the manual checklist on each target platform.
 
 ### Real-app acceptance after a Codex update
 
 The old Node Host commands `runtime:probe` and `runtime:acceptance` were removed during the Go cutover and are no longer executable entry points. After a Codex update, use a test workspace with no private projects or sensitive chats and:
 
-1. Fully quit regular Codex and check all seven built-ins, a custom theme, `pause`, `resume`, and `restore`.
+1. Fully quit regular Codex and check all eight built-ins, a custom theme, `pause`, `resume`, and `restore`.
 2. Quit the managed instance from the Codex menu and verify Controller/control-endpoint cleanup.
 3. Start official Codex normally and verify that it has no inherited remote-debugging flags and keeps the official appearance.
 4. Record Codex/OpenChatGPTSkin/OS versions, results, and sanitized screenshots.
@@ -438,7 +448,8 @@ UI adaptation changes must include deterministic page fixtures/tests. Theme subm
 
 ## Documentation
 
-- [v0.4.1 Release Notes](docs/releases/v0.4.1.md)
+- [v0.4.2 Release Notes](docs/releases/v0.4.2.md)
+- [v0.4.1 Historical Release Notes](docs/releases/v0.4.1.md)
 - [v0.4.0 Historical Release Notes](docs/releases/v0.4.0.md)
 - [v0.3.3 Historical Release Notes](docs/releases/v0.3.3.md)
 - [v0.3.2 Historical Release Notes](docs/releases/v0.3.2.md)

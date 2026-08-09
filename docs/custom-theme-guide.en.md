@@ -332,7 +332,7 @@ See [Theme Format and Safety Rules](theme-format.md) for paths, signatures, sche
 - [ ] Every image and font has documented rights.
 - [ ] Public themes include attribution.
 - [ ] `validate` and `pack` succeed.
-- [ ] Import, preview, apply, and restore are checked against all seven built-ins: `future-idol-cyan`, `rose-carpet-star`, `mountain-mist`, `glacier-aurora`, `goku-saiyan-engine`, `hoshimiya-ichigo-shining-stage`, and `yua-mikami-starlight`.
+- [ ] Import, preview, apply, and restore are checked against all eight built-ins: `future-idol-cyan`, `rose-carpet-star`, `mountain-mist`, `glacier-aurora`, `goku-saiyan-engine`, `hoshimiya-ichigo-shining-stage`, `tibo-cyber-core`, and `yua-mikami-starlight`.
 - [ ] The theme works in real ChatGPT Desktop and the official appearance can be restored.
 - [ ] Screenshots contain no project names, usernames, chat content, paths, or tokens.
 

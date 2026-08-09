@@ -2,7 +2,7 @@
 
 [返回 README](../README.md)
 
-`v0.4.1` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller、Runtime 与 Theme CLI 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
+`v0.4.2` 的 Windows 生产包使用单一 Go Host 承担 Theme Studio、Controller、Runtime 与 Theme CLI 角色。便携 ZIP 和当前用户 Setup 均不包含 Node.js 或 Node 业务 `node_modules`；React/Vite 前端、Theme/Contract 作者源与 TypeScript CDP Adapter 只在构建阶段使用。
 
 ## 安装与数据目录
 
@@ -11,7 +11,7 @@
 - 用户数据位于 `%LOCALAPPDATA%\OpenChatGPTSkin`，覆盖安装和默认卸载不会删除个人主题、草稿或版本；
 - 未签名安装包可能触发 SmartScreen，只应从项目 GitHub Release 下载并先核对 `checksums.txt`。
 
-发布包必须包含 `release-manifest.json` schema v3。Manifest 记录 Go Host 版本/提交/入口 Hash、Contract Hash、CDP Adapter Hash、构建时 catalog 中的全部内置主题和 Stage 中每个文件的 SHA-256，并明确声明 `studio`、`controller`、`runtime`、`theme` 四个角色及空 sidecar；`v0.4.1` Release 记录七个主题。验收会拒绝 `node.exe`、`node` 或 `node_modules`。
+发布包必须包含 `release-manifest.json` schema v3。Manifest 记录 Go Host 版本/提交/入口 Hash、Contract Hash、CDP Adapter Hash、构建时 catalog 中的全部内置主题和 Stage 中每个文件的 SHA-256，并明确声明 `studio`、`controller`、`runtime`、`theme` 四个角色及空 sidecar；`v0.4.2` Release 记录八个主题。验收会拒绝 `node.exe`、`node` 或 `node_modules`。
 
 ## 发布包 Theme CLI
 
@@ -46,7 +46,7 @@ npm run runtime -- status
 npm run runtime -- restore
 ```
 
-当前源码中的七个内置主题是 `future-idol-cyan`、`glacier-aurora`、`goku-saiyan-engine`、`hoshimiya-ichigo-shining-stage`、`mountain-mist`、`rose-carpet-star` 和 `yua-mikami-starlight`。内置主题可省略版本；个人主题必须使用 `--version <version>` 选择精确版本。
+当前源码中的八个内置主题是 `future-idol-cyan`、`glacier-aurora`、`goku-saiyan-engine`、`hoshimiya-ichigo-shining-stage`、`mountain-mist`、`rose-carpet-star`、`tibo-cyber-core` 和 `yua-mikami-starlight`。内置主题可省略版本；个人主题必须使用 `--version <version>` 选择精确版本。
 
 `list-themes` 与 `import --theme-file` 只访问主题仓库，不启动 Controller 或连接 Codex。导入仍经过 `.ocskin` Schema、大小、Hash 和路径安全校验，并原子安装到个人主题仓库。
 
@@ -70,10 +70,10 @@ npm run runtime -- restore
 
 ## 真实 Windows 验收清单
 
-在无私人项目或敏感聊天的测试工作区执行。当前 `v0.4.1` 的 Windows Stage 与 Setup 安装后原生构建物都会执行 Theme CLI 的 `contract → create → config → show → validate → pack → unpack → validate` 完整验收；ChatGPT 更新后仍必须重新执行本清单。
+在无私人项目或敏感聊天的测试工作区执行。当前 `v0.4.2` 的 Windows Stage 与 Setup 安装后原生构建物都会执行 Theme CLI 的 `contract → create → config → show → validate → pack → unpack → validate` 完整验收；Codex 更新后仍必须重新执行本清单。
 
 1. 校验 Setup/ZIP SHA-256，分别完成安装/启动；确认 Theme Studio 能打开且用户数据不写入程序目录。
-2. 完全退出普通 Codex，依次应用七个内置主题；检查首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端。
+2. 完全退出普通 Codex，依次应用八个内置主题；检查首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端。
 3. 导入并应用一个包含自定义背景、颜色、字体、装饰、头像、建议图标和项目图标的 `.ocskin`。
 4. 执行 `pause`、`switch`、`resume`，确认暂停时官方外观可见，恢复时只应用已选主题。
 5. 执行 `restore`，确认官方外观恢复；从 Codex 菜单或系统托盘正常退出，确认 Controller 清理完成。

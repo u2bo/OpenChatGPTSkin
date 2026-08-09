@@ -16,7 +16,7 @@ describe("v0.2.0 Go migration baseline", () => {
       themeCount: 5,
       verified: true,
     });
-    expect(currentCatalog.builtins).toHaveLength(7);
+    expect(currentCatalog.builtins).toHaveLength(8);
   });
 
   it("exposes the verifier through the documented package command", async () => {

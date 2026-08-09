@@ -160,6 +160,7 @@ For built-in themes, `catalog.json` may define `thumbnailPosition` with the same
 - `glacier-aurora`
 - `hoshimiya-ichigo-shining-stage`
 - `goku-saiyan-engine`
+- `tibo-cyber-core`
 - `yua-mikami-starlight`
 
 Asset-free recipes require a user-authorized local image and are never public-ready:

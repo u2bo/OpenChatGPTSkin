@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 4,
+  "kind": "theme",
+  "appearance": "dark",
+  "id": "tibo-cyber-core",
+  "name": "Tibo·赛博智核",
+  "description": "Tibo 主题人物、近黑代码舱与青蓝霓虹构成的沉浸式开发者主题。",
+  "version": "1.0.0",
+  "author": "OpenChatGPTSkin",
+  "metadata": {
+    "homepage": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localized": {
+      "en": {
+        "name": "Tibo Cyber Core",
+        "description": "An immersive developer theme shaped by Tibo, a near-black code cockpit, and cyan-blue neon light."
+      }
+    }
+  },
+  "assets": {
+    "background": "assets/background.webp",
+    "fonts": {
+      "display": "fonts/display.woff2"
+    },
+    "profileAvatar": "assets/profile-avatar.webp",
+    "suggestionIcons": {
+      "card1": "assets/suggestion-card1.webp",
+      "card2": "assets/suggestion-card2.webp",
+      "card3": "assets/suggestion-card3.webp",
+      "card4": "assets/suggestion-card4.webp"
+    },
+    "projectIcons": [
+      "assets/suggestion-card2.webp",
+      "assets/suggestion-card1.webp",
+      "assets/suggestion-card4.webp",
+      "assets/suggestion-card3.webp"
+    ]
+  },
+  "colors": {
+    "accent": "#22e6d1",
+    "secondary": "#42b8ff",
+    "text": "#eafdff",
+    "muted": "#75a7ad",
+    "panel": "#021018",
+    "border": "rgba(34, 230, 209, 0.68)",
+    "success": "#45e7b5",
+    "warning": "#ffd166",
+    "danger": "#ff7d8b",
+    "info": "#52c7ff",
+    "textSecondary": "#b9e3e7",
+    "link": "#65f3e4",
+    "inputText": "#eafdff",
+    "placeholder": "#82aeb4",
+    "codeText": "#77ffe6"
+  },
+  "typography": {
+    "uiFamily": "Microsoft YaHei UI",
+    "codeFamily": "Cascadia Code",
+    "scale": 1,
+    "uiSize": 14,
+    "codeSize": 13,
+    "uiWeight": 500,
+    "codeWeight": 400,
+    "lineHeight": 1.5,
+    "displayFamily": "ocs-display",
+    "displayFontAssetKey": "display",
+    "displaySize": 44,
+    "displayWeight": 700,
+    "displayLineHeight": 1.28,
+    "displayLetterSpacing": 0.03
+  },
+  "background": {
+    "positionX": 0.72,
+    "positionY": 0.46,
+    "scale": 1,
+    "blur": 0,
+    "brightness": 1.04,
+    "overlay": 0,
+    "safeArea": "left",
+    "taskMode": "full",
+    "taskOpacity": 0.16
+  },
+  "surfaces": {
+    "baseOpacity": 0.12,
+    "elevatedOpacity": 0.46,
+    "terminalOpacity": 0.64,
+    "blur": 0
+  },
+  "decorations": [
+    {
+      "type": "sparkles",
+      "enabled": true,
+      "intensity": 0.32,
+      "placement": "background",
+      "opacity": 0.5,
+      "scale": 1
+    }
+  ],
+  "layout": {
+    "heroHeight": 540,
+    "cardColumns": 4,
+    "composerWidth": 0.76,
+    "sidebarDensity": "comfortable",
+    "moduleGap": 16,
+    "modules": [
+      {
+        "id": "sidebar",
+        "order": 0,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "topbar",
+        "order": 1,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      },
+      {
+        "id": "hero",
+        "order": 2,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "suggestions",
+        "order": 3,
+        "visible": true,
+        "size": "expanded",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "project-picker",
+        "order": 4,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 16
+      },
+      {
+        "id": "composer",
+        "order": 5,
+        "visible": true,
+        "size": "regular",
+        "align": "center",
+        "spacing": 12
+      },
+      {
+        "id": "task-background",
+        "order": 6,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 0
+      },
+      {
+        "id": "content-layer",
+        "order": 7,
+        "visible": true,
+        "size": "regular",
+        "align": "stretch",
+        "spacing": 12
+      }
+    ]
+  },
+  "rights": {
+    "licenseId": "LicenseRef-OpenChatGPTSkin-User-Supplied-Tibo",
+    "attribution": "User-supplied Tibo concept and portrait background prepared for OpenChatGPTSkin",
+    "source": "https://github.com/u2bo/OpenChatGPTSkin.git",
+    "localOnly": false
+  },
+  "interfaceImages": {
+    "profileAvatarSize": 26,
+    "suggestionIconSize": 56,
+    "projectIconSize": 20
+  },
+  "home": {
+    "welcome": {
+      "localized": {
+        "zh-CN": {
+          "lines": [
+            "欢迎回来，",
+            "CODER · {projectName}"
+          ]
+        },
+        "en": {
+          "lines": [
+            "WELCOME BACK,",
+            "CODER · {projectName}"
+          ]
+        }
+      },
+      "layout": {
+        "anchor": "top-left",
+        "positionX": 0.05,
+        "positionY": 0.1,
+        "width": 0.46,
+        "textAlign": "left",
+        "hideNativeIcon": true
+      }
+    }
+  },
+  "composition": {
+    "layers": []
+  }
+}

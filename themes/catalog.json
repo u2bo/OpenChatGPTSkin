@@ -76,6 +76,21 @@
       "preview": "builtin/rose-carpet-star/preview.webp"
     },
     {
+      "id": "tibo-cyber-core",
+      "name": "Tibo·赛博智核",
+      "version": "1.0.0",
+      "kind": "theme",
+      "path": "builtin/tibo-cyber-core",
+      "ready": true,
+      "localOnly": false,
+      "licenseId": "LicenseRef-OpenChatGPTSkin-User-Supplied-Tibo",
+      "preview": "builtin/tibo-cyber-core/preview.webp",
+      "thumbnailPosition": {
+        "positionX": 0.72,
+        "positionY": 0.32
+      }
+    },
+    {
       "id": "yua-mikami-starlight",
       "name": "三上悠亚·星光粉",
       "version": "1.0.0",

@@ -334,7 +334,7 @@ Theme Studio **不会自动保存版本**：
 - [ ] 所有图片和字体都有可验证授权；
 - [ ] 公共主题包含 attribution；
 - [ ] `validate` 和 `pack` 成功；
-- [ ] 以七个内置主题（`future-idol-cyan`、`rose-carpet-star`、`mountain-mist`、`glacier-aurora`、`goku-saiyan-engine`、`hoshimiya-ichigo-shining-stage`、`yua-mikami-starlight`）为基线检查导入、预览、应用和恢复；
+- [ ] 以八个内置主题（`future-idol-cyan`、`rose-carpet-star`、`mountain-mist`、`glacier-aurora`、`goku-saiyan-engine`、`hoshimiya-ichigo-shining-stage`、`tibo-cyber-core`、`yua-mikami-starlight`）为基线检查导入、预览、应用和恢复；
 - [ ] 在真实 ChatGPT Desktop 中试用并成功恢复官方皮肤；
 - [ ] 截图已经移除项目名、用户名、聊天内容、路径和令牌。
 

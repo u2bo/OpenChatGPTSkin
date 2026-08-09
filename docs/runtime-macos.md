@@ -7,7 +7,7 @@ OpenChatGPTSkin 已实现 macOS Runtime 的平台适配：Theme Studio、主题�
 > [!WARNING]
 > 当前实现已在 Windows 上通过 TypeScript、单元测试和 macOS 命令契约测试，但尚未在真实 Mac 上完成 Codex 视觉闭环验收。发布时应标记为开发者预览，不能把本页的“预期”当作实机通过证据。
 
-GitHub Actions 会分别在 macOS x64 与 ARM64 Runner 构建单一 Go Host，组装单 HTML Theme Studio 和当前 catalog 的全部主题，生成对应架构的 DMG 与 `.tar.gz`，并执行 payload、便携归档、应用包、Mach-O 架构、DMG 挂载和完整 Theme Studio Release Acceptance。`v0.4.1` Release 包含七个主题，并对 App 内最终可执行文件执行完整 Theme CLI 工作流。Tag 构建会把产物作为明确标注的未签名开发者预览附加到 GitHub Release；手动 `workflow_dispatch` 只上传测试产物，不创建 Release。
+GitHub Actions 会分别在 macOS x64 与 ARM64 Runner 构建单一 Go Host，组装单 HTML Theme Studio 和当前 catalog 的全部主题，生成对应架构的 DMG 与 `.tar.gz`，并执行 payload、便携归档、应用包、Mach-O 架构、DMG 挂载和完整 Theme Studio Release Acceptance。`v0.4.2` Release 包含八个主题，并对 App 内最终可执行文件执行完整 Theme CLI 工作流。Tag 构建会把产物作为明确标注的未签名开发者预览附加到 GitHub Release；手动 `workflow_dispatch` 只上传测试产物，不创建 Release。
 
 ## 前提
 
@@ -113,7 +113,7 @@ macOS 窗口枚举通常需要 Accessibility 权限。OpenChatGPTSkin 不为换�
    /usr/sbin/spctl --assess --type execute --verbose=4 /Applications/Codex.app
    ```
 
-3. 依次执行 `launch`、六个 `switch`，检查七个内置主题在首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端中一致。
+3. 依次执行 `launch`、七个 `switch`，检查八个内置主题在首页、历史、任务、设置、插件、菜单、弹层、输入框、侧边栏和终端中一致。
 4. 执行 `pause` 与 `resume`，确认暂停完全移除投影、恢复只重新应用已选主题。
 5. 执行 `restore`，确认官方外观恢复；从 Codex 菜单正常退出，使 Runtime 完成清理。
 6. 检查控制 socket：
@@ -124,7 +124,7 @@ macOS 窗口枚举通常需要 Accessibility 权限。OpenChatGPTSkin 不为换�
 
    运行期间应为当前用户所有、权限 `srw-------`；Controller 退出后对应 socket 应被删除。
 7. 正常启动官方 Codex，确认没有继承 `--remote-debugging-address` 或 `--remote-debugging-port`，且普通应用不受主题影响。
-8. 记录 Codex 版本、macOS 版本、七主题结果、恢复结果和脱敏截图；不要记录 PID、端口、用户名、路径、命令行、项目名或聊天内容。
+8. 记录 Codex 版本、macOS 版本、八主题结果、恢复结果和脱敏截图；不要记录 PID、端口、用户名、路径、命令行、项目名或聊天内容。
 
 旧 Node Host 的 `runtime:probe` 与 `runtime:acceptance` 已删除。当前验收以 Go 单元/合约/原生包自动检查加本清单的真实设备观察为准，不通过隐藏 fallback 伪造平台能力。
 

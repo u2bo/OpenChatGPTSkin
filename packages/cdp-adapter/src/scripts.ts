@@ -1513,6 +1513,29 @@ export function applyExpression(theme: CompiledTheme, themeReference?: string): 
         .slice(0, 8);
       for (const entry of gradientScrollFades) mark(entry.node, "scroll-fade");
 
+      // These roots do not belong to the legacy main subtree. Reconcile them
+      // explicitly so late route/tab mounts use the same owned marker lifecycle.
+      for (const root of document.querySelectorAll(nativeSelectors.contentHost)) {
+        if (!visible(root) || insideOverlay(root)) continue;
+        const markUnclaimed = (node, surface) => {
+          if (!node.hasAttribute("data-open-chatgpt-skin-surface") &&
+            visible(node) && !insideOverlay(node)) mark(node, surface);
+        };
+        markUnclaimed(root, root.querySelector(${JSON.stringify(THREAD_CONVERSATION_SELECTOR)})
+          ? "conversation-host" : "content-host");
+        for (const node of root.querySelectorAll(nativeSelectors.panelChrome + "," + nativeSelectors.bottomPanel)) {
+          markUnclaimed(node, "panel-chrome");
+        }
+        for (const node of root.querySelectorAll(nativeSelectors.tabbedPanel)) {
+          markUnclaimed(node, "tabbed-panel");
+        }
+        for (const node of root.querySelectorAll(nativeSelectors.settingsContent)) {
+          markUnclaimed(node, "settings-content");
+        }
+        for (const node of root.querySelectorAll(nativeSelectors.terminalHost)) {
+          markUnclaimed(node, "terminal-host");
+        }
+      }
       syncReviewShadowThemes();
 
       for (const overlay of document.querySelectorAll(interfaceImageSelector)) {

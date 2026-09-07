@@ -24,6 +24,29 @@ function cssPercent(value: number): number {
 }
 
 describe("compileTheme", () => {
+  it.each(["off", "ambient", "banner", "full"] as const)(
+    "keeps the %s conversation mode and independent modern panel opacity settings",
+    async (taskMode) => {
+      const bundle = await loadThemeDirectory(resolve("themes/builtin/glacier-aurora"));
+      const theme = parseThemeDocument({
+        ...bundle.theme,
+        background: { ...bundle.theme.background, taskMode, taskOpacity: 0.31 },
+        surfaces: { ...bundle.theme.surfaces, baseOpacity: 0.27, elevatedOpacity: 0.63, terminalOpacity: 0.79 },
+      });
+      const css = compileTheme({ ...bundle, theme }).themeCss;
+      const taskBackground = css.match(/\[data-open-chatgpt-skin-surface="task"\]\{[^}]*?background:([^;]+);/)?.[1];
+      const modernBackground = css.match(/\[data-open-chatgpt-skin-surface="conversation-host"\]\{background:([^;]+);/)?.[1];
+      expect(taskBackground).toBeTruthy();
+      expect(modernBackground).toBe(taskBackground);
+      expect(css).toContain("--ocs-surface-panel-mix:27%");
+      expect(css).toContain("--ocs-elevated-panel-mix:63%");
+      expect(css).toContain("--ocs-terminal-panel-mix:79%");
+      expect(css).toContain('[data-open-chatgpt-skin-surface="terminal-host"]{background:color-mix(in srgb,var(--ocs-panel) var(--ocs-terminal-panel-mix),transparent)!important;}');
+      expect(css).toContain('[data-open-chatgpt-skin-surface="settings-content"]{--color-background-panel:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;}');
+      expect(css).not.toContain("_MainContentSurface_");
+    },
+  );
+
   it("enforces the exact 8 MiB compiled-theme boundary", () => {
     expect(RUNTIME_MAX_COMPILED_THEME_BYTES).toBe(8 * 1024 * 1024);
     expect(() => assertRuntimeThemeSize(RUNTIME_MAX_COMPILED_THEME_BYTES))

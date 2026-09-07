@@ -165,6 +165,12 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     visual.background.taskOpacityPercent,
   );
   const taskSurface = surfaceSelector("task");
+  const contentHost = surfaceSelector("content-host");
+  const conversationHost = surfaceSelector("conversation-host");
+  const tabbedPanel = surfaceSelector("tabbed-panel");
+  const panelChrome = surfaceSelector("panel-chrome");
+  const settingsContent = surfaceSelector("settings-content");
+  const terminalHost = surfaceSelector("terminal-host");
   const workbenchSurface = surfaceSelector("workbench");
   const workspacePanelSurface = surfaceSelector("workspace-panel");
   const resourceCardSurface = surfaceSelector("resource-card");
@@ -390,6 +396,15 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `border-color:var(--ocs-border)!important;box-shadow:none!important;}`,
     `[data-open-chatgpt-skin-surface="sidebar"]{` +
       `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `${contentHost},${tabbedPanel}{`,
+    `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;}`,
+    `${conversationHost}{background:${taskSurfaceBackground}!important;}`,
+    `${panelChrome},${settingsContent}{background:transparent!important;}`,
+    `${settingsContent}{--color-background-panel:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;}`,
+    `${tabbedPanel} :is([class~="electron:bg-surface"],[class~="group/file-diff"]){background-color:transparent!important;}`,
+    `${tabbedPanel}:has(${terminalHost}){background:transparent!important;}`,
+    `${terminalHost}{background:color-mix(in srgb,var(--ocs-panel) var(--ocs-terminal-panel-mix),transparent)!important;}`,
+    `${terminalHost} :is(.xterm,.xterm-viewport,.xterm-screen,.xterm-rows){background-color:transparent!important;}`,
     `${taskSurface}{position:relative!important;isolation:isolate!important;`,
     `color:var(--ocs-text)!important;background:${taskSurfaceBackground}!important;`,
     `border-color:var(--ocs-border)!important;}`,

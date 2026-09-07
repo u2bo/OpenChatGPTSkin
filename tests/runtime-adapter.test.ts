@@ -160,6 +160,63 @@ function compiledTheme() {
   };
 }
 
+describe("Codex 26.901 sibling route surfaces", () => {
+  it("marks route, tab chrome, terminal and settings without touching unrelated tabs", async () => {
+    const base = await readFile("tests/fixtures/runtime/codex-page.html", "utf8");
+    const modern = await readFile("tests/fixtures/runtime/codex-26901-panels.html", "utf8");
+    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("app://-/index.html", base.replace("</body>", modern + "</body>"), { mutationController });
+    const adapter = new CurrentCodexAdapter(client);
+    await adapter.apply(compiledTheme());
+    const surfaces = () => client.evaluate<Record<string, string | null>>(`(() => {
+      const ids = ["modern-content", "modern-right-chrome", "modern-right-tabs", "modern-right-toolbar", "modern-right-body", "modern-bottom-chrome", "modern-bottom-tabs", "modern-terminal", "modern-settings-route", "modern-settings", "unrelated-tabs"];
+      return Object.fromEntries(ids.map(id => [id, document.getElementById(id).getAttribute("data-open-chatgpt-skin-surface")]));
+    })()`);
+    expect(await surfaces()).toEqual({
+      "modern-content": "conversation-host", "modern-right-chrome": "panel-chrome",
+      "modern-right-tabs": "tabbed-panel", "modern-right-toolbar": "panel-chrome",
+      "modern-right-body": "panel-chrome", "modern-bottom-chrome": "panel-chrome",
+      "modern-bottom-tabs": "tabbed-panel", "modern-terminal": "terminal-host",
+      "modern-settings-route": "content-host", "modern-settings": "settings-content",
+      "unrelated-tabs": null,
+    });
+    // Hydration and navigation can change the route without changing its URL.
+    await client.evaluate(`(() => { document.getElementById("modern-conversation").remove(); return true; })()`);
+    mutationController.flush?.();
+    expect((await surfaces())["modern-content"]).toBe("content-host");
+    await client.evaluate(`(() => {
+      const thread = document.createElement("div");
+      thread.setAttribute("data-thread-scroll-container", "true");
+      document.getElementById("modern-content").append(thread);
+      return true;
+    })()`);
+    mutationController.flush?.();
+    expect((await surfaces())["modern-content"]).toBe("conversation-host");
+    await client.evaluate(`(() => {
+      const old = document.getElementById("modern-right-tabs");
+      const next = old.cloneNode(true);
+      for (const node of [next, ...next.querySelectorAll("[data-open-chatgpt-skin-surface]")]) {
+        node.removeAttribute("data-open-chatgpt-skin-surface");
+      }
+      for (const node of [next, ...next.querySelectorAll("[data-rect]")]) {
+        const [left, top, width, height] = node.getAttribute("data-rect").split(",").map(Number);
+        Object.defineProperty(node, "getBoundingClientRect", {
+          value: () => ({ left, top, width, height, right: left + width, bottom: top + height }),
+        });
+      }
+      old.replaceWith(next);
+      return true;
+    })()`);
+    mutationController.flush?.();
+    expect((await surfaces())["modern-right-tabs"]).toBe("tabbed-panel");
+    expect((await surfaces())["modern-right-body"]).toBe("panel-chrome");
+    await adapter.remove();
+    expect(Object.values(await surfaces()).every(value => value === null)).toBe(true);
+    expect(mutationController.disconnectCalls).toBeGreaterThanOrEqual(1);
+    expect(await client.evaluate<string>('document.getElementById("modern-content").style.backgroundColor')).toBe("rgb(0, 0, 0)");
+  });
+});
+
 function compiledWelcomeTheme() {
   return {
     ...compiledTheme(),

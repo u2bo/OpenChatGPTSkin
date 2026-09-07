@@ -1,5 +1,11 @@
 export const OPEN_CHATGPT_SKIN_SURFACES = [
   "main",
+  "content-host",
+  "conversation-host",
+  "panel-chrome",
+  "tabbed-panel",
+  "settings-content",
+  "terminal-host",
   "sidebar",
   "window-titlebar",
   "application-menu",
@@ -57,6 +63,13 @@ export type OpenChatGPTSkinSurface = typeof OPEN_CHATGPT_SKIN_SURFACES[number];
 
 export const NATIVE_CODEX_SURFACE_SELECTORS = {
   shellMain: "main.main-surface,main,[role=main]",
+  // Codex 26.901 route roots are siblings of the legacy shell main.
+  contentHost: 'main[class*="_MainContentSurface_"]',
+  settingsContent: 'div[class~="electron:bg-surface"][class~="windows:rounded-tl-lg"]',
+  tabbedPanel: '[data-app-shell-tabs="true"]',
+  panelChrome: 'div[class*="bg-[var(--app-shell-panel-background"]',
+  bottomPanel: 'div.absolute.inset-x-0.top-0.border-t.bg-surface:has([data-app-shell-tabs="true"])',
+  terminalHost: '[data-codex-terminal="true"]',
   sidebar: "aside.app-shell-left-panel,aside,nav,[role=navigation]",
   applicationMenu: '[class~="group/application-menu-top-bar"]',
   modeSwitcher: '[role="group"][aria-label="Composer mode"]',

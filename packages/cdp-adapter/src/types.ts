@@ -72,6 +72,8 @@ export interface CompiledCompositionLayer {
 }
 
 export interface CompiledTheme {
+  /** Static CSS for mounted and future UI; no automatic shell reconciliation. */
+  readonly surfaceStrategy?: "static";
   readonly themeId: string;
   readonly themeVersion: string;
   readonly backgroundDataUrl: string;

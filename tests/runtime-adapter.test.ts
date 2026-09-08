@@ -3,14 +3,20 @@ import { parseHTML } from "linkedom";
 import { describe, expect, it } from "vitest";
 import {
   CurrentCodexAdapter,
+  NATIVE_CODEX_SURFACE_SELECTORS,
   waitForCompatibleAdapter,
   type CdpRuntimeClient,
 } from "@open-chatgpt-skin/cdp-adapter";
 
 interface ClientOptions {
   readonly backgroundDecodeFails?: boolean;
+  readonly resizeController?: { notify?: () => void; active?: () => number };
   readonly mutationController?: {
     flush?: () => void;
+    notify?: (records: MutationRecord[]) => void;
+    advance?: () => void;
+    pending?: () => number;
+    passes?: number;
     disconnectCalls?: number;
     observerOptions?: MutationObserverInit;
   };
@@ -23,6 +29,19 @@ function clientFor(
 ): CdpRuntimeClient {
   const { document, window } = parseHTML(html);
   const runtimeWindow = Object.create(window) as Window;
+  const timers = new Map<number, () => void>();
+  let nextTimer = 0;
+  const advance = () => {
+    const callbacks = [...timers.values()];
+    timers.clear();
+    for (const callback of callbacks) callback();
+  };
+  Object.defineProperty(runtimeWindow, "setTimeout", {
+    value: (callback: () => void) => { timers.set(++nextTimer, callback); return nextTimer; },
+  });
+  Object.defineProperty(runtimeWindow, "clearTimeout", {
+    value: (id: number) => { timers.delete(id); },
+  });
   Object.defineProperty(runtimeWindow, "location", {
     configurable: false,
     value: { href: url },
@@ -57,10 +76,23 @@ function clientFor(
   Object.defineProperty(runtimeWindow, "MutationObserver", {
     configurable: false,
     value: class TestMutationObserver {
-      constructor(callback: () => void) {
+      constructor(callback: (records: MutationRecord[]) => void) {
         if (options.mutationController) {
-          options.mutationController.flush = callback;
+          options.mutationController.notify = callback;
+          options.mutationController.advance = advance;
+          options.mutationController.pending = () => timers.size;
+          options.mutationController.flush = () => {
+            callback([{type: "attributes", target: document.body} as MutationRecord]);
+            advance();
+          };
         }
+      }
+
+      takeRecords(): MutationRecord[] {
+        if (options.mutationController) {
+          options.mutationController.passes = (options.mutationController.passes ?? 0) + 1;
+        }
+        return [];
       }
 
       observe(_target: Node, observerOptions: MutationObserverInit): void {
@@ -77,6 +109,16 @@ function clientFor(
       }
     },
   });
+  if(options.resizeController) {
+    const observers=new Map<object,()=>void>();
+    Object.defineProperty(runtimeWindow, "ResizeObserver", {value:class {
+      constructor(private callback:()=>void) {}
+      observe() { observers.set(this,this.callback); }
+      disconnect() { observers.delete(this); }
+    }});
+    options.resizeController.notify=()=>{ for(const callback of [...observers.values()]) callback(); };
+    options.resizeController.active=()=>observers.size;
+  }
   for (const node of document.querySelectorAll<HTMLElement>("[data-rect]")) {
     Object.defineProperty(node, "getBoundingClientRect", {
       value: () => {
@@ -160,63 +202,6 @@ function compiledTheme() {
   };
 }
 
-describe("Codex 26.901 sibling route surfaces", () => {
-  it("marks route, tab chrome, terminal and settings without touching unrelated tabs", async () => {
-    const base = await readFile("tests/fixtures/runtime/codex-page.html", "utf8");
-    const modern = await readFile("tests/fixtures/runtime/codex-26901-panels.html", "utf8");
-    const mutationController: NonNullable<ClientOptions["mutationController"]> = {};
-    const client = clientFor("app://-/index.html", base.replace("</body>", modern + "</body>"), { mutationController });
-    const adapter = new CurrentCodexAdapter(client);
-    await adapter.apply(compiledTheme());
-    const surfaces = () => client.evaluate<Record<string, string | null>>(`(() => {
-      const ids = ["modern-content", "modern-right-chrome", "modern-right-tabs", "modern-right-toolbar", "modern-right-body", "modern-bottom-chrome", "modern-bottom-tabs", "modern-terminal", "modern-settings-route", "modern-settings", "unrelated-tabs"];
-      return Object.fromEntries(ids.map(id => [id, document.getElementById(id).getAttribute("data-open-chatgpt-skin-surface")]));
-    })()`);
-    expect(await surfaces()).toEqual({
-      "modern-content": "conversation-host", "modern-right-chrome": "panel-chrome",
-      "modern-right-tabs": "tabbed-panel", "modern-right-toolbar": "panel-chrome",
-      "modern-right-body": "panel-chrome", "modern-bottom-chrome": "panel-chrome",
-      "modern-bottom-tabs": "tabbed-panel", "modern-terminal": "terminal-host",
-      "modern-settings-route": "content-host", "modern-settings": "settings-content",
-      "unrelated-tabs": null,
-    });
-    // Hydration and navigation can change the route without changing its URL.
-    await client.evaluate(`(() => { document.getElementById("modern-conversation").remove(); return true; })()`);
-    mutationController.flush?.();
-    expect((await surfaces())["modern-content"]).toBe("content-host");
-    await client.evaluate(`(() => {
-      const thread = document.createElement("div");
-      thread.setAttribute("data-thread-scroll-container", "true");
-      document.getElementById("modern-content").append(thread);
-      return true;
-    })()`);
-    mutationController.flush?.();
-    expect((await surfaces())["modern-content"]).toBe("conversation-host");
-    await client.evaluate(`(() => {
-      const old = document.getElementById("modern-right-tabs");
-      const next = old.cloneNode(true);
-      for (const node of [next, ...next.querySelectorAll("[data-open-chatgpt-skin-surface]")]) {
-        node.removeAttribute("data-open-chatgpt-skin-surface");
-      }
-      for (const node of [next, ...next.querySelectorAll("[data-rect]")]) {
-        const [left, top, width, height] = node.getAttribute("data-rect").split(",").map(Number);
-        Object.defineProperty(node, "getBoundingClientRect", {
-          value: () => ({ left, top, width, height, right: left + width, bottom: top + height }),
-        });
-      }
-      old.replaceWith(next);
-      return true;
-    })()`);
-    mutationController.flush?.();
-    expect((await surfaces())["modern-right-tabs"]).toBe("tabbed-panel");
-    expect((await surfaces())["modern-right-body"]).toBe("panel-chrome");
-    await adapter.remove();
-    expect(Object.values(await surfaces()).every(value => value === null)).toBe(true);
-    expect(mutationController.disconnectCalls).toBeGreaterThanOrEqual(1);
-    expect(await client.evaluate<string>('document.getElementById("modern-content").style.backgroundColor')).toBe("rgb(0, 0, 0)");
-  });
-});
-
 function compiledWelcomeTheme() {
   return {
     ...compiledTheme(),
@@ -298,6 +283,313 @@ function compiledLayerTheme() {
 }
 
 describe("CurrentCodexAdapter", () => {
+
+  it("matches hydrated route/panel selectors without marking unrelated tabs", async () => {
+    const base=await readFile("tests/fixtures/runtime/codex-page.html","utf8");
+    const panels=await readFile("tests/fixtures/runtime/codex-26901-panels.html","utf8");
+    const controller:NonNullable<ClientOptions["mutationController"]>={};
+    const client=clientFor("app://-/index.html",base.replace('</body>',panels+'</body>'),{mutationController:controller});
+    const adapter=new CurrentCodexAdapter(client);
+    await adapter.apply({...compiledTheme(),surfaceStrategy:"static"});
+    const nativeMatch=(id:string,selector:string)=>client.evaluate<boolean>(
+      `document.getElementById(${JSON.stringify(id)}).matches(${JSON.stringify(selector)})`);
+    expect(await nativeMatch('modern-content',NATIVE_CODEX_SURFACE_SELECTORS.conversationHost)).toBe(true);
+    expect(await nativeMatch('modern-right-tabs',NATIVE_CODEX_SURFACE_SELECTORS.tabbedPanel)).toBe(true);
+    expect(await nativeMatch('modern-bottom-tabs',NATIVE_CODEX_SURFACE_SELECTORS.tabbedPanel)).toBe(true);
+    expect(await nativeMatch('modern-terminal',NATIVE_CODEX_SURFACE_SELECTORS.terminalHost)).toBe(true);
+    expect(await nativeMatch('modern-settings',NATIVE_CODEX_SURFACE_SELECTORS.settingsHost)).toBe(true);
+    expect(await nativeMatch('unrelated-tabs',NATIVE_CODEX_SURFACE_SELECTORS.tabbedPanel)).toBe(false);
+    const records=await client.evaluate<MutationRecord[]>(`(() => {
+      const thread=document.getElementById('modern-conversation');const target=thread.parentElement;thread.remove();
+      return [{type:'childList',target,addedNodes:[],removedNodes:[thread]}];
+    })()`);
+    controller.notify!(records);controller.advance!();
+    expect(await nativeMatch('modern-content',NATIVE_CODEX_SURFACE_SELECTORS.conversationHost)).toBe(false);
+    expect(await nativeMatch('modern-content',NATIVE_CODEX_SURFACE_SELECTORS.contentHost)).toBe(true);
+    const mounted=await client.evaluate<MutationRecord[]>(`(() => {
+      const thread=document.createElement('div');thread.setAttribute('data-thread-scroll-container','true');
+      const target=document.getElementById('modern-content');target.append(thread);
+      return [{type:'childList',target,addedNodes:[thread],removedNodes:[]}];
+    })()`);
+    controller.notify!(mounted);controller.advance!();
+    expect(await nativeMatch('modern-content',NATIVE_CODEX_SURFACE_SELECTORS.conversationHost)).toBe(true);
+    await adapter.remove();
+    expect(await client.evaluate(`document.querySelector('[data-open-chatgpt-skin-surface]')`)).toBeNull();
+  });
+
+  it("initializes modern composer layout on remount without the legacy chrome class or geometry scans", async () => {
+    const html=(await readFile('tests/fixtures/runtime/codex-history-page.html','utf8'))
+      .replace('class="composer-surface-chrome"','class="_ComposerLayoutRoot_kbwao_2" data-composer-surface-variant="default"')
+      .replace('id="history-composer-stack"','id="history-composer-stack" class="thread-content-max-width"');
+    const controller: NonNullable<ClientOptions['mutationController']> = {};
+    const client=clientFor('app://-/index.html',html,{mutationController:controller});
+    await new CurrentCodexAdapter(client).apply({...compiledTheme(),surfaceStrategy:'static'});
+    const mutations=await client.evaluate<MutationRecord[]>(`(() => {
+      window.composerReads=0;
+      for(const node of document.querySelectorAll('*')) node.getBoundingClientRect=()=>{window.composerReads++;return {width:700,height:100,left:300,top:600,right:1000,bottom:700}};
+      const old=document.querySelector('#history-composer-stack');
+      const next=old.cloneNode(true);
+      for(const node of [next,...next.querySelectorAll('[data-open-chatgpt-skin-surface]')]) node.removeAttribute('data-open-chatgpt-skin-surface');
+      old.replaceWith(next);
+      return [{type:'childList',target:next.parentElement,addedNodes:[next],removedNodes:[old]}];
+    })()`);
+    controller.notify!(mutations);controller.advance!();
+    expect(await client.evaluate(`document.querySelector('#history-composer-stack').getAttribute('data-open-chatgpt-skin-surface')`)).toBe('composer');
+    expect(await client.evaluate(`document.querySelector('[data-composer-surface-variant]').getAttribute('data-open-chatgpt-skin-surface')`)).toBe('composer-input');
+    expect(await client.evaluate('window.composerReads')).toBe(0);
+    const typing=await client.evaluate<MutationRecord[]>(`[{type:'childList',target:document.querySelector('textarea'),addedNodes:[document.createElement('p')],removedNodes:[]}]`);
+    for(let i=0;i<100;i++)controller.notify!(typing);
+    expect(controller.pending!()).toBe(0);
+    expect(await client.evaluate('window.composerReads')).toBe(0);
+  });
+
+  it("uses static CSS after startup: arbitrary UI mounts and scroll/resize cause no shell measurements", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const controller: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("app://-/index.html", html, {mutationController:controller});
+    const adapter = new CurrentCodexAdapter(client);
+    await adapter.apply({...compiledTheme(), surfaceStrategy:"static"});
+    expect(controller.observerOptions).toEqual({childList:true,subtree:true});
+    const records = await client.evaluate<MutationRecord[]>(`(() => {
+      window.shellReads=0;
+      for(const node of document.querySelectorAll('*')) {
+        const read=node.getBoundingClientRect.bind(node);
+        node.getBoundingClientRect=()=>{window.shellReads++;return read()};
+      }
+      const panel=document.createElement('aside');panel.setAttribute('data-app-shell-tabs','true');
+      panel.innerHTML='<div role="dialog"><button>Options</button></div><div data-codex-terminal="true"><div class="xterm">terminal output</div></div>';
+      const unknown=document.createElement('section');unknown.innerHTML='<div><button>Future UI</button></div>';
+      const diff=document.createElement('diffs-container');diff.attachShadow({mode:'open'}).innerHTML='<pre>Review</pre>';
+      document.body.append(panel,unknown,diff);
+      return [{type:'childList',target:document.body,addedNodes:[panel,unknown,diff],removedNodes:[]}];
+    })()`);
+    controller.notify!(records);controller.advance!();
+    expect(await client.evaluate('window.shellReads')).toBe(0);
+    expect(await client.evaluate(`document.querySelector('diffs-container').shadowRoot.querySelectorAll('style[data-open-chatgpt-skin-shadow]').length`)).toBe(1);
+    const unrelated = await client.evaluate<MutationRecord[]>(`[{type:'childList',target:document.body,addedNodes:[document.createElement('section')],removedNodes:[]}]`);
+    for(let i=0;i<1000;i++) controller.notify!(unrelated);
+    await client.evaluate(`(() => {window.dispatchEvent(new window.Event('scroll'));window.dispatchEvent(new window.Event('resize'));})()`);
+    expect(controller.pending!()).toBe(0);
+    expect(await client.evaluate('window.shellReads')).toBe(0);
+    await adapter.remove();
+    expect(controller.pending!()).toBe(0);
+  });
+
+
+
+  it("preserves native home cards and imagery after navigation and repairs welcome on verification", async () => {
+    const html=(await readFile("tests/fixtures/runtime/codex-page.html","utf8"))
+      .replace('<html>','<html lang="zh-CN">')
+      .replace('<section id="native-hero"','<span data-testid="home-icon"></span><section id="native-hero"');
+    const controller:NonNullable<ClientOptions["mutationController"]>={};
+    const client=clientFor("app://-/index.html",html,{mutationController:controller});
+    const adapter=new CurrentCodexAdapter(client);
+    const theme={...compiledWelcomeTheme(),surfaceStrategy:"static" as const,
+      interfaceImagery:compiledInterfaceTheme().interfaceImagery,assetDataUrls:compiledInterfaceTheme().assetDataUrls};
+    await adapter.apply(theme);
+    const removal=await client.evaluate<MutationRecord[]>(`(() => {
+      const main=document.querySelector('main');window.savedHome=main;main.remove();
+      return [{type:'childList',target:document.body,addedNodes:[],removedNodes:[main]}];
+    })()`);
+    controller.notify!(removal);controller.advance!();
+    const insertion=await client.evaluate<MutationRecord[]>(`(() => {
+      const main=window.savedHome;
+      for(const image of main.querySelectorAll('[data-open-chatgpt-skin-interface-image]')) image.remove();
+      for(const node of main.querySelectorAll('[data-open-chatgpt-skin-surface]'))node.removeAttribute('data-open-chatgpt-skin-surface');
+      document.body.append(main);
+      return [{type:'childList',target:document.body,addedNodes:[main],removedNodes:[]}];
+    })()`);
+    controller.notify!(insertion);controller.advance!();
+    expect(await client.evaluate(`document.querySelectorAll('#native-suggestions [data-open-chatgpt-skin-interface-image]').length`)).toBe(4);
+    expect(await client.evaluate(`document.querySelector('#native-suggestions button').textContent`)).toBe('Explore code');
+    await client.evaluate(`document.querySelector('[data-open-chatgpt-skin="welcome"]').textContent='drift'`);
+    expect(await adapter.verify(theme)).toMatchObject({welcomeValid:true});
+    expect(await client.evaluate(`document.querySelector('[data-open-chatgpt-skin="welcome"]').textContent`)).toContain('你想一起打造');
+    await adapter.remove();
+    expect(await client.evaluate(`document.querySelectorAll('[data-open-chatgpt-skin-interface-image]').length`)).toBe(0);
+  });
+
+  it("handles native panel/dialog mounts and diff roots without rebuilding the shell", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const controller: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html, {mutationController:controller});
+    const adapter = new CurrentCodexAdapter(client);
+    await adapter.apply(compiledTheme());
+    const initial = controller.passes;
+    const mounts = await client.evaluate<MutationRecord[]>(`(() => {
+      const panel=document.createElement('aside'); panel.id='dynamic-panel';
+      panel.setAttribute('data-app-shell-tabs','true');
+      panel.innerHTML='<div data-codex-terminal="true"><div class="xterm"><div id="terminal-lines"></div></div></div>';
+      const diff=document.createElement('diffs-container'); diff.id='dynamic-diff';
+      diff.attachShadow({mode:'open'}).innerHTML='<pre>diff text</pre>'; panel.append(diff);
+      const dialog=document.createElement('div'); dialog.id='dynamic-dialog'; dialog.setAttribute('role','dialog');
+      dialog.innerHTML='<button>Close</button>';
+      document.body.append(panel,dialog);
+      return [{type:'childList',target:document.body,addedNodes:[panel,dialog],removedNodes:[]}];
+    })()`);
+    controller.notify!(mounts); controller.advance!();
+    expect(controller.passes).toBe(initial);
+    expect(await client.evaluate(`document.querySelector('#dynamic-diff').shadowRoot.querySelectorAll('style[data-open-chatgpt-skin-shadow]').length`)).toBe(1);
+    const updates = await client.evaluate<MutationRecord[]>(`[
+      {type:'attributes',attributeName:'class',target:document.querySelector('#dynamic-dialog button')},
+      {type:'childList',target:document.querySelector('#terminal-lines'),addedNodes:[document.createElement('span')],removedNodes:[]},
+      {type:'attributes',attributeName:'class',target:document.querySelector('#dynamic-panel')}
+    ]`);
+    for (let i=0;i<500;i++) controller.notify!(updates);
+    expect(controller.pending!()).toBe(0);
+    expect(controller.passes).toBe(initial);
+    const removal = await client.evaluate<MutationRecord[]>(`(() => {
+      const panel=document.querySelector('#dynamic-panel');panel.remove();
+      return [{type:'childList',target:document.body,addedNodes:[],removedNodes:[panel]}];
+    })()`);
+    controller.notify!(removal);controller.advance!();
+    expect(controller.passes).toBe(initial);
+    expect(await client.evaluate('window.__openChatgptSkinShadowSheets.length')).toBe(0);
+    controller.notify!(mounts);
+    await adapter.remove();
+    expect(controller.pending!()).toBe(0);
+  });
+
+  it("preserves unchanged shell markers during reconciliation and prunes terminal/editor rows", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html);
+    await client.evaluate(`(() => {
+      window.denseReads=0;
+      for (const className of ['xterm','monaco-editor']) {
+        const host=document.createElement('div');host.className=className;
+        document.querySelector('#history-task-route').append(host);
+        for(let i=0;i<1000;i++) {
+          const row=document.createElement('div'); row.textContent='code output '+i;
+          row.getBoundingClientRect=()=>{window.denseReads++;return {width:600,height:20,top:100,bottom:120,left:300,right:900}};
+          host.append(row);
+        }
+      }
+    })()`);
+    const adapter=new CurrentCodexAdapter(client);
+    await adapter.apply(compiledTheme());
+    await client.evaluate(`(() => {
+      window.shellWrites=0;
+      for (const node of document.querySelectorAll('[data-open-chatgpt-skin-surface="main"],[data-open-chatgpt-skin-surface="sidebar"]')) {
+        const remove=node.removeAttribute.bind(node),set=node.setAttribute.bind(node);
+        node.removeAttribute=(key)=>{if(key==='data-open-chatgpt-skin-surface')window.shellWrites++;remove(key)};
+        node.setAttribute=(key,value)=>{if(key==='data-open-chatgpt-skin-surface')window.shellWrites++;set(key,value)};
+      }
+    })()`);
+    await adapter.verify();
+    expect(await client.evaluate('window.shellWrites')).toBe(0);
+    expect(await client.evaluate('window.denseReads')).toBe(0);
+  });
+
+  it("ignores editing and virtual sidebar rows while retaining input replacements and layout changes", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const controller: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html, {mutationController: controller});
+    const adapter = new CurrentCodexAdapter(client);
+    await adapter.apply(compiledTheme());
+    const initial = controller.passes!;
+    const local = await client.evaluate<MutationRecord[]>(`(() => {
+      const input = document.querySelector('textarea');
+      return [
+        {type:'childList',target:input,addedNodes:[document.createElement('p')],removedNodes:[]},
+        {type:'childList',target:input.parentElement,addedNodes:[document.createElement('span')],removedNodes:[]},
+        {type:'attributes',attributeName:'class',target:input.parentElement},
+        {type:'attributes',attributeName:'class',target:document.querySelector('nav button')},
+        {type:'childList',target:document.querySelector('nav'),addedNodes:[document.createElement('button')],removedNodes:[]}
+      ];
+    })()`);
+    for (let i=0; i<500; i++) controller.notify!(local);
+    expect(controller.pending!()).toBe(0);
+    expect(controller.passes).toBe(initial);
+    const replacement = await client.evaluate<MutationRecord[]>(`[{type:'childList',target:document.querySelector('textarea').parentElement,addedNodes:[document.createElement('textarea')],removedNodes:[]}]`);
+    controller.notify!(replacement);
+    expect(controller.pending!()).toBe(1);
+    controller.advance!();
+    expect(controller.passes).toBe(initial+1);
+    const sidebarToggle = await client.evaluate<MutationRecord[]>(`[{type:'attributes',attributeName:'class',target:document.querySelector('aside')}]`);
+    controller.notify!(sidebarToggle);
+    expect(controller.pending!()).toBe(1);
+    controller.advance!();
+    expect(controller.passes).toBe(initial+2);
+    await adapter.remove();
+  });
+
+  it("does not measure thousands of historical nodes when a route layout is reconciled", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html);
+    const adapter = new CurrentCodexAdapter(client);
+    await client.evaluate(`(() => {
+      const history = document.querySelector('#history-thread-content');
+      window.historyMeasurements = 0;
+      for(let i=0;i<2000;i++) {
+        const row = document.createElement('div');
+        row.textContent = 'Historical message ' + i;
+        row.getBoundingClientRect = () => {
+          window.historyMeasurements++;
+          return {left:300,top:100,width:600,height:24,right:900,bottom:124};
+        };
+        history.append(row);
+      }
+    })()`);
+    await adapter.apply(compiledTheme());
+    await adapter.verify();
+    expect(await client.evaluate('window.historyMeasurements')).toBe(0);
+  });
+
+  it("coalesces structural changes, ignores streamed text and task scrolling, and cancels removal work", async () => {
+    const html = await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8");
+    const controller: NonNullable<ClientOptions["mutationController"]> = {};
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html, {mutationController: controller});
+    const adapter = new CurrentCodexAdapter(client);
+    await adapter.apply(compiledTheme());
+    const initial = controller.passes!;
+    const streaming = await client.evaluate<MutationRecord[]>(`(() => {
+      const target = document.querySelector('.thread-scroll-container,[data-thread-scroll-container]');
+      return [
+        {type:'childList',target,addedNodes:[document.createTextNode('token')],removedNodes:[]},
+        {type:'childList',target,addedNodes:[document.createElement('span')],removedNodes:[]},
+        {type:'attributes',target:target.querySelector('div') || target},
+      ];
+    })()`);
+    for (let i = 0; i < 500; i++) controller.notify!(streaming);
+    await client.evaluate(`window.dispatchEvent(new window.Event('scroll'))`);
+    expect(controller.pending!()).toBe(0);
+    expect(controller.passes).toBe(initial);
+
+    const structural = await client.evaluate<MutationRecord[]>(`[{type:'attributes',target:document.body}]`);
+    for (let i = 0; i < 500; i++) controller.notify!(structural);
+    expect(controller.pending!()).toBe(1);
+    expect(controller.passes).toBe(initial);
+    controller.advance!();
+    expect(controller.passes).toBe(initial + 1);
+    expect(controller.pending!()).toBe(0);
+
+    const reviewMount = await client.evaluate<MutationRecord[]>(`[{type:'childList',
+      target:document.querySelector('.thread-scroll-container,[data-thread-scroll-container]'),
+      addedNodes:[document.createElement('diffs-container')],removedNodes:[]}]`);
+    controller.notify!(reviewMount);
+    expect(controller.pending!()).toBe(1);
+    await adapter.remove();
+    expect(controller.pending!()).toBe(0);
+    controller.advance!();
+    controller.notify!(structural);
+    expect(controller.passes).toBe(initial + 1);
+    expect(controller.pending!()).toBe(0);
+  });
+
+  it("clears the current full-height native composer backdrop without treating message gradients as fades", async () => {
+    const html = (await readFile("tests/fixtures/runtime/codex-history-page.html", "utf8"))
+      .replace('class="mx-auto w-full max-w-(--thread-content-max-width) px-toolbar z-0 h-full bg-gradient-to-t from-token-main-surface-primary via-token-main-surface-primary"',
+        'aria-hidden="true" class="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-full bg-gradient-to-t from-surface via-surface"')
+      .replace('data-rect="376,645,768,175"', 'data-rect="240,500,1040,320"');
+    const client = clientFor("https://chatgpt.com/codex/tasks/history", html);
+    await new CurrentCodexAdapter(client).apply(compiledTheme());
+    expect(await client.evaluate(`document.querySelector('#history-composer-backdrop').dataset.openChatgptSkinSurface`)).toBe("scroll-fade");
+    expect(await client.evaluate(`document.querySelector('#history-thread-content').dataset.openChatgptSkinSurface || null`)).toBe(null);
+  });
+
+
+
+
   it("uses the visible application language when html lang is stale", async () => {
     const html = (await readFile("tests/fixtures/runtime/codex-page.html", "utf8"))
       .replace("<html>", '<html lang="en">')
@@ -428,6 +720,7 @@ describe("CurrentCodexAdapter", () => {
       document.querySelector('#native-hero').dataset.rect = "410,120,760,180";
       window.dispatchEvent(new window.Event("resize"));
     })()`);
+    mutationController.advance?.();
 
     await expect(client.evaluate(`(() => {
       const host = document.querySelector('[data-open-chatgpt-skin="composition-layer"]');
@@ -879,6 +1172,29 @@ describe("CurrentCodexAdapter", () => {
       nativeHidden: "profile-avatar",
       avatarSize: "24px",
     });
+  });
+
+  it.each([false,true])("never treats conversation titles as the account avatar (static=%s)", async (staticMode) => {
+    const html=(await readFile('tests/fixtures/runtime/codex-page.html','utf8'))
+      .replace('<nav role="navigation"','<aside class="app-shell-left-panel" role="navigation"').replace('</nav>','</aside>')
+      .replace('<button id="native-account-button"', '<div class="vertical-scroll-fade-mask"><button aria-label="Open profile menu" data-rect="12,680,250,32">Open profile menu</button><button aria-label="用户设置示例" data-rect="12,700,250,32">用户设置示例</button></div><button id="native-account-button"');
+    const controller:NonNullable<ClientOptions['mutationController']>={};
+    const client=clientFor('app://-/index.html',html,{mutationController:controller});
+    const adapter=new CurrentCodexAdapter(client);
+    await adapter.apply({...compiledInterfaceTheme(),...(staticMode?{surfaceStrategy:'static' as const}:{})});
+    if(staticMode) {
+      const mutations=await client.evaluate<MutationRecord[]>(`(() => {
+        const old=document.querySelector('#native-account-button');const next=old.cloneNode(true);
+        for(const node of [next,...next.querySelectorAll('[data-rect]')])node.getBoundingClientRect=()=>{const [left,top,width,height]=node.dataset.rect.split(',').map(Number);return {left,top,width,height,right:left+width,bottom:top+height}};
+        for(const node of next.querySelectorAll('[data-open-chatgpt-skin-interface-image]'))node.remove();
+        old.replaceWith(next);
+        return [{type:'childList',target:next.parentElement,addedNodes:[next],removedNodes:[old]}];
+      })()`);
+      controller.notify!(mutations);controller.advance!();
+    }
+    expect(await client.evaluate(`Array.from(document.querySelectorAll('[data-open-chatgpt-skin-interface-image="profile-avatar"]')).map(node=>node.parentElement.id)`)).toEqual(['native-account-button']);
+    expect(await client.evaluate(`document.querySelector('.vertical-scroll-fade-mask [data-open-chatgpt-skin-native-icon]')===null`)).toBe(true);
+    await adapter.remove();
   });
 
   it("replaces visible project folder icons and enlarges suggestion imagery", async () => {

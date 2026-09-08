@@ -8,7 +8,7 @@ import {
   type ThemeInterfaceImageVisual,
 } from "@open-chatgpt-skin/theme-schema";
 import { RuntimeThemeError } from "./errors.js";
-import { surfaceSelector } from "./surface-contract.js";
+import { NATIVE_CODEX_SURFACE_SELECTORS, surfaceSelector } from "./surface-contract.js";
 import type {
   CompiledCompositionLayer,
   CompiledDecoration,
@@ -165,12 +165,8 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     visual.background.taskOpacityPercent,
   );
   const taskSurface = surfaceSelector("task");
-  const contentHost = surfaceSelector("content-host");
-  const conversationHost = surfaceSelector("conversation-host");
-  const tabbedPanel = surfaceSelector("tabbed-panel");
-  const panelChrome = surfaceSelector("panel-chrome");
-  const settingsContent = surfaceSelector("settings-content");
-  const terminalHost = surfaceSelector("terminal-host");
+  const native = NATIVE_CODEX_SURFACE_SELECTORS;
+  const nativePaintScope = `:is(:root,${native.tabbedPanel},${native.terminalHost},${native.overlay},diffs-container,file-tree-container)`;
   const workbenchSurface = surfaceSelector("workbench");
   const workspacePanelSurface = surfaceSelector("workspace-panel");
   const resourceCardSurface = surfaceSelector("resource-card");
@@ -189,10 +185,10 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
   const statusBannerSurface = surfaceSelector("status-banner");
   const settingsSurface = surfaceSelector("settings");
   const settingsPanelSurface = surfaceSelector("settings-panel");
-  const overlaySurface = surfaceSelector("overlay");
+  const overlaySurface = `:is(${surfaceSelector("overlay")},${native.overlay})`;
   const applicationMenuSurface = surfaceSelector("application-menu");
-  const taskContentSurfaces = [taskSurface, workbenchSurface, workspacePanelSurface];
-  const conversationSurfaces = [taskSurface, workbenchSurface];
+  const taskContentSurfaces = [taskSurface, workbenchSurface, workspacePanelSurface, native.contentHost];
+  const conversationSurfaces = [taskSurface, workbenchSurface, native.conversationHost];
   const taskPrimaryText = descendantSelector(
     taskContentSurfaces,
     ".text-token-foreground,.text-token-text-primary",
@@ -364,6 +360,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `--ocs-elevated-panel-mix:${visual.surfaces.elevatedOpacityPercent}%;`,
     `--ocs-terminal-panel-mix:${visual.surfaces.terminalOpacityPercent}%;`,
     `--ocs-surface-blur:${visual.surfaces.blurPx}px;`,
+    `--ocs-surface-backdrop:${visual.surfaces.blurPx > 0 ? "blur(" + visual.surfaces.blurPx + "px)" : "none"};`,
     `color-scheme:${visual.appearance.resolved}!important;}`,
     `html{background:#17191a!important;}body{color:var(--ocs-text)!important;`,
     `font-family:${uiFamily}!important;position:relative!important;isolation:isolate!important;`,
@@ -376,7 +373,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `background-size:cover;background-repeat:no-repeat;`,
     `transform:scale(var(--ocs-background-scale));`,
     `transform-origin:var(--ocs-background-x) var(--ocs-background-y);`,
-    `filter:blur(${visual.background.blurPx}px) brightness(${visual.background.brightness});}`,
+    `filter:${visual.background.blurPx === 0 && visual.background.brightness === 1 ? "none" : "blur(" + visual.background.blurPx + "px) brightness(" + visual.background.brightness + ")"};}`,
     `body::after{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;`,
     `background:${safeAreaOverlay};}`,
     `p,li,dd,dt{color:var(--ocs-text-secondary)!important;}`,
@@ -395,25 +392,62 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;}`,
     `[data-open-chatgpt-skin-surface="sidebar"]{` +
-      `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
-    `${contentHost},${tabbedPanel}{`,
+      `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
+    // Modern route and tab hosts are siblings of the legacy main. Keep one
+    // tinted layer per panel and let nested chrome reveal the theme behind it.
+    `${native.contentHost},${native.tabbedPanel}{`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;}`,
-    `${conversationHost}{background:${taskSurfaceBackground}!important;}`,
-    `${panelChrome},${settingsContent}{background:transparent!important;}`,
-    `${settingsContent}{--color-background-panel:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;}`,
-    `${tabbedPanel} :is([class~="electron:bg-surface"],[class~="group/file-diff"]){background-color:transparent!important;}`,
-    `${tabbedPanel}:has(${terminalHost}){background:transparent!important;}`,
-    `${terminalHost}{background:color-mix(in srgb,var(--ocs-panel) var(--ocs-terminal-panel-mix),transparent)!important;}`,
-    `${terminalHost} :is(.xterm,.xterm-viewport,.xterm-screen,.xterm-rows){background-color:transparent!important;}`,
+    // Native classes resolve these tokens at mount time, including portals.
+    // They must not wait for a geometry-based marker pass to gain theme colors.
+    `${nativePaintScope}{`,
+    `--color-surface:var(--ocs-panel)!important;`,
+    `--color-surface-secondary:var(--ocs-panel)!important;`,
+    `--color-surface-tertiary:var(--ocs-panel)!important;`,
+    `--color-surface-elevated:var(--ocs-panel)!important;`,
+    `--color-surface-elevated-secondary:var(--ocs-panel)!important;`,
+    `--color-background-panel:var(--ocs-panel)!important;`,
+    `--color-text:var(--ocs-text)!important;--color-text-emphasis:var(--ocs-text)!important;`,
+    `--color-text-prose:var(--ocs-text)!important;`,
+    `--color-text-secondary:var(--ocs-text-secondary)!important;`,
+    `--color-text-tertiary:var(--ocs-muted)!important;`,
+    `--color-border:var(--ocs-border)!important;--color-border-subtle:var(--ocs-border)!important;`,
+    `color:var(--ocs-text)!important;color-scheme:var(--ocs-color-scheme)!important;}`,
+    // Native semantic roots style future route mounts without marker mutation.
+    `aside.app-shell-left-panel{background:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;`,
+    `color:var(--ocs-text-secondary)!important;border-color:var(--ocs-border)!important;}`,
+    `.composer-surface-chrome:not([data-open-chatgpt-skin-surface]){`,
+    `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
+    `color:var(--ocs-input-text)!important;border-color:var(--ocs-border)!important;`,
+    `box-shadow:none!important;backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
+    `.composer-surface-chrome :is(textarea,[contenteditable=true],[role=textbox]){background:transparent!important;}`,
+    // The conversation composer has opaque wrappers outside the input chrome.
+    // Match these at mount time, including after React replaces the footer.
+    `main :is([class*="bg-token-main-surface"],.bg-surface,.bg-surface-secondary,.bg-surface-tertiary):has(.composer-surface-chrome){`,
+    `background:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important;}`,
+    `main .composer-surface-chrome{color:var(--ocs-input-text)!important;}`,
+    `main .composer-surface-chrome :is(button,[role=button],span,svg){color:inherit!important;}`,
+    `main .composer-surface-chrome :is([class*="bg-token-main-surface"],[class*="bg-token-input-background"],.bg-surface){background:transparent!important;}`,
+    `main .pointer-events-none :is(.bg-gradient-to-t.from-token-main-surface-primary,.bg-gradient-to-t.from-surface){`,
+    `background:transparent!important;background-image:none!important;box-shadow:none!important;backdrop-filter:none!important;}`,
+    `diffs-container,file-tree-container{background:var(--ocs-panel)!important;color:var(--ocs-code-text)!important;}`,
+    `${native.panelBackground},${native.bottomPanel},${native.settingsHost}{background:transparent!important;}`,
+    `${native.settingsHost}{--color-background-panel:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;}`,
+    `${native.tabbedPanel} :is([class~="electron:bg-surface"],[class~="group/file-diff"]){background-color:transparent!important;}`,
+    `${native.tabbedPanel}:has(${native.terminalHost}){background:transparent!important;}`,
+    `${native.terminalHost}{background:color-mix(in srgb,var(--ocs-panel) var(--ocs-terminal-panel-mix),transparent)!important;}`,
+    `${native.terminalHost} :is(.xterm,.xterm-viewport,.xterm-screen,.xterm-rows){background-color:transparent!important;}`,
     `${taskSurface}{position:relative!important;isolation:isolate!important;`,
     `color:var(--ocs-text)!important;background:${taskSurfaceBackground}!important;`,
     `border-color:var(--ocs-border)!important;}`,
+    // This sibling of the legacy shell main can appear after hydration. CSS
+    // follows mounts/navigation and disappears with the owned theme stylesheet.
+    `${NATIVE_CODEX_SURFACE_SELECTORS.conversationHost}{background:${taskSurfaceBackground}!important;}`,
     `${taskSurface} :where(article,[data-message-author-role]){`,
     `color:var(--ocs-text)!important;}`,
     `${workbenchSurface}{color:var(--ocs-text)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${workspacePanelSurface}{color:var(--ocs-text)!important;`,
     `background:transparent!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
@@ -434,7 +468,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${resourceCardSurface}{color:var(--ocs-text)!important;`,
     `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `background-image:none!important;border-color:var(--ocs-border)!important;`,
-    `box-shadow:none!important;backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `box-shadow:none!important;backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${resourceCardSurface} :where(button,[role=button],svg){color:inherit!important;}`,
     `${taskSurface} :where(th,td){color:var(--ocs-text)!important;}`,
     `${workspacePanelSurface} :where(button,[role=button],svg){`,
@@ -448,11 +482,11 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `color:var(--ocs-text)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${settingsPanelSurface}{color:var(--ocs-text)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${settingsInheritedText}{color:inherit!important;}`,
     `${settingsSurface} :where(h1,h2,h3,h4,h5,h6,[role=heading]),`,
     `${settingsPanelSurface} :where(h1,h2,h3,h4,h5,h6,[role=heading]){`,
@@ -492,7 +526,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${overlaySurface}{color:var(--ocs-text)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:0 14px 44px rgba(0,0,0,.22)!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${overlaySurface} :where(div,section,article,span,p,label,small,li,dd,dt,button,[role=menuitem],svg){`,
     `color:inherit!important;border-color:var(--ocs-border)!important;}`,
     `${overlaySurface} :where(button,[role=button]){color:var(--ocs-text)!important;`,
@@ -513,7 +547,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${applicationMenuSurface}{color:var(--ocs-text-secondary)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${applicationMenuSurface} :where(button,svg){color:inherit!important;}`,
     `${modeSwitcherSurface}{color:var(--ocs-text-secondary)!important;`,
     `background:transparent!important;border-color:transparent!important;`,
@@ -528,7 +562,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${modeSwitcherSelectionSurface}{`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border:1px solid var(--ocs-border)!important;box-shadow:none!important;`,
-    `filter:none!important;backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `filter:none!important;backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${featurePageSurface}{color:var(--ocs-text)!important;`,
     `background:transparent!important;border-color:var(--ocs-border)!important;`,
     `box-shadow:none!important;backdrop-filter:none!important;}`,
@@ -553,7 +587,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${featureToolbarSurface}{color:var(--ocs-text)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${featureToolbarSurface}::before,${featureToolbarSurface}::after{`,
     `background:linear-gradient(to bottom,`,
     `color-mix(in srgb,var(--ocs-panel) var(--ocs-surface-panel-mix),transparent),`,
@@ -561,7 +595,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${featureSearchSurface}{color:var(--ocs-input-text)!important;`,
     `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${featureSearchSurface} :where(input,textarea,[contenteditable=true],[role=textbox]){`,
     `color:var(--ocs-input-text)!important;background:transparent!important;}`,
     `${featureSearchSurface} :where(input::placeholder,textarea::placeholder){`,
@@ -587,11 +621,13 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `[data-open-chatgpt-skin-surface="topbar"]::before,`,
     `[data-open-chatgpt-skin-surface="topbar"]::after{background:transparent!important;`,
     `box-shadow:none!important;filter:none!important;border-color:var(--ocs-border)!important;}`,
-    `${topFadeSurface}{background:transparent!important;`,
+    // The modern shell mounts its fade after the toolbar and toggles its data
+    // state on scroll. Match the native attribute so no marker refresh is needed.
+    `${topFadeSurface},${native.topFade}{background:transparent!important;`,
     `background-color:transparent!important;background-image:none!important;`,
     `box-shadow:none!important;filter:none!important;backdrop-filter:none!important;`,
     `pointer-events:none!important;}`,
-    `${scrollFadeSurface}{background:transparent!important;`,
+    `${scrollFadeSurface},main ${native.composerBackdrop}{background:transparent!important;`,
     `background-color:transparent!important;background-image:none!important;`,
     `box-shadow:none!important;filter:none!important;backdrop-filter:none!important;`,
     `pointer-events:none!important;}`,
@@ -614,7 +650,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `border-color:transparent!important;box-shadow:none!important;filter:none!important;}`,
     `${composerSurface} :is(.composer-surface-chrome,[class*="bg-token-main-surface"],`,
     `[class*="bg-token-input-background"],[class*="bg-token-bg-fog"],`,
-    `[class*="bg-token-dropdown-background"]):not(`,
+    `[class*="bg-token-dropdown-background"],.bg-surface,.bg-surface-secondary,.bg-surface-tertiary):not(`,
     `[data-open-chatgpt-skin-surface="composer-input"]){`,
     `background:transparent!important;background-image:none!important;`,
     `border-color:transparent!important;box-shadow:none!important;backdrop-filter:none!important;}`,
@@ -623,8 +659,12 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
     `border-color:var(--ocs-border)!important;`,
     `box-shadow:none!important;`,
-    `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+    `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `[data-open-chatgpt-skin-surface="composer-input"] *{color:inherit!important;}`,
+    `main .composer-surface-chrome:not([data-open-chatgpt-skin-surface="composer-chrome"]){`,
+    `background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
+    `color:var(--ocs-input-text)!important;border-color:var(--ocs-border)!important;`,
+    `box-shadow:none!important;backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `[data-open-chatgpt-skin-surface="composer-input"] :where(input,textarea,[contenteditable=true],[role=textbox]){`,
     `color:var(--ocs-input-text)!important;background:transparent!important;}`,
     `[data-open-chatgpt-skin-surface="composer-input"] [data-placeholder]::before,`,
@@ -646,7 +686,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `${statusBannerSurface}{color:var(--ocs-text)!important;` +
       `background-color:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;` +
       `border-color:var(--ocs-border)!important;box-shadow:none!important;` +
-      `backdrop-filter:blur(var(--ocs-surface-blur))!important;}`,
+      `backdrop-filter:var(--ocs-surface-backdrop)!important;}`,
     `${statusBannerSurface} :where(h1,h2,h3,h4,h5,h6,[role=heading]){` +
       `color:var(--ocs-text)!important;}`,
     `${statusBannerSurface} :where(div,section,article,span,p,label,small,svg){` +
@@ -687,6 +727,26 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     `[data-open-chatgpt-skin-surface="home-native-icon"]{visibility:hidden!important;}`,
     priorityThemeCss,
     compileModuleCss(visual.layout.modules),
+    // Codex 26.901 paints conversation roots and home bodies through these
+    // component-local variables; overriding the old chrome class misses both.
+    `@layer base{`,
+    `${native.composerRoot}{`,
+    `--composer-layout-surface-background:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;`,
+    `--composer-layout-surface-backdrop-filter:var(--ocs-surface-backdrop)!important;`,
+    `--composer-layout-surface-shadow:none!important;`,
+    `color:var(--ocs-input-text)!important;}`,
+    `${native.composerRoot}:not([data-composer-utility-bar-variant="home"]),`,
+    `${native.composerRoot}[data-composer-utility-bar-variant="home"] ${native.composerBody}{`,
+    `background:var(--composer-layout-surface-background)!important;`,
+    `backdrop-filter:var(--composer-layout-surface-backdrop-filter)!important;`,
+    `border:1px solid var(--ocs-border)!important;box-shadow:none!important;}`,
+    `${native.composerRoot}[data-composer-utility-bar-variant="home"]{background:transparent!important;backdrop-filter:none!important;}`,
+    `${native.composerRoot}:not([data-composer-utility-bar-variant="home"]) ${native.composerBody}{background:transparent!important;backdrop-filter:none!important;box-shadow:none!important;}`,
+    `${native.composerRoot} :is([data-composer-input-variant],[contenteditable=true],textarea){`,
+    `background:transparent!important;color:var(--ocs-input-text)!important;caret-color:var(--ocs-accent)!important;}`,
+    `${native.composerRoot} :is(button,span,svg){color:inherit!important;}`,
+    `${native.composerRoot} [data-placeholder]::before{color:var(--ocs-placeholder)!important;}`,
+    `}`,
   ].join("");
 
   const fontCss = Object.entries(theme.assets.fonts ?? {}).map(([key, path]) => {
@@ -725,6 +785,7 @@ export function compileTheme(bundle: ValidatedThemeBundle): CompiledTheme {
     ...(visual.welcome.layout ? { layout: visual.welcome.layout } : {}),
   } : undefined;
   const compiled = withMeasuredBytes({
+    surfaceStrategy: "static",
     themeId: theme.id,
     themeVersion: theme.version,
     backgroundDataUrl,

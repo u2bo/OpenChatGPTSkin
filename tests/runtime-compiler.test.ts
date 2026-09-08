@@ -7,6 +7,7 @@ import {
   assertRuntimeThemeSize,
   compileTheme,
   RUNTIME_MAX_COMPILED_THEME_BYTES,
+  NATIVE_CODEX_SURFACE_SELECTORS,
 } from "@open-chatgpt-skin/cdp-adapter";
 
 const RUNTIME_THEME_IDS = [
@@ -24,28 +25,20 @@ function cssPercent(value: number): number {
 }
 
 describe("compileTheme", () => {
-  it.each(["off", "ambient", "banner", "full"] as const)(
-    "keeps the %s conversation mode and independent modern panel opacity settings",
-    async (taskMode) => {
-      const bundle = await loadThemeDirectory(resolve("themes/builtin/glacier-aurora"));
-      const theme = parseThemeDocument({
-        ...bundle.theme,
-        background: { ...bundle.theme.background, taskMode, taskOpacity: 0.31 },
-        surfaces: { ...bundle.theme.surfaces, baseOpacity: 0.27, elevatedOpacity: 0.63, terminalOpacity: 0.79 },
-      });
-      const css = compileTheme({ ...bundle, theme }).themeCss;
-      const taskBackground = css.match(/\[data-open-chatgpt-skin-surface="task"\]\{[^}]*?background:([^;]+);/)?.[1];
-      const modernBackground = css.match(/\[data-open-chatgpt-skin-surface="conversation-host"\]\{background:([^;]+);/)?.[1];
-      expect(taskBackground).toBeTruthy();
-      expect(modernBackground).toBe(taskBackground);
-      expect(css).toContain("--ocs-surface-panel-mix:27%");
-      expect(css).toContain("--ocs-elevated-panel-mix:63%");
-      expect(css).toContain("--ocs-terminal-panel-mix:79%");
-      expect(css).toContain('[data-open-chatgpt-skin-surface="terminal-host"]{background:color-mix(in srgb,var(--ocs-panel) var(--ocs-terminal-panel-mix),transparent)!important;}');
-      expect(css).toContain('[data-open-chatgpt-skin-surface="settings-content"]{--color-background-panel:color-mix(in srgb,var(--ocs-panel) var(--ocs-elevated-panel-mix),transparent)!important;}');
-      expect(css).not.toContain("_MainContentSurface_");
-    },
-  );
+  it("removes filter effects entirely when blur is disabled", async () => {
+    const bundle = await loadThemeDirectory(resolve("themes/builtin/mountain-mist"));
+    const theme = parseThemeDocument({...bundle.theme,
+      surfaces: {...bundle.theme.surfaces, blur: 0},
+      background: {...bundle.theme.background, blur: 0, brightness: 1},
+    });
+    const compiled = compileTheme({...bundle,theme});
+    expect(compiled.surfaceStrategy).toBe('static');
+    expect(compiled.themeCss).toContain('--ocs-surface-backdrop:none;');
+    expect(compiled.themeCss).not.toContain('backdrop-filter:blur(');
+    expect(compiled.themeCss).not.toContain('filter:blur(0');
+    const blurred = compileTheme({...bundle,theme:parseThemeDocument({...theme,surfaces:{...theme.surfaces,blur:8}})});
+    expect(blurred.themeCss).toContain('--ocs-surface-backdrop:blur(8px);');
+  });
 
   it("enforces the exact 8 MiB compiled-theme boundary", () => {
     expect(RUNTIME_MAX_COMPILED_THEME_BYTES).toBe(8 * 1024 * 1024);
@@ -261,7 +254,7 @@ describe("compileTheme", () => {
       '[data-open-chatgpt-skin-surface="topbar"]',
     );
     expect(compiled.themeCss).toContain(
-      '[data-open-chatgpt-skin-surface="top-fade"]{background:transparent!important;',
+      '[data-open-chatgpt-skin-surface="top-fade"],[data-app-shell-main-content-top-fade]{background:transparent!important;',
     );
     expect(compiled.themeCss).toContain(
       '[data-open-chatgpt-skin-surface="composer-input"] *{color:inherit!important;}',
@@ -337,10 +330,10 @@ describe("compileTheme", () => {
       '[data-open-chatgpt-skin-surface="overlay"]',
     );
     expect(compiled.themeCss).toContain(
-      '[data-open-chatgpt-skin-surface="overlay"] :is(.composer-surface-chrome',
+      `:is([data-open-chatgpt-skin-surface="overlay"],${NATIVE_CODEX_SURFACE_SELECTORS.overlay}) :is(.composer-surface-chrome`,
     );
     expect(compiled.themeCss).toContain(
-      '[data-open-chatgpt-skin-surface="overlay"] :where(button,[role=button]){color:var(--ocs-text)!important;background:transparent!important;',
+      `:is([data-open-chatgpt-skin-surface="overlay"],${NATIVE_CODEX_SURFACE_SELECTORS.overlay}) :where(button,[role=button]){color:var(--ocs-text)!important;background:transparent!important;`,
     );
     expect(compiled.themeCss).toContain(
       '[data-open-chatgpt-skin-surface="composer"] :is(.composer-surface-chrome,[class*="bg-token-main-surface"]',

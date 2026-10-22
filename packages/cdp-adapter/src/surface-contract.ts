@@ -55,8 +55,23 @@ export const OPEN_CHATGPT_SKIN_SURFACES = [
 
 export type OpenChatGPTSkinSurface = typeof OPEN_CHATGPT_SKIN_SURFACES[number];
 
+const COMPOSER_BACKDROP = 'div[aria-hidden="true"].pointer-events-none.absolute.inset-x-0.bottom-0.h-full.bg-gradient-to-t.from-surface.via-surface';
+
 export const NATIVE_CODEX_SURFACE_SELECTORS = {
+  topFade: '[data-app-shell-main-content-top-fade]',
+  accountMenu: 'button[aria-label="Open profile menu" i],button[aria-label="打开个人资料菜单"],button[aria-label="Account menu" i],button.sidebar-item[aria-haspopup="menu"]',
+  composerRoot: '[data-composer-surface-variant]',
+  composerBody: '[class*="_ComposerLayoutBody_"]',
+  composerBackdrop: COMPOSER_BACKDROP,
   shellMain: "main.main-surface,main,[role=main]",
+  contentHost: 'main[class*="_MainContentSurface_"]',
+  settingsHost: 'main[class*="_MainContentSurface_"] div[class~="electron:bg-surface"][class~="windows:rounded-tl-lg"]',
+  tabbedPanel: ':is(main[class*="_MainContentSurface_"],main.main-surface) [data-app-shell-tabs="true"]',
+  panelBackground: 'div[class*="bg-[var(--app-shell-panel-background"]',
+  bottomPanel: 'div.absolute.inset-x-0.top-0.border-t.bg-surface:has([data-app-shell-tabs="true"])',
+  terminalHost: '[data-codex-terminal="true"]',
+  // Codex 26.901 mounts the conversation in a separate CSS-module main.
+  conversationHost: 'main[class*="_MainContentSurface_"]:has(.thread-scroll-container,[data-thread-scroll-container])',
   sidebar: "aside.app-shell-left-panel,aside,nav,[role=navigation]",
   applicationMenu: '[class~="group/application-menu-top-bar"]',
   modeSwitcher: '[role="group"][aria-label="Composer mode"]',
@@ -64,6 +79,9 @@ export const NATIVE_CODEX_SURFACE_SELECTORS = {
   routeMain: '[role="main"]',
   terminal: '[role="terminal"],.xterm,[class*="terminal"]',
   scrollFade: [
+    // Codex 26.901: the composer backdrop spans the whole footer. Its height
+    // can exceed the input bounds, so geometry heuristics miss it.
+    COMPOSER_BACKDROP,
     ".app-shell-main-content-top-fade",
     '[class*="scroll-fade"]',
     '[class*="scrollFade"]',
